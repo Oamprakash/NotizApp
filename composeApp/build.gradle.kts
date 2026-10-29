@@ -84,3 +84,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+    enabled = false
+}
+
