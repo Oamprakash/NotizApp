@@ -46,7 +46,7 @@ One user belongs to one society in v1 (data model already allows more).
 | 2 | ✅ Push notifications (FCM/APNs) for notices, dues, reminders, complaints, polls, chat, approvals — see `docs/PUSH_SETUP.md` |
 | 2 | ✅ Tamil UI with in-app English / தமிழ் switch. Next: Tamil push notification text, Hindi, voice notes |
 | 2 | Payment gateway (Razorpay/Cashfree UPI) with auto-reconciliation via webhooks, replacing manual UTR entry |
-| 2 | Receipts as PDF, dues export to Excel for the auditor |
+| 2 | ✅ Numbered PDF receipts, cash payments, dues export to Excel for the auditor |
 | 3 | Multiple groups per society (blocks, committee-only), threads, media |
 | 3 | SMS / web-link fallback for residents without the app |
 | 3 | Visitor and staff management, amenity booking |

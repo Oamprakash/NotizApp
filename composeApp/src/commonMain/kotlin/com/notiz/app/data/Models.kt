@@ -79,7 +79,14 @@ data class Due(
     val status: String,
     val utr: String? = null,
     @SerialName("created_at") val createdAt: String = "",
+    @SerialName("paid_at") val paidAt: String? = null,
+    @SerialName("receipt_no") val receiptNo: Int? = null,
+    /** Who reported the payment — embedded as payer:profiles!dues_submitted_by_fkey(full_name) */
+    val payer: PayerName? = null,
 )
+
+@Serializable
+data class PayerName(@SerialName("full_name") val fullName: String)
 
 object DueStatus {
     const val PENDING = "pending"

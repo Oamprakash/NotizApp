@@ -156,6 +156,13 @@
     <string name="members_share_whatsapp">Share on WhatsApp</string>
     <string name="members_resident">Resident</string>
     <string name="members_admin">Admin</string>
+    <string name="dues_share_failed">Couldn't share the file. Please try again.</string>
+    <string name="dues_export_excel">Export to Excel</string>
+    <string name="dues_paid_cash">Paid in cash</string>
+    <string name="dues_cash_title">Mark as paid in cash?</string>
+    <string name="dues_cash_body">Flat %1$s paid %2$s for %3$s by cash or cheque. A receipt will be issued.</string>
+    <string name="dues_receipt_no">Receipt %1$s</string>
+    <string name="dues_receipt">Receipt</string>
     <string-array name="months_short">
         <item>Jan</item>
         <item>Feb</item>

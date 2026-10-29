@@ -29,6 +29,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Shares generated receipts (PDF) and dues exports (Excel) with other apps -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- Push notifications (Firebase Cloud Messaging) -->
         <service
             android:name=".push.NotizMessagingService"

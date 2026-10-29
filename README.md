@@ -27,6 +27,7 @@ composeApp/src/
     ui/                    auth, onboarding, home tabs, notices, dues,
                            complaints, polls, chat, members, theme
     i18n/                  language switch (English / தமிழ்), translatable messages
+    export/                PDF receipts and Excel export (pure Kotlin, same on Android and iOS)
     util/                  ₹ formatting, dates, UPI deep links
   commonMain/composeResources/
     values/strings.xml     English text
@@ -45,7 +46,7 @@ docs/PUSH_SETUP.md         Firebase / APNs / webhook / cron setup for push
 
 1. Create a project at [supabase.com](https://supabase.com) — pick the **Mumbai (ap-south-1)** region for Indian users.
 2. **SQL Editor → New query** → run each file in `supabase/migrations/` in date order
-   (`20261023000000_init.sql`, then `20261029000000_push_notifications.sql`).
+   (`20261023000000_init.sql`, `20261029000000_push_notifications.sql`, `20261029100000_receipts.sql`).
    (Or with the CLI: `supabase link` then `supabase db push`.)
 3. **Authentication → Sign In / Providers → Phone**: enable it.
    - For development, add **test phone numbers** with fixed OTPs (e.g. `919999900001` → `123456`). No SMS is sent and it costs nothing.
@@ -83,6 +84,15 @@ Pick a simulator and Run. The Xcode build phase calls Gradle to build the Kotlin
 6. Dues → **Raise bill** (A) → **Pay via UPI** then enter the UTR (B) → **Mark paid** (A).
 7. Raise a complaint (B) → change status (A). Create a poll (A) → vote (B). Chat both ways.
 
+## Receipts and Excel export
+
+- Every payment an admin confirms gets a receipt number, sequential per society (`R-00001`, `R-00002`, …), assigned once in the database.
+- Paid dues show a **Receipt** button: residents and admins can share an A5 PDF receipt (amount in words, UTR, payer, date) on WhatsApp, email and so on.
+- Admins can mark an unpaid flat **Paid in cash** (cash or cheque); it gets a receipt too.
+- Admins can **Export to Excel**: a `.xlsx` with a *Summary* sheet (per bill: flats billed, paid, collected, outstanding, plus totals) and a *Dues* sheet (every flat with status, UTR, paid date and receipt number), ready for the auditor.
+
+Receipts and exports are in English. The PDF fonts can't draw Tamil script, so Tamil names are left out of the receipt.
+
 ## Languages
 
 The app is in **English and Tamil (தமிழ்)**. It follows the phone's language, and the **English / தமிழ்** button (login, setup and home screens) switches instantly. The choice is saved on the device.
@@ -108,6 +118,7 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 - **Utilities**: the `util/` unit tests pass.
 - **Push triggers**: every notification case (12 scenarios) checked on PostgreSQL 16 for the right recipients and text; outsiders can't read tokens or the outbox or call the internal functions.
 - **Edge Function**: type-checked with Deno, 6 tests pass (JWT signing, FCM payload, sending, dead-token cleanup, outbox marking).
+- **Receipts & export**: receipt numbering tested on PostgreSQL (backfill, no double numbers, cash, permissions). Generated PDFs pass `qpdf --check` and render correctly; `.xlsx` files open in openpyxl with numeric amounts, Tamil text and special characters intact.
 - **Not yet compiled**: the build environment had no access to Maven/Google repositories or Xcode, so the first Gradle sync happens on your machine. If a version clashes, these are the usual fixes:
   - `compose.material3` / `compose.runtime` deprecation warnings are expected with Compose Multiplatform 1.12; they don't fail the build.
   - If AGP complains about the KMP + `com.android.application` combination, stay on AGP 8.13.x (AGP 9 needs the new `androidApp` + `com.android.kotlin.multiplatform.library` structure).

@@ -80,6 +80,14 @@ import com.notiz.app.i18n.asString
 import com.notiz.app.i18n.uiText
 import com.notiz.app.i18n.localDate
 import org.jetbrains.compose.resources.StringResource
+import com.notiz.app.export.MimeTypes
+import com.notiz.app.export.ReceiptData
+import com.notiz.app.export.buildDuesWorkbook
+import com.notiz.app.export.buildReceiptPdf
+import com.notiz.app.export.duesFileName
+import com.notiz.app.export.receiptFileName
+import com.notiz.app.export.receiptNumberLabel
+import com.notiz.app.export.rememberFileSharer
 
 enum class DuesFilter(val label: StringResource) {
     ALL(Res.string.dues_filter_all),
@@ -171,6 +179,39 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
     var raising by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf<Due?>(null) }
     var payError by remember { mutableStateOf<UiText?>(null) }
+    var cashFor by remember { mutableStateOf<Due?>(null) }
+    val sharer = rememberFileSharer()
+
+    fun share(build: () -> ByteArray, fileName: String, mimeType: String) {
+        try {
+            sharer.share(build(), fileName, mimeType)
+        } catch (e: Exception) {
+            payError = uiText(Res.string.dues_share_failed)
+        }
+    }
+
+    fun shareReceipt(due: Due) {
+        val no = due.receiptNo ?: return
+        val data = ReceiptData(
+            societyName = session.society.name,
+            city = session.society.city,
+            receiptNo = no,
+            paidOn = due.paidAt ?: due.createdAt,
+            flatNo = due.flatNo,
+            payerName = due.payer?.fullName,
+            billTitle = due.title,
+            dueDate = due.dueDate,
+            amountPaise = due.amountPaise,
+            utr = due.utr,
+        )
+        share({ buildReceiptPdf(data) }, receiptFileName(data), MimeTypes.PDF)
+    }
+
+    fun exportExcel() = share(
+        { buildDuesWorkbook(state.dues) },
+        duesFileName(session.society.name, todayIso()),
+        MimeTypes.XLSX,
+    )
 
     fun openUpi(due: Due) {
         val society = session.society
@@ -204,7 +245,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (session.isAdmin) {
-                        item { AdminSummary(state) }
+                        item { AdminSummary(state, onExport = ::exportExcel) }
                         item {
                             Row(
                                 Modifier.horizontalScroll(rememberScrollState()),
@@ -244,6 +285,8 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
                             onPay = { openUpi(due) },
                             onReport = { reporting = due },
                             onVerify = { approve -> vm.verify(due, approve) },
+                            onPaidInCash = { cashFor = due },
+                            onReceipt = { shareReceipt(due) },
                         )
                     }
                 }
@@ -273,6 +316,19 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
             onSubmit = { utr -> vm.submitUtr(due, utr) { reporting = null } },
         )
     }
+    cashFor?.let { due ->
+        AlertDialog(
+            onDismissRequest = { cashFor = null },
+            title = { Text(stringResource(Res.string.dues_cash_title)) },
+            text = { Text(stringResource(Res.string.dues_cash_body, due.flatNo, formatRupees(due.amountPaise), due.title)) },
+            confirmButton = {
+                TextButton(onClick = { cashFor = null; vm.verify(due, approve = true) }) {
+                    Text(stringResource(Res.string.dues_mark_paid))
+                }
+            },
+            dismissButton = { TextButton(onClick = { cashFor = null }) { Text(stringResource(Res.string.action_cancel)) } },
+        )
+    }
     if (raising) {
         RaiseBillDialog(
             busy = state.busy,
@@ -283,12 +339,18 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AdminSummary(state: DuesUiState) {
+private fun AdminSummary(state: DuesUiState, onExport: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            SummaryFigure(stringResource(Res.string.dues_collected), formatRupees(state.collectedPaise))
-            SummaryFigure(stringResource(Res.string.dues_outstanding), formatRupees(state.outstandingPaise))
-            SummaryFigure(stringResource(Res.string.dues_to_verify), state.toVerifyCount.toString())
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                SummaryFigure(stringResource(Res.string.dues_collected), formatRupees(state.collectedPaise))
+                SummaryFigure(stringResource(Res.string.dues_outstanding), formatRupees(state.outstandingPaise))
+                SummaryFigure(stringResource(Res.string.dues_to_verify), state.toVerifyCount.toString())
+            }
+            if (state.dues.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = onExport) { Text(stringResource(Res.string.dues_export_excel)) }
+            }
         }
     }
 }
@@ -311,6 +373,8 @@ private fun DueCard(
     onPay: () -> Unit,
     onReport: () -> Unit,
     onVerify: (approve: Boolean) -> Unit,
+    onPaidInCash: () -> Unit,
+    onReceipt: () -> Unit,
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
@@ -352,6 +416,24 @@ private fun DueCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { onVerify(true) }, enabled = !busy) { Text(stringResource(Res.string.dues_mark_paid)) }
                     OutlinedButton(onClick = { onVerify(false) }, enabled = !busy) { Text(stringResource(Res.string.dues_not_received)) }
+                }
+            }
+            // Admin: record a cash / cheque payment for an unpaid flat
+            if (isAdmin && due.status == DueStatus.PENDING) {
+                Spacer(Modifier.height(if (isMyFlat) 4.dp else 12.dp))
+                TextButton(onClick = onPaidInCash, enabled = !busy) { Text(stringResource(Res.string.dues_paid_cash)) }
+            }
+            // Paid: receipt number + share the PDF
+            if (due.status == DueStatus.PAID && due.receiptNo != null) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(Res.string.dues_receipt_no, receiptNumberLabel(due.receiptNo)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedButton(onClick = onReceipt) { Text(stringResource(Res.string.dues_receipt)) }
                 }
             }
         }
@@ -406,6 +488,9 @@ private fun ReportPaymentDialog(
         dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_later)) } },
     )
 }
+
+@OptIn(ExperimentalTime::class)
+private fun todayIso(): String = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
 
 @OptIn(ExperimentalTime::class)
 private fun defaultDueDate(): String {

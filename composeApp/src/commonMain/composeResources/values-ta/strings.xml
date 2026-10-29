@@ -156,6 +156,13 @@
     <string name="members_share_whatsapp">WhatsApp-ல் பகிர்</string>
     <string name="members_resident">குடியிருப்பாளர்</string>
     <string name="members_admin">நிர்வாகி</string>
+    <string name="dues_share_failed">கோப்பைப் பகிர முடியவில்லை. மீண்டும் முயற்சிக்கவும்.</string>
+    <string name="dues_export_excel">Excel-க்கு ஏற்றுமதி செய்</string>
+    <string name="dues_paid_cash">ரொக்கமாகச் செலுத்தப்பட்டது</string>
+    <string name="dues_cash_title">ரொக்கமாகச் செலுத்தியதாகக் குறிக்கவா?</string>
+    <string name="dues_cash_body">வீடு %1$s, %3$s-க்கான %2$s-ஐ ரொக்கம் அல்லது காசோலை மூலம் செலுத்தியது. ரசீது வழங்கப்படும்.</string>
+    <string name="dues_receipt_no">ரசீது %1$s</string>
+    <string name="dues_receipt">ரசீது</string>
     <string-array name="months_short">
         <item>ஜன.</item>
         <item>பிப்.</item>
