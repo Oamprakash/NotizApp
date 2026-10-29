@@ -57,10 +57,10 @@ import com.notiz.app.data.Notice
 import com.notiz.app.data.NoticeReadCount
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
-import com.notiz.app.ui.components.EmptyState
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.components.UnreadDot
 import com.notiz.app.util.formatTimestamp
@@ -129,7 +129,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
             state.loadError != null && state.notices.isEmpty() -> ErrorBox(state.loadError!!, onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.notices.isEmpty()) {
-                    EmptyState(
+                    RefreshableEmptyState(
                         "No notices yet",
                         if (session.isAdmin) "Post the first notice for your residents." else "Society notices will appear here.",
                     )

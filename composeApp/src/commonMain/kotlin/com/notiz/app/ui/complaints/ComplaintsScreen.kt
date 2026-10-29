@@ -47,10 +47,10 @@ import com.notiz.app.data.ComplaintRepository
 import com.notiz.app.data.ComplaintStatus
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
-import com.notiz.app.ui.components.EmptyState
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.theme.StatusColors
 import com.notiz.app.util.formatTimestamp
@@ -129,7 +129,7 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
             state.loadError != null && state.complaints.isEmpty() -> ErrorBox(state.loadError!!, onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.complaints.isEmpty()) {
-                    EmptyState(
+                    RefreshableEmptyState(
                         "No complaints",
                         if (session.isAdmin) "Complaints raised by residents will appear here."
                         else "Something broken? Raise a complaint and track it till it's fixed.",

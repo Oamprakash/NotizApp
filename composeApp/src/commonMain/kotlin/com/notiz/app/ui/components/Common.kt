@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -61,6 +62,21 @@ fun EmptyState(title: String, subtitle: String, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+/**
+ * Empty state for use inside PullToRefreshBox. Pull-to-refresh only reacts to scrollable
+ * content, so the message sits in a LazyColumn item that fills the screen.
+ */
+@Composable
+fun RefreshableEmptyState(title: String, subtitle: String, modifier: Modifier = Modifier) {
+    LazyColumn(modifier.fillMaxSize()) {
+        item {
+            Box(Modifier.fillParentMaxSize()) {
+                EmptyState(title, subtitle)
+            }
+        }
     }
 }
 

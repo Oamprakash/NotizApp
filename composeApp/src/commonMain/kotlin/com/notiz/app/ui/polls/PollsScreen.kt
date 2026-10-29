@@ -48,10 +48,10 @@ import com.notiz.app.data.Poll
 import com.notiz.app.data.PollOption
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
-import com.notiz.app.ui.components.EmptyState
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.util.formatTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -123,7 +123,7 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
             state.loadError != null && state.polls.isEmpty() -> ErrorBox(state.loadError!!, onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.polls.isEmpty()) {
-                    EmptyState(
+                    RefreshableEmptyState(
                         "No polls yet",
                         if (session.isAdmin) "Ask residents to decide together — one vote per flat."
                         else "Society polls will appear here.",
