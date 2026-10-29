@@ -10,6 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.notiz.app.i18n.AppEnvironment
+import com.notiz.app.i18n.asString
 import com.notiz.app.push.NotificationPermissionRequest
 import com.notiz.app.push.PushEvents
 import com.notiz.app.push.PushTypes
@@ -27,6 +29,14 @@ import com.notiz.app.ui.theme.NotizTheme
 @Composable
 fun App() {
     val container = AppContainer.instance
+    // Re-composes everything in the chosen language (English / தமிழ்)
+    AppEnvironment {
+        AppContent(container)
+    }
+}
+
+@Composable
+private fun AppContent(container: AppContainer) {
     CompositionLocalProvider(LocalAppContainer provides container) {
         NotizTheme {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -65,7 +75,7 @@ fun App() {
                         society = s.society,
                         onSignOut = appViewModel::signOut,
                     )
-                    is AppState.Error -> ErrorBox(message = s.message, onRetry = appViewModel::refresh)
+                    is AppState.Error -> ErrorBox(message = s.message.asString(), onRetry = appViewModel::refresh)
                 }
             }
         }

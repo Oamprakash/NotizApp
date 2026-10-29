@@ -43,13 +43,17 @@ import com.notiz.app.ui.complaints.ComplaintsTab
 import com.notiz.app.ui.dues.DuesTab
 import com.notiz.app.ui.notices.NoticesTab
 import com.notiz.app.ui.polls.PollsTab
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.StringResource
+import com.notiz.app.ui.components.LanguageToggle
 
-private enum class HomeTab(val label: String, val icon: ImageVector) {
-    Notices("Notices", Icons.Filled.Notifications),
-    Dues("Dues", Icons.Filled.ShoppingCart),
-    Complaints("Complaints", Icons.Filled.Build),
-    Polls("Polls", Icons.Filled.Check),
-    Chat("Chat", Icons.Filled.Email),
+private enum class HomeTab(val label: StringResource, val icon: ImageVector) {
+    Notices(Res.string.tab_notices, Icons.Filled.Notifications),
+    Dues(Res.string.tab_dues, Icons.Filled.ShoppingCart),
+    Complaints(Res.string.tab_complaints, Icons.Filled.Build),
+    Polls(Res.string.tab_polls, Icons.Filled.Check),
+    Chat(Res.string.tab_chat, Icons.Filled.Email),
 }
 
 @Composable
@@ -84,21 +88,26 @@ fun HomeScreen(
                     Column {
                         Text(session.society.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            "Flat ${session.flatNo}" + if (session.isAdmin) " · Admin" else "",
+                            if (session.isAdmin) {
+                                stringResource(Res.string.home_flat_admin, session.flatNo)
+                            } else {
+                                stringResource(Res.string.home_flat, session.flatNo)
+                            },
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
                 actions = {
+                    LanguageToggle()
                     IconButton(onClick = onOpenMembers) {
                         Icon(
                             if (session.isAdmin) Icons.AutoMirrored.Filled.List else Icons.Filled.Person,
-                            contentDescription = "Members",
+                            contentDescription = stringResource(Res.string.members_title),
                         )
                     }
                     IconButton(onClick = onSignOut) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sign out")
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = stringResource(Res.string.action_sign_out))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -111,7 +120,7 @@ fun HomeScreen(
                         selected = item == tab,
                         onClick = { tabName = item.name },
                         icon = { Icon(item.icon, contentDescription = null) },
-                        label = { Text(item.label) },
+                        label = { Text(stringResource(item.label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     )
                 }
             }

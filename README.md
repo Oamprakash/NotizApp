@@ -26,7 +26,11 @@ composeApp/src/
     push/                  push notifications: token registration, tap routing
     ui/                    auth, onboarding, home tabs, notices, dues,
                            complaints, polls, chat, members, theme
+    i18n/                  language switch (English / தமிழ்), translatable messages
     util/                  ₹ formatting, dates, UPI deep links
+  commonMain/composeResources/
+    values/strings.xml     English text
+    values-ta/strings.xml  Tamil text (same keys)
   commonTest/              unit tests for util/
   androidMain/             MainActivity, manifest, FCM service, notification channel
   iosMain/                 MainViewController (called from Swift), iOS push bridge
@@ -78,6 +82,12 @@ Pick a simulator and Run. The Xcode build phase calls Gradle to build the Kotlin
 5. Post a notice (A) → open it (B) → A sees "Read by 1 of 2".
 6. Dues → **Raise bill** (A) → **Pay via UPI** then enter the UTR (B) → **Mark paid** (A).
 7. Raise a complaint (B) → change status (A). Create a poll (A) → vote (B). Chat both ways.
+
+## Languages
+
+The app is in **English and Tamil (தமிழ்)**. It follows the phone's language, and the **English / தமிழ்** button (login, setup and home screens) switches instantly. The choice is saved on the device.
+
+To add or change text, edit both `composeResources/values/strings.xml` and `values-ta/strings.xml` with the same key, and use it in code as `stringResource(Res.string.key)`. Messages created in ViewModels use `uiText(Res.string.key)` so they're translated when shown. Adding Hindi later is one more folder: `values-hi/strings.xml`.
 
 ## Push notifications
 

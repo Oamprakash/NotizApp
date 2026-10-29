@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English (default). Keep keys in sync with values-ta/strings.xml. -->
+<resources>
+    <string name="action_try_again">Try again</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="error_server_unreachable">Can't reach the server. Check your internet connection.</string>
+    <string name="error_no_internet">No internet connection. Please try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_invalid_invite">That invite code doesn't match any society. Check it with your secretary.</string>
+    <string name="error_admins_only">Only admins can do this.</string>
+    <string name="error_already_submitted">This payment has already been reported.</string>
+    <string name="error_invalid_utr">Enter a valid UTR / reference number.</string>
+    <string name="error_two_options">Add at least two options.</string>
+    <string name="error_invalid_option">That option isn't part of this poll.</string>
+    <string name="error_not_allowed">You don't have access to this.</string>
+    <string name="app_name">Notiz</string>
+    <string name="login_tagline">Society notices, dues and complaints — in one place.</string>
+    <string name="login_mobile_number">Mobile number</string>
+    <string name="login_send_otp">Send OTP</string>
+    <string name="login_enter_code">Enter the 6-digit code sent to %1$s</string>
+    <string name="login_otp">OTP</string>
+    <string name="login_verify">Verify</string>
+    <string name="login_change_number">Change number</string>
+    <string name="login_resend">Resend code</string>
+    <string name="login_otp_failed">That code didn't work. Check it or request a new one.</string>
+    <string name="setup_upi_invalid">UPI ID should look like society@okaxis</string>
+    <string name="profile_title">What's your name?</string>
+    <string name="profile_subtitle">Neighbours and the committee will see this name.</string>
+    <string name="profile_full_name">Full name</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_sign_out">Sign out</string>
+    <string name="setup_title">Set up your society</string>
+    <string name="setup_tab_join">Join with code</string>
+    <string name="setup_tab_register">Register society</string>
+    <string name="setup_join_hint">Ask your secretary for the 6-character invite code.</string>
+    <string name="setup_invite_code">Invite code</string>
+    <string name="setup_request_join">Request to join</string>
+    <string name="setup_register_hint">You'll be the admin. Residents join with the invite code you get next.</string>
+    <string name="setup_society_name">Society name</string>
+    <string name="setup_city">City</string>
+    <string name="setup_upi_id">Society UPI ID (for dues)</string>
+    <string name="setup_upi_name">Account name on UPI</string>
+    <string name="setup_flat_number">Your flat / door number</string>
+    <string name="pending_title">Waiting for approval</string>
+    <string name="pending_body">Your request to join %1$s as flat %2$s has been sent. The secretary or a committee member will approve it soon.</string>
+    <string name="pending_the_society">the society</string>
+    <string name="pending_check_again">Check again</string>
+    <string name="tab_notices">Notices</string>
+    <string name="tab_dues">Dues</string>
+    <string name="tab_complaints">Complaints</string>
+    <string name="tab_polls">Polls</string>
+    <string name="tab_chat">Chat</string>
+    <string name="home_flat">Flat %1$s</string>
+    <string name="home_flat_admin">Flat %1$s · Admin</string>
+    <string name="members_title">Members</string>
+    <string name="notice_pinned">Pinned</string>
+    <string name="notice_new">New notice</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_back">Back</string>
+    <string name="notices_empty_title">No notices yet</string>
+    <string name="notices_empty_admin">Post the first notice for your residents.</string>
+    <string name="notices_empty_resident">Society notices will appear here.</string>
+    <string name="notice_read_by">Read by %1$d of %2$d members</string>
+    <string name="notice_field_title">Title</string>
+    <string name="notice_field_details">Details</string>
+    <string name="notice_pin">Pin to top</string>
+    <string name="notice_unpin">Unpin</string>
+    <string name="notice_post">Post</string>
+    <string name="notice_posting">Posting…</string>
+    <string name="notice_title">Notice</string>
+    <string name="notice_not_found">Notice not found</string>
+    <string name="notice_delete_title">Delete this notice?</string>
+    <string name="notice_delete_body">Residents will no longer see it.</string>
+    <string name="dues_filter_all">All</string>
+    <string name="dues_to_verify">To verify</string>
+    <string name="dues_unpaid">Unpaid</string>
+    <string name="dues_paid">Paid</string>
+    <string name="dues_verifying">Verifying</string>
+    <string name="dues_raise_bill">Raise bill</string>
+    <string name="dues_info_reported">Payment reported. The treasurer will confirm it.</string>
+    <string name="dues_info_marked_paid">Marked %1$s as paid.</string>
+    <string name="dues_info_sent_back">Sent back to unpaid.</string>
+    <string name="dues_info_bill_raised">Bill raised for %1$d flats.</string>
+    <string name="dues_no_upi_id">Your society hasn't added a UPI ID yet. Ask the treasurer how to pay.</string>
+    <string name="dues_no_upi_app">No UPI app found. Pay %1$s to %2$s manually.</string>
+    <string name="dues_empty_title">Nothing here</string>
+    <string name="dues_empty_admin">Raise a bill to collect maintenance from every flat.</string>
+    <string name="dues_empty_resident">You're all settled. New bills will show up here.</string>
+    <string name="dues_collected">Collected</string>
+    <string name="dues_outstanding">Outstanding</string>
+    <string name="dues_due_on">Due %1$s</string>
+    <string name="dues_utr">UTR: %1$s</string>
+    <string name="dues_pay_upi">Pay via UPI</string>
+    <string name="dues_already_paid">Already paid</string>
+    <string name="dues_mark_paid">Mark paid</string>
+    <string name="dues_not_received">Not received</string>
+    <string name="dues_report_title">Report your payment</string>
+    <string name="dues_report_body_vpa">After paying %1$s to %2$s, enter the 12-digit UTR / UPI reference number from your UPI app.</string>
+    <string name="dues_report_body">After paying %1$s, enter the 12-digit UTR / UPI reference number from your UPI app.</string>
+    <string name="dues_utr_field">UTR / reference no.</string>
+    <string name="action_sending">Sending…</string>
+    <string name="action_submit">Submit</string>
+    <string name="action_later">Later</string>
+    <string name="dues_default_title">Maintenance</string>
+    <string name="dues_raise_title">Raise a bill</string>
+    <string name="dues_raise_hint">Every approved flat gets this bill.</string>
+    <string name="dues_amount_field">Amount per flat (₹)</string>
+    <string name="dues_date_field">Due date (YYYY-MM-DD)</string>
+    <string name="dues_raising">Raising…</string>
+    <string name="complaint_open">Open</string>
+    <string name="complaint_in_progress">In progress</string>
+    <string name="complaint_resolved">Resolved</string>
+    <string name="category_plumbing">Plumbing</string>
+    <string name="category_electrical">Electrical</string>
+    <string name="category_lift">Lift</string>
+    <string name="category_security">Security</string>
+    <string name="category_cleaning">Cleaning</string>
+    <string name="category_parking">Parking</string>
+    <string name="category_other">Other</string>
+    <string name="complaints_empty_title">No complaints</string>
+    <string name="complaints_empty_admin">Complaints raised by residents will appear here.</string>
+    <string name="complaints_empty_resident">Something broken? Raise a complaint and track it till it's fixed.</string>
+    <string name="complaints_raise">Raise complaint</string>
+    <string name="complaints_raise_title">Raise a complaint</string>
+    <string name="complaints_problem_field">What's the problem?</string>
+    <string name="polls_new">New poll</string>
+    <string name="polls_empty_title">No polls yet</string>
+    <string name="polls_empty_admin">Ask residents to decide together — one vote per flat.</string>
+    <string name="polls_empty_resident">Society polls will appear here.</string>
+    <plurals name="polls_flats_voted">
+        <item quantity="one">%1$d flat has voted</item>
+        <item quantity="other">%1$d flats have voted</item>
+    </plurals>
+    <string name="polls_tap_to_vote">Tap an option to vote for your flat.</string>
+    <string name="polls_voted_hint">Your flat has voted. Tap another option to change.</string>
+    <string name="polls_default_options">Yes\nNo</string>
+    <string name="polls_question_field">Question</string>
+    <string name="polls_options_field">Options (one per line)</string>
+    <string name="polls_creating">Creating…</string>
+    <string name="polls_create">Create</string>
+    <string name="chat_empty_title">Say hello 👋</string>
+    <string name="chat_empty_body">Messages here are visible to every approved member.</string>
+    <string name="chat_message_hint">Message</string>
+    <string name="chat_send">Send</string>
+    <string name="members_neighbours">Neighbours</string>
+    <string name="members_whatsapp_failed">Couldn't open WhatsApp. Share this code: %1$s</string>
+    <string name="members_waiting">Waiting for approval (%1$d)</string>
+    <string name="members_approve">Approve</string>
+    <string name="members_reject">Reject</string>
+    <string name="members_count">Members (%1$d)</string>
+    <string name="members_remove_admin">Remove admin</string>
+    <string name="members_make_admin">Make admin</string>
+    <string name="members_invite_message">Join %1$s on Notiz for notices, maintenance payments and complaints. Install the app and use invite code %2$s with your flat number.</string>
+    <string name="members_invite_hint">Share this code with residents. You approve each request before they can see anything.</string>
+    <string name="members_share_whatsapp">Share on WhatsApp</string>
+    <string name="members_resident">Resident</string>
+    <string name="members_admin">Admin</string>
+    <string-array name="months_short">
+        <item>Jan</item>
+        <item>Feb</item>
+        <item>Mar</item>
+        <item>Apr</item>
+        <item>May</item>
+        <item>Jun</item>
+        <item>Jul</item>
+        <item>Aug</item>
+        <item>Sep</item>
+        <item>Oct</item>
+        <item>Nov</item>
+        <item>Dec</item>
+    </string-array>
+</resources>

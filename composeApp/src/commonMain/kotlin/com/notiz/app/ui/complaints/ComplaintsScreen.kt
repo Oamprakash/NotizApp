@@ -55,16 +55,20 @@ import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.theme.StatusColors
-import com.notiz.app.util.formatTimestamp
+import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.asString
 
 data class ComplaintsUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val complaints: List<Complaint> = emptyList(),
-    val loadError: String? = null,
-    val actionError: String? = null,
+    val loadError: UiText? = null,
+    val actionError: UiText? = null,
     val busy: Boolean = false,
 )
 
@@ -107,9 +111,22 @@ class ComplaintsViewModel(
 }
 
 private fun statusLabel(status: String) = when (status) {
-    ComplaintStatus.IN_PROGRESS -> "In progress"
-    ComplaintStatus.RESOLVED -> "Resolved"
-    else -> "Open"
+    ComplaintStatus.IN_PROGRESS -> Res.string.complaint_in_progress
+    ComplaintStatus.RESOLVED -> Res.string.complaint_resolved
+    else -> Res.string.complaint_open
+}
+
+/** Categories are stored in English (the server's push text uses them); show them translated. */
+@Composable
+private fun categoryLabel(category: String): String = when (category) {
+    "Plumbing" -> stringResource(Res.string.category_plumbing)
+    "Electrical" -> stringResource(Res.string.category_electrical)
+    "Lift" -> stringResource(Res.string.category_lift)
+    "Security" -> stringResource(Res.string.category_security)
+    "Cleaning" -> stringResource(Res.string.category_cleaning)
+    "Parking" -> stringResource(Res.string.category_parking)
+    "Other" -> stringResource(Res.string.category_other)
+    else -> category
 }
 
 private fun statusColor(status: String) = when (status) {
@@ -129,13 +146,16 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize()) {
         when {
             state.loading -> LoadingBox()
-            state.loadError != null && state.complaints.isEmpty() -> ErrorBox(state.loadError!!, onRetry = { vm.load() })
+            state.loadError != null && state.complaints.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.complaints.isEmpty()) {
                     RefreshableEmptyState(
-                        "No complaints",
-                        if (session.isAdmin) "Complaints raised by residents will appear here."
-                        else "Something broken? Raise a complaint and track it till it's fixed.",
+                        stringResource(Res.string.complaints_empty_title),
+                        if (session.isAdmin) {
+                            stringResource(Res.string.complaints_empty_admin)
+                        } else {
+                            stringResource(Res.string.complaints_empty_resident)
+                        },
                     )
                 } else {
                     LazyColumn(
@@ -158,10 +178,10 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
         ExtendedFloatingActionButton(
             onClick = { raising = true },
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text("Raise complaint") },
+            text = { Text(stringResource(Res.string.complaints_raise)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
         )
-        ErrorBanner(state.actionError, onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
+        ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
     }
 
     if (raising) {
@@ -179,18 +199,23 @@ private fun ComplaintCard(complaint: Complaint, isAdmin: Boolean, onStatus: (Str
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    complaint.category + if (isAdmin && complaint.flatNo.isNotBlank()) " · Flat ${complaint.flatNo}" else "",
+                    categoryLabel(complaint.category) +
+                        if (isAdmin && complaint.flatNo.isNotBlank()) {
+                            " · " + stringResource(Res.string.home_flat, complaint.flatNo)
+                        } else {
+                            ""
+                        },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                 )
-                StatusPill(statusLabel(complaint.status), statusColor(complaint.status))
+                StatusPill(stringResource(statusLabel(complaint.status)), statusColor(complaint.status))
             }
             Spacer(Modifier.height(6.dp))
             Text(complaint.description, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
             Text(
-                formatTimestamp(complaint.createdAt),
+                localTimestamp(complaint.createdAt),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -201,7 +226,7 @@ private fun ComplaintCard(complaint: Complaint, isAdmin: Boolean, onStatus: (Str
                         FilterChip(
                             selected = complaint.status == status,
                             onClick = { onStatus(status) },
-                            label = { Text(statusLabel(status)) },
+                            label = { Text(stringResource(statusLabel(status))) },
                         )
                     }
                 }
@@ -220,18 +245,18 @@ private fun RaiseComplaintDialog(
     var description by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Raise a complaint") },
+        title = { Text(stringResource(Res.string.complaints_raise_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ComplaintRepository.categories.forEach { c ->
-                        FilterChip(selected = category == c, onClick = { category = c }, label = { Text(c) })
+                        FilterChip(selected = category == c, onClick = { category = c }, label = { Text(categoryLabel(c)) })
                     }
                 }
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it.take(2000) },
-                    label = { Text("What's the problem?") },
+                    label = { Text(stringResource(Res.string.complaints_problem_field)) },
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -239,9 +264,9 @@ private fun RaiseComplaintDialog(
         },
         confirmButton = {
             TextButton(onClick = { onRaise(category, description) }, enabled = description.isNotBlank() && !busy) {
-                Text(if (busy) "Sending…" else "Submit")
+                Text(stringResource(if (busy) Res.string.action_sending else Res.string.action_submit))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }

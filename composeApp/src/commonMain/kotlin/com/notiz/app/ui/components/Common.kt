@@ -26,6 +26,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.notiz.app.i18n.AppLanguage
+import com.notiz.app.i18n.Language
+import com.notiz.app.i18n.currentLanguage
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun LoadingBox(modifier: Modifier = Modifier) {
@@ -43,7 +48,7 @@ fun ErrorBox(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier
     ) {
         Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text("Try again") }
+        Button(onClick = onRetry) { Text(stringResource(Res.string.action_try_again)) }
     }
 }
 
@@ -107,7 +112,7 @@ private fun Banner(message: String?, onDismiss: () -> Unit, isError: Boolean, mo
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f).padding(vertical = 12.dp),
             )
-            TextButton(onClick = onDismiss) { Text("Dismiss") }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_dismiss)) }
         }
     }
 }
@@ -158,5 +163,18 @@ fun LoadingButton(
         } else {
             Text(text)
         }
+    }
+}
+
+/**
+ * Switches between English and Tamil. Shows the *other* language's name so it's readable by
+ * someone who doesn't understand the current one.
+ */
+@Composable
+fun LanguageToggle(modifier: Modifier = Modifier) {
+    val current = currentLanguage()
+    val other = if (current == Language.TAMIL) Language.ENGLISH else Language.TAMIL
+    TextButton(onClick = { AppLanguage.select(other) }, modifier = modifier) {
+        Text(other.nativeName, fontWeight = FontWeight.SemiBold)
     }
 }

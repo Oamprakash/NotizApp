@@ -40,6 +40,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(libs.material.icons.core)
+            implementation(compose.components.resources)
 
             implementation(libs.lifecycle.viewmodel.compose)
             implementation(libs.navigation.compose)
@@ -66,6 +67,12 @@ kotlin {
             implementation(kotlin("test"))
         }
     }
+}
+
+// Strings live in src/commonMain/composeResources (values = English, values-ta = Tamil)
+compose.resources {
+    packageOfResClass = "com.notiz.app.resources"
+    publicResClass = false
 }
 
 android {

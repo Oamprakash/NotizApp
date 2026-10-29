@@ -5,7 +5,8 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-private val MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+/** English short month names; the UI passes localised ones (see ui/i18n/LocalizedFormat.kt). */
+val ENGLISH_MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 /** 250000 paise → "₹2,500"; 250050 → "₹2,500.50" (Indian digit grouping). */
 fun formatRupees(paise: Long): String {
@@ -38,22 +39,22 @@ fun parseRupeesToPaise(input: String): Long? {
 }
 
 /** "2026-11-05" → "5 Nov 2026". Returns the input unchanged if it isn't a date. */
-fun formatDate(isoDate: String): String {
+fun formatDate(isoDate: String, months: List<String> = ENGLISH_MONTHS): String {
     val parts = isoDate.take(10).split("-")
     if (parts.size != 3) return isoDate
     val month = parts[1].toIntOrNull()?.takeIf { it in 1..12 } ?: return isoDate
     val day = parts[2].toIntOrNull() ?: return isoDate
-    return "$day ${MONTHS[month - 1]} ${parts[0]}"
+    return "$day ${months.getOrElse(month - 1) { ENGLISH_MONTHS[month - 1] }} ${parts[0]}"
 }
 
 /** Postgres timestamptz → local "5 Nov 2026, 4:30 PM" (or just the date). */
 @OptIn(ExperimentalTime::class)
-fun formatTimestamp(iso: String, withTime: Boolean = true): String = runCatching {
+fun formatTimestamp(iso: String, withTime: Boolean = true, months: List<String> = ENGLISH_MONTHS): String = runCatching {
     val local = Instant.parse(iso).toLocalDateTime(TimeZone.currentSystemDefault())
-    val date = formatDate(local.date.toString())
+    val date = formatDate(local.date.toString(), months)
     if (!withTime) return@runCatching date
     "$date, ${formatClock(local.time.toString())}"
-}.getOrElse { formatDate(iso) }
+}.getOrElse { formatDate(iso, months) }
 
 /** Postgres timestamptz → local "4:30 PM". */
 @OptIn(ExperimentalTime::class)

@@ -54,9 +54,14 @@ import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.ui.components.RefreshableEmptyState
-import com.notiz.app.util.formatTimestamp
+import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.asString
+import org.jetbrains.compose.resources.pluralStringResource
 
 data class PollsUiState(
     val loading: Boolean = true,
@@ -64,8 +69,8 @@ data class PollsUiState(
     val polls: List<Poll> = emptyList(),
     val results: Map<String, Long> = emptyMap(), // optionId → votes
     val myVotes: Map<String, String> = emptyMap(), // pollId → optionId
-    val loadError: String? = null,
-    val actionError: String? = null,
+    val loadError: UiText? = null,
+    val actionError: UiText? = null,
     val busy: Boolean = false,
 )
 
@@ -123,13 +128,16 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize()) {
         when {
             state.loading -> LoadingBox()
-            state.loadError != null && state.polls.isEmpty() -> ErrorBox(state.loadError!!, onRetry = { vm.load() })
+            state.loadError != null && state.polls.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.polls.isEmpty()) {
                     RefreshableEmptyState(
-                        "No polls yet",
-                        if (session.isAdmin) "Ask residents to decide together — one vote per flat."
-                        else "Society polls will appear here.",
+                        stringResource(Res.string.polls_empty_title),
+                        if (session.isAdmin) {
+                            stringResource(Res.string.polls_empty_admin)
+                        } else {
+                            stringResource(Res.string.polls_empty_resident)
+                        },
                     )
                 } else {
                     LazyColumn(
@@ -155,11 +163,11 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
             ExtendedFloatingActionButton(
                 onClick = { creating = true },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New poll") },
+                text = { Text(stringResource(Res.string.polls_new)) },
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             )
         }
-        ErrorBanner(state.actionError, onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
+        ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
     }
 
     if (creating) {
@@ -184,7 +192,7 @@ private fun PollCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(poll.question, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(
-                "$total ${if (total == 1L) "flat has" else "flats have"} voted · ${formatTimestamp(poll.createdAt, withTime = false)}",
+                pluralStringResource(Res.plurals.polls_flats_voted, total.toInt(), total) + " · " + localTimestamp(poll.createdAt, withTime = false),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -199,7 +207,7 @@ private fun PollCard(
                 )
             }
             Text(
-                if (myOptionId == null) "Tap an option to vote for your flat." else "Your flat has voted. Tap another option to change.",
+                stringResource(if (myOptionId == null) Res.string.polls_tap_to_vote else Res.string.polls_voted_hint),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -242,21 +250,22 @@ private fun OptionRow(option: PollOption, votes: Long, total: Long, selected: Bo
 @Composable
 private fun NewPollDialog(busy: Boolean, onDismiss: () -> Unit, onCreate: (String, List<String>) -> Unit) {
     var question by remember { mutableStateOf("") }
-    var optionsText by remember { mutableStateOf("Yes\nNo") }
+    val defaultOptions = stringResource(Res.string.polls_default_options)
+    var optionsText by remember { mutableStateOf(defaultOptions) }
     val options = optionsText.lines().map { it.trim() }.filter { it.isNotEmpty() }
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("New poll") },
+        title = { Text(stringResource(Res.string.polls_new)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = question, onValueChange = { question = it.take(300) },
-                    label = { Text("Question") }, modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(Res.string.polls_question_field)) }, modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = optionsText, onValueChange = { optionsText = it.take(1000) },
-                    label = { Text("Options (one per line)") }, minLines = 3,
+                    label = { Text(stringResource(Res.string.polls_options_field)) }, minLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(0.dp))
@@ -266,8 +275,8 @@ private fun NewPollDialog(busy: Boolean, onDismiss: () -> Unit, onCreate: (Strin
             TextButton(
                 onClick = { onCreate(question, options) },
                 enabled = question.isNotBlank() && options.size >= 2 && !busy,
-            ) { Text(if (busy) "Creating…" else "Create") }
+            ) { Text(stringResource(if (busy) Res.string.polls_creating else Res.string.polls_create)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }

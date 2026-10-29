@@ -32,13 +32,20 @@ import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.LoadingButton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.asString
+import com.notiz.app.i18n.uiText
+import com.notiz.app.ui.components.LanguageToggle
+import androidx.compose.ui.Alignment
 
 data class LoginUiState(
     val phoneDigits: String = "",
     val otp: String = "",
     val otpSent: Boolean = false,
     val loading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
 ) {
     val fullPhone get() = AppConfig.DEFAULT_COUNTRY_CODE + phoneDigits
     val canSend get() = phoneDigits.length == 10
@@ -65,8 +72,8 @@ class LoginViewModel(private val container: AppContainer) : BaseViewModel() {
     fun verifyOtp() {
         state.update { it.copy(loading = true, error = null) }
         // Most common failure is a wrong or expired code — say that plainly.
-        launchSafe(onError = { msg ->
-            state.update { it.copy(loading = false, error = "That code didn't work. Check it or request a new one. ($msg)") }
+        launchSafe(onError = {
+            state.update { it.copy(loading = false, error = uiText(Res.string.login_otp_failed)) }
         }) {
             container.auth.verifyOtp(state.value.fullPhone, state.value.otp)
         }
@@ -89,11 +96,12 @@ fun LoginScreen(generation: Int) {
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Notiz", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold,
+        LanguageToggle(Modifier.align(Alignment.End))
+        Text(stringResource(Res.string.app_name), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Society notices, dues and complaints — in one place.",
+            stringResource(Res.string.login_tagline),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -103,31 +111,31 @@ fun LoginScreen(generation: Int) {
             OutlinedTextField(
                 value = state.phoneDigits,
                 onValueChange = vm::onPhoneChange,
-                label = { Text("Mobile number") },
+                label = { Text(stringResource(Res.string.login_mobile_number)) },
                 prefix = { Text("${AppConfig.DEFAULT_COUNTRY_CODE} ") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(16.dp))
-            LoadingButton(text = "Send OTP", loading = state.loading, enabled = state.canSend, onClick = vm::sendOtp)
+            LoadingButton(text = stringResource(Res.string.login_send_otp), loading = state.loading, enabled = state.canSend, onClick = vm::sendOtp)
         } else {
-            Text("Enter the 6-digit code sent to ${state.fullPhone}", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(Res.string.login_enter_code, state.fullPhone), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = state.otp,
                 onValueChange = vm::onOtpChange,
-                label = { Text("OTP") },
+                label = { Text(stringResource(Res.string.login_otp)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(16.dp))
-            LoadingButton(text = "Verify", loading = state.loading, enabled = state.canVerify, onClick = vm::verifyOtp)
-            TextButton(onClick = vm::changeNumber) { Text("Change number") }
-            TextButton(onClick = vm::sendOtp, enabled = !state.loading) { Text("Resend code") }
+            LoadingButton(text = stringResource(Res.string.login_verify), loading = state.loading, enabled = state.canVerify, onClick = vm::verifyOtp)
+            TextButton(onClick = vm::changeNumber) { Text(stringResource(Res.string.login_change_number)) }
+            TextButton(onClick = vm::sendOtp, enabled = !state.loading) { Text(stringResource(Res.string.login_resend)) }
         }
 
-        ErrorBanner(state.error, onDismiss = vm::dismissError, modifier = Modifier.padding(top = 8.dp))
+        ErrorBanner(state.error?.asString(), onDismiss = vm::dismissError, modifier = Modifier.padding(top = 8.dp))
     }
 }

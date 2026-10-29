@@ -5,11 +5,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.notiz.app.i18n.LanguagePrefs
 import com.notiz.app.push.AndroidNotifications
 import com.notiz.app.push.PushEvents
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        LanguagePrefs.init(this) // before any UI reads the saved language
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         AndroidNotifications.ensureChannel(this)

@@ -50,12 +50,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.asString
 
 data class ChatUiState(
     val loading: Boolean = true,
     val messages: List<Message> = emptyList(),
-    val loadError: String? = null,
-    val sendError: String? = null,
+    val loadError: UiText? = null,
+    val sendError: UiText? = null,
     val sending: Boolean = false,
 )
 
@@ -122,8 +126,8 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 state.loading && state.messages.isEmpty() -> LoadingBox()
-                state.loadError != null && state.messages.isEmpty() -> ErrorBox(state.loadError!!, onRetry = vm::load)
-                state.messages.isEmpty() -> EmptyState("Say hello 👋", "Messages here are visible to every approved member.")
+                state.loadError != null && state.messages.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = vm::load)
+                state.messages.isEmpty() -> EmptyState(stringResource(Res.string.chat_empty_title), stringResource(Res.string.chat_empty_body))
                 else -> LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(12.dp),
@@ -136,7 +140,7 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                 }
             }
         }
-        ErrorBanner(state.sendError, onDismiss = vm::dismissError)
+        ErrorBanner(state.sendError?.asString(), onDismiss = vm::dismissError)
         HorizontalDivider()
         Row(
             Modifier.fillMaxWidth().padding(8.dp),
@@ -146,7 +150,7 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
             OutlinedTextField(
                 value = draft,
                 onValueChange = { draft = it.take(4000) },
-                placeholder = { Text("Message") },
+                placeholder = { Text(stringResource(Res.string.chat_message_hint)) },
                 maxLines = 4,
                 modifier = Modifier.weight(1f),
             )
@@ -154,7 +158,7 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                 onClick = { vm.send(draft) { draft = "" } },
                 enabled = draft.isNotBlank() && !state.sending,
             ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(Res.string.chat_send))
             }
         }
     }

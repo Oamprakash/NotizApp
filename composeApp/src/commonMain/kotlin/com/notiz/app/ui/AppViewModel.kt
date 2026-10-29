@@ -4,6 +4,9 @@ import androidx.lifecycle.viewModelScope
 import com.notiz.app.AppContainer
 import com.notiz.app.data.Membership
 import com.notiz.app.data.Society
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.uiText
+import com.notiz.app.resources.*
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +21,7 @@ sealed interface AppState {
     data object NeedsSociety : AppState
     data class Pending(val membership: Membership) : AppState
     data class Ready(val membership: Membership, val society: Society) : AppState
-    data class Error(val message: String) : AppState
+    data class Error(val message: UiText) : AppState
 }
 
 class AppViewModel(private val container: AppContainer) : BaseViewModel() {
@@ -55,7 +58,7 @@ class AppViewModel(private val container: AppContainer) : BaseViewModel() {
                     is SessionStatus.Initializing -> Unit
                     is SessionStatus.RefreshFailure -> {
                         if (_state.value == AppState.Loading) {
-                            _state.value = AppState.Error("Can't reach the server. Check your internet connection.")
+                            _state.value = AppState.Error(uiText(Res.string.error_server_unreachable))
                         }
                     }
                 }

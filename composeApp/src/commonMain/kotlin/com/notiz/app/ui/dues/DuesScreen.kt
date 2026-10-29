@@ -62,7 +62,6 @@ import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.theme.StatusColors
 import com.notiz.app.util.Upi
-import com.notiz.app.util.formatDate
 import com.notiz.app.util.formatRupees
 import com.notiz.app.util.isValidIsoDate
 import com.notiz.app.util.parseRupeesToPaise
@@ -74,17 +73,29 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.asString
+import com.notiz.app.i18n.uiText
+import com.notiz.app.i18n.localDate
+import org.jetbrains.compose.resources.StringResource
 
-enum class DuesFilter(val label: String) { ALL("All"), TO_VERIFY("To verify"), PENDING("Unpaid"), PAID("Paid") }
+enum class DuesFilter(val label: StringResource) {
+    ALL(Res.string.dues_filter_all),
+    TO_VERIFY(Res.string.dues_to_verify),
+    PENDING(Res.string.dues_unpaid),
+    PAID(Res.string.dues_paid),
+}
 
 data class DuesUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val dues: List<Due> = emptyList(),
     val filter: DuesFilter = DuesFilter.ALL,
-    val loadError: String? = null,
-    val actionError: String? = null,
-    val info: String? = null,
+    val loadError: UiText? = null,
+    val actionError: UiText? = null,
+    val info: UiText? = null,
     val busy: Boolean = false,
 ) {
     val visible: List<Due>
@@ -118,7 +129,7 @@ class DuesViewModel(
     fun setFilter(filter: DuesFilter) = state.update { it.copy(filter = filter) }
     fun dismissMessages() = state.update { it.copy(actionError = null, info = null) }
 
-    private fun action(successInfo: String? = null, onDone: () -> Unit = {}, block: suspend () -> Unit) {
+    private fun action(successInfo: UiText? = null, onDone: () -> Unit = {}, block: suspend () -> Unit) {
         state.update { it.copy(busy = true, actionError = null, info = null) }
         launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
             block()
@@ -129,12 +140,12 @@ class DuesViewModel(
     }
 
     fun submitUtr(due: Due, utr: String, onDone: () -> Unit) =
-        action("Payment reported. The treasurer will confirm it.", onDone) {
+        action(uiText(Res.string.dues_info_reported), onDone) {
             container.dues.submitPayment(due.id, utr)
         }
 
     fun verify(due: Due, approve: Boolean) =
-        action(if (approve) "Marked ${due.flatNo} as paid." else "Sent back to unpaid.") {
+        action(if (approve) uiText(Res.string.dues_info_marked_paid, due.flatNo) else uiText(Res.string.dues_info_sent_back)) {
             container.dues.verifyPayment(due.id, approve)
         }
 
@@ -142,7 +153,7 @@ class DuesViewModel(
         state.update { it.copy(busy = true, actionError = null, info = null) }
         launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
             val flats = container.dues.raiseBill(session.societyId, title, amountPaise, dueDate)
-            state.update { it.copy(busy = false, info = "Bill raised for $flats flats.") }
+            state.update { it.copy(busy = false, info = uiText(Res.string.dues_info_bill_raised, flats)) }
             onDone()
             load()
         }
@@ -159,12 +170,12 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
 
     var raising by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf<Due?>(null) }
-    var payError by remember { mutableStateOf<String?>(null) }
+    var payError by remember { mutableStateOf<UiText?>(null) }
 
     fun openUpi(due: Due) {
         val society = session.society
         if (society.upiVpa.isBlank()) {
-            payError = "Your society hasn't added a UPI ID yet. Ask the treasurer how to pay."
+            payError = uiText(Res.string.dues_no_upi_id)
             return
         }
         val uri = Upi.payUri(
@@ -177,7 +188,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
         try {
             uriHandler.openUri(uri)
         } catch (e: Exception) {
-            payError = "No UPI app found. Pay ${formatRupees(due.amountPaise)} to ${society.upiVpa} manually."
+            payError = uiText(Res.string.dues_no_upi_app, formatRupees(due.amountPaise), society.upiVpa)
         }
         reporting = due // Ask for the UTR once they return
     }
@@ -185,7 +196,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize()) {
         when {
             state.loading -> LoadingBox()
-            state.loadError != null && state.dues.isEmpty() -> ErrorBox(state.loadError!!, onRetry = { vm.load() })
+            state.loadError != null && state.dues.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
@@ -203,7 +214,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
                                     FilterChip(
                                         selected = state.filter == f,
                                         onClick = { vm.setFilter(f) },
-                                        label = { Text(f.label) },
+                                        label = { Text(stringResource(f.label)) },
                                     )
                                 }
                             }
@@ -214,9 +225,12 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
                         item {
                             Box(Modifier.fillMaxWidth().padding(top = 48.dp)) {
                                 EmptyState(
-                                    "Nothing here",
-                                    if (session.isAdmin) "Raise a bill to collect maintenance from every flat."
-                                    else "You're all settled. New bills will show up here.",
+                                    stringResource(Res.string.dues_empty_title),
+                                    if (session.isAdmin) {
+                                        stringResource(Res.string.dues_empty_admin)
+                                    } else {
+                                        stringResource(Res.string.dues_empty_resident)
+                                    },
                                 )
                             }
                         }
@@ -240,13 +254,13 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
             ExtendedFloatingActionButton(
                 onClick = { raising = true },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Raise bill") },
+                text = { Text(stringResource(Res.string.dues_raise_bill)) },
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             )
         }
         Column(Modifier.align(Alignment.TopCenter)) {
-            ErrorBanner(state.actionError ?: payError, onDismiss = { vm.dismissMessages(); payError = null })
-            InfoBanner(state.info, onDismiss = vm::dismissMessages)
+            ErrorBanner(state.actionError?.asString() ?: payError?.asString(), onDismiss = { vm.dismissMessages(); payError = null })
+            InfoBanner(state.info?.asString(), onDismiss = vm::dismissMessages)
         }
     }
 
@@ -272,9 +286,9 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
 private fun AdminSummary(state: DuesUiState) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            SummaryFigure("Collected", formatRupees(state.collectedPaise))
-            SummaryFigure("Outstanding", formatRupees(state.outstandingPaise))
-            SummaryFigure("To verify", state.toVerifyCount.toString())
+            SummaryFigure(stringResource(Res.string.dues_collected), formatRupees(state.collectedPaise))
+            SummaryFigure(stringResource(Res.string.dues_outstanding), formatRupees(state.outstandingPaise))
+            SummaryFigure(stringResource(Res.string.dues_to_verify), state.toVerifyCount.toString())
         }
     }
 }
@@ -303,12 +317,13 @@ private fun DueCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (isAdmin) "Flat ${due.flatNo}" else due.title,
+                        if (isAdmin) stringResource(Res.string.home_flat, due.flatNo) else due.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        (if (isAdmin) "${due.title} · " else "") + "Due ${formatDate(due.dueDate)}",
+                        (if (isAdmin) "${due.title} · " else "") +
+                            stringResource(Res.string.dues_due_on, localDate(due.dueDate)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -320,23 +335,23 @@ private fun DueCard(
             }
             if (!due.utr.isNullOrBlank()) {
                 Spacer(Modifier.height(6.dp))
-                Text("UTR: ${due.utr}", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(Res.string.dues_utr, due.utr.orEmpty()), style = MaterialTheme.typography.bodySmall)
             }
 
             // Resident (or admin for their own flat): pay
             if (due.status == DueStatus.PENDING && (isMyFlat || !isAdmin)) {
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onPay, enabled = !busy) { Text("Pay via UPI") }
-                    OutlinedButton(onClick = onReport, enabled = !busy) { Text("Already paid") }
+                    Button(onClick = onPay, enabled = !busy) { Text(stringResource(Res.string.dues_pay_upi)) }
+                    OutlinedButton(onClick = onReport, enabled = !busy) { Text(stringResource(Res.string.dues_already_paid)) }
                 }
             }
             // Admin: confirm payments residents reported
             if (isAdmin && due.status == DueStatus.SUBMITTED) {
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onVerify(true) }, enabled = !busy) { Text("Mark paid") }
-                    OutlinedButton(onClick = { onVerify(false) }, enabled = !busy) { Text("Not received") }
+                    Button(onClick = { onVerify(true) }, enabled = !busy) { Text(stringResource(Res.string.dues_mark_paid)) }
+                    OutlinedButton(onClick = { onVerify(false) }, enabled = !busy) { Text(stringResource(Res.string.dues_not_received)) }
                 }
             }
         }
@@ -346,9 +361,9 @@ private fun DueCard(
 @Composable
 private fun DueStatusPill(status: String) {
     when (status) {
-        DueStatus.PAID -> StatusPill("Paid", StatusColors.success)
-        DueStatus.SUBMITTED -> StatusPill("Verifying", StatusColors.info)
-        else -> StatusPill("Unpaid", StatusColors.warning)
+        DueStatus.PAID -> StatusPill(stringResource(Res.string.dues_paid), StatusColors.success)
+        DueStatus.SUBMITTED -> StatusPill(stringResource(Res.string.dues_verifying), StatusColors.info)
+        else -> StatusPill(stringResource(Res.string.dues_unpaid), StatusColors.warning)
     }
 }
 
@@ -363,18 +378,20 @@ private fun ReportPaymentDialog(
     var utr by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Report your payment") },
+        title = { Text(stringResource(Res.string.dues_report_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "After paying ${formatRupees(due.amountPaise)}" +
-                        (if (upiVpa.isNotBlank()) " to $upiVpa" else "") +
-                        ", enter the 12-digit UTR / UPI reference number from your UPI app.",
+                    if (upiVpa.isNotBlank()) {
+                        stringResource(Res.string.dues_report_body_vpa, formatRupees(due.amountPaise), upiVpa)
+                    } else {
+                        stringResource(Res.string.dues_report_body, formatRupees(due.amountPaise))
+                    },
                 )
                 OutlinedTextField(
                     value = utr,
                     onValueChange = { utr = it.filter(Char::isLetterOrDigit).take(30) },
-                    label = { Text("UTR / reference no.") },
+                    label = { Text(stringResource(Res.string.dues_utr_field)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                     modifier = Modifier.fillMaxWidth(),
@@ -383,10 +400,10 @@ private fun ReportPaymentDialog(
         },
         confirmButton = {
             TextButton(onClick = { onSubmit(utr) }, enabled = utr.length >= 6 && !busy) {
-                Text(if (busy) "Sending…" else "Submit")
+                Text(stringResource(if (busy) Res.string.action_sending else Res.string.action_submit))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Later") } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_later)) } },
     )
 }
 
@@ -402,7 +419,8 @@ private fun RaiseBillDialog(
     onDismiss: () -> Unit,
     onRaise: (title: String, amountPaise: Long, dueDate: String) -> Unit,
 ) {
-    var title by remember { mutableStateOf("Maintenance") }
+    val defaultTitle = stringResource(Res.string.dues_default_title)
+    var title by remember { mutableStateOf(defaultTitle) }
     var amount by remember { mutableStateOf("") }
     var dueDate by remember { mutableStateOf(defaultDueDate()) }
     val paise = parseRupeesToPaise(amount)
@@ -410,24 +428,24 @@ private fun RaiseBillDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Raise a bill") },
+        title = { Text(stringResource(Res.string.dues_raise_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Every approved flat gets this bill.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(Res.string.dues_raise_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = title, onValueChange = { title = it.take(80) },
-                    label = { Text("Title") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = amount, onValueChange = { amount = it.take(10) },
-                    label = { Text("Amount per flat (₹)") }, singleLine = true,
+                    label = { Text(stringResource(Res.string.dues_amount_field)) }, singleLine = true,
                     isError = amount.isNotEmpty() && paise == null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = dueDate, onValueChange = { dueDate = it.take(10) },
-                    label = { Text("Due date (YYYY-MM-DD)") }, singleLine = true,
+                    label = { Text(stringResource(Res.string.dues_date_field)) }, singleLine = true,
                     isError = !dateOk,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -437,8 +455,8 @@ private fun RaiseBillDialog(
             TextButton(
                 onClick = { if (paise != null) onRaise(title, paise, dueDate.trim()) },
                 enabled = title.isNotBlank() && paise != null && dateOk && !busy,
-            ) { Text(if (busy) "Raising…" else "Raise bill") }
+            ) { Text(stringResource(if (busy) Res.string.dues_raising else Res.string.dues_raise_bill)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }

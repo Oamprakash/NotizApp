@@ -2,7 +2,8 @@ package com.notiz.app.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.notiz.app.data.userMessage
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.toUiText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -10,9 +11,9 @@ import kotlinx.coroutines.launch
 
 abstract class BaseViewModel : ViewModel() {
 
-    /** Runs [block], turning any failure into a readable message for [onError]. */
+    /** Runs [block], turning any failure into a translatable message for [onError]. */
     protected fun launchSafe(
-        onError: (String) -> Unit,
+        onError: (UiText) -> Unit,
         block: suspend CoroutineScope.() -> Unit,
     ): Job = viewModelScope.launch {
         try {
@@ -20,7 +21,7 @@ abstract class BaseViewModel : ViewModel() {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
-            onError(e.userMessage())
+            onError(e.toUiText())
         }
     }
 }

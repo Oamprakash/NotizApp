@@ -65,9 +65,13 @@ import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.components.UnreadDot
-import com.notiz.app.util.formatTimestamp
+import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import com.notiz.app.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.asString
 
 // ───────────────────────────── List ─────────────────────────────
 
@@ -77,8 +81,8 @@ data class NoticesUiState(
     val notices: List<Notice> = emptyList(),
     val readIds: Set<String> = emptySet(),
     val readCounts: Map<String, NoticeReadCount> = emptyMap(),
-    val loadError: String? = null,
-    val actionError: String? = null,
+    val loadError: UiText? = null,
+    val actionError: UiText? = null,
     val posting: Boolean = false,
 )
 
@@ -129,12 +133,16 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
     Box(modifier.fillMaxSize()) {
         when {
             state.loading -> LoadingBox()
-            state.loadError != null && state.notices.isEmpty() -> ErrorBox(state.loadError!!, onRetry = { vm.load() })
+            state.loadError != null && state.notices.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.notices.isEmpty()) {
                     RefreshableEmptyState(
-                        "No notices yet",
-                        if (session.isAdmin) "Post the first notice for your residents." else "Society notices will appear here.",
+                        stringResource(Res.string.notices_empty_title),
+                        if (session.isAdmin) {
+                            stringResource(Res.string.notices_empty_admin)
+                        } else {
+                            stringResource(Res.string.notices_empty_resident)
+                        },
                     )
                 } else {
                     LazyColumn(
@@ -159,11 +167,11 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
             ExtendedFloatingActionButton(
                 onClick = { composing = true },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New notice") },
+                text = { Text(stringResource(Res.string.notice_new)) },
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             )
         }
-        ErrorBanner(state.actionError, onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
+        ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
     }
 
     if (composing) {
@@ -192,7 +200,7 @@ private fun NoticeCard(notice: Notice, unread: Boolean, readCount: NoticeReadCou
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                if (notice.pinned) StatusPill("Pinned", MaterialTheme.colorScheme.secondary)
+                if (notice.pinned) StatusPill(stringResource(Res.string.notice_pinned), MaterialTheme.colorScheme.secondary)
             }
             if (notice.body.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
@@ -206,7 +214,7 @@ private fun NoticeCard(notice: Notice, unread: Boolean, readCount: NoticeReadCou
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                formatTimestamp(notice.createdAt),
+                localTimestamp(notice.createdAt),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -219,7 +227,7 @@ private fun NoticeCard(notice: Notice, unread: Boolean, readCount: NoticeReadCou
 private fun ReadProgress(count: NoticeReadCount) {
     Spacer(Modifier.height(8.dp))
     Text(
-        "Read by ${count.reads} of ${count.members} members",
+        stringResource(Res.string.notice_read_by, count.reads, count.members),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
     )
@@ -241,30 +249,30 @@ private fun NewNoticeDialog(
     var pinned by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = { if (!posting) onDismiss() },
-        title = { Text("New notice") },
+        title = { Text(stringResource(Res.string.notice_new)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title, onValueChange = { title = it.take(200) },
-                    label = { Text("Title") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = body, onValueChange = { body = it.take(4000) },
-                    label = { Text("Details") }, minLines = 4,
+                    label = { Text(stringResource(Res.string.notice_field_details)) }, minLines = 4,
                     modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = pinned, onCheckedChange = { pinned = it })
-                    Text("Pin to top")
+                    Text(stringResource(Res.string.notice_pin))
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = { onPost(title, body, pinned) }, enabled = title.isNotBlank() && !posting) {
-                Text(if (posting) "Posting…" else "Post")
+                Text(stringResource(if (posting) Res.string.notice_posting else Res.string.notice_post))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !posting) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !posting) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }
 
@@ -273,7 +281,7 @@ private fun NewNoticeDialog(
 data class NoticeDetailUiState(
     val loading: Boolean = true,
     val notice: Notice? = null,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 class NoticeDetailViewModel(
@@ -324,10 +332,10 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notice") },
+                title = { Text(stringResource(Res.string.notice_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back))
                     }
                 },
             )
@@ -336,18 +344,18 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
         val notice = state.notice
         when {
             state.loading -> LoadingBox(Modifier.padding(padding))
-            notice == null -> ErrorBox(state.error ?: "Notice not found", onRetry = vm::load, modifier = Modifier.padding(padding))
+            notice == null -> ErrorBox(state.error?.asString() ?: stringResource(Res.string.notice_not_found), onRetry = vm::load, modifier = Modifier.padding(padding))
             else -> Column(
                 Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
             ) {
                 if (notice.pinned) {
-                    StatusPill("Pinned", MaterialTheme.colorScheme.secondary)
+                    StatusPill(stringResource(Res.string.notice_pinned), MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.height(8.dp))
                 }
                 Text(notice.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    formatTimestamp(notice.createdAt),
+                    localTimestamp(notice.createdAt),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -358,14 +366,14 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
                     Spacer(Modifier.height(32.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(onClick = { vm.togglePin {} }) {
-                            Text(if (notice.pinned) "Unpin" else "Pin to top")
+                            Text(stringResource(if (notice.pinned) Res.string.notice_unpin else Res.string.notice_pin))
                         }
-                        OutlinedButton(onClick = { confirmDelete = true }) { Text("Delete") }
+                        OutlinedButton(onClick = { confirmDelete = true }) { Text(stringResource(Res.string.action_delete)) }
                     }
                 }
                 state.error?.let {
                     Spacer(Modifier.height(12.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error)
+                    Text(it.asString(), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -374,12 +382,12 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete this notice?") },
-            text = { Text("Residents will no longer see it.") },
+            title = { Text(stringResource(Res.string.notice_delete_title)) },
+            text = { Text(stringResource(Res.string.notice_delete_body)) },
             confirmButton = {
-                TextButton(onClick = { confirmDelete = false; vm.delete(onBack) }) { Text("Delete") }
+                TextButton(onClick = { confirmDelete = false; vm.delete(onBack) }) { Text(stringResource(Res.string.action_delete)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
 }
