@@ -19,6 +19,7 @@ data class Society(
     @SerialName("upi_vpa") val upiVpa: String = "",
     @SerialName("upi_payee_name") val upiPayeeName: String = "",
     @SerialName("invite_code") val inviteCode: String = "",
+    @SerialName("online_payments_enabled") val onlinePaymentsEnabled: Boolean = false,
 )
 
 @Serializable
@@ -81,6 +82,9 @@ data class Due(
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("paid_at") val paidAt: String? = null,
     @SerialName("receipt_no") val receiptNo: Int? = null,
+    /** "upi" (reported by resident), "cash", or "online" (Razorpay) — set when paid */
+    @SerialName("payment_mode") val paymentMode: String? = null,
+    @SerialName("payment_link_id") val paymentLinkId: String? = null,
     /** Who reported the payment — embedded as payer:profiles!dues_submitted_by_fkey(full_name) */
     val payer: PayerName? = null,
 )
@@ -166,3 +170,26 @@ data class NewMessage(
     @SerialName("sender_id") val senderId: String,
     val body: String,
 )
+
+object PaymentMode {
+    const val UPI = "upi"
+    const val CASH = "cash"
+    const val ONLINE = "online"
+}
+
+/** Admin view of the society's Razorpay setup (the key secret is never sent to the app). */
+@Serializable
+data class GatewayStatus(
+    val configured: Boolean = false,
+    @SerialName("key_id") val keyId: String? = null,
+    @SerialName("webhook_secret") val webhookSecret: String? = null,
+    @SerialName("online_enabled") val onlineEnabled: Boolean = false,
+    @SerialName("test_mode") val testMode: Boolean = false,
+)
+
+/** Reply from the create-payment-link Edge Function. */
+@Serializable
+data class PayLinkResult(val status: String, val url: String? = null)
+
+@Serializable
+data class OnlineFlag(@SerialName("online_payments_enabled") val onlinePaymentsEnabled: Boolean = false)

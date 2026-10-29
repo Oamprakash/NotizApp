@@ -61,6 +61,7 @@ fun HomeScreen(
     session: SessionContext,
     onOpenNotice: (String) -> Unit,
     onOpenMembers: () -> Unit,
+    onOpenPaymentSettings: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     var tabName by rememberSaveable { mutableStateOf(HomeTab.Notices.name) }
@@ -130,7 +131,7 @@ fun HomeScreen(
         val modifier = Modifier.padding(padding).consumeWindowInsets(padding)
         when (tab) {
             HomeTab.Notices -> NoticesTab(session, onOpenNotice, modifier)
-            HomeTab.Dues -> DuesTab(session, modifier)
+            HomeTab.Dues -> DuesTab(session, onOpenPaymentSettings, modifier)
             HomeTab.Complaints -> ComplaintsTab(session, modifier)
             HomeTab.Polls -> PollsTab(session, modifier)
             HomeTab.Chat -> ChatTab(session, modifier)

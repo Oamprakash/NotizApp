@@ -14,6 +14,7 @@ import com.notiz.app.push.PushEvents
 import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.home.HomeScreen
 import com.notiz.app.ui.members.MembersScreen
+import com.notiz.app.ui.payments.PaymentSettingsScreen
 import com.notiz.app.ui.notices.NoticeDetailScreen
 import kotlinx.serialization.Serializable
 
@@ -25,6 +26,9 @@ data class NoticeDetailRoute(val noticeId: String)
 
 @Serializable
 data object MembersRoute
+
+@Serializable
+data object PaymentSettingsRoute
 
 /** Navigation for a signed-in, approved member. */
 @Composable
@@ -53,6 +57,7 @@ fun MainNavigation(membership: Membership, society: Society, onSignOut: () -> Un
                 session = session,
                 onOpenNotice = { navController.navigate(NoticeDetailRoute(it)) },
                 onOpenMembers = { navController.navigate(MembersRoute) },
+                onOpenPaymentSettings = { navController.navigate(PaymentSettingsRoute) },
                 onSignOut = onSignOut,
             )
         }
@@ -63,6 +68,9 @@ fun MainNavigation(membership: Membership, society: Society, onSignOut: () -> Un
                 noticeId = route.noticeId,
                 onBack = { navController.popBackStack() },
             )
+        }
+        composable<PaymentSettingsRoute> {
+            PaymentSettingsScreen(session = session, onBack = { navController.popBackStack() })
         }
         composable<MembersRoute> {
             MembersScreen(session = session, onBack = { navController.popBackStack() })

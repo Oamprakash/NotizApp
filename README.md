@@ -38,15 +38,17 @@ composeApp/src/
 iosApp/                    SwiftUI host app + AppDelegate for push (XcodeGen project.yml)
 supabase/migrations/       schema, RLS policies, RPC functions, push triggers
 supabase/functions/push/   Edge Function that sends notifications via FCM (+ tests)
+supabase/functions/create-payment-link/, razorpay-webhook/   online payments via Razorpay (+ tests)
 docs/MVP_SPEC.md           MVP scope and plan
 docs/PUSH_SETUP.md         Firebase / APNs / webhook / cron setup for push
+docs/PAYMENTS_SETUP.md     Razorpay online payments: deploy + per-society setup
 ```
 
 ## 1. Set up Supabase (10 minutes)
 
 1. Create a project at [supabase.com](https://supabase.com) — pick the **Mumbai (ap-south-1)** region for Indian users.
 2. **SQL Editor → New query** → run each file in `supabase/migrations/` in date order
-   (`20261023000000_init.sql`, `20261029000000_push_notifications.sql`, `20261029100000_receipts.sql`).
+   (`…_init.sql`, `…_push_notifications.sql`, `…_receipts.sql`, `…_razorpay.sql`).
    (Or with the CLI: `supabase link` then `supabase db push`.)
 3. **Authentication → Sign In / Providers → Phone**: enable it.
    - For development, add **test phone numbers** with fixed OTPs (e.g. `919999900001` → `123456`). No SMS is sent and it costs nothing.
@@ -84,6 +86,10 @@ Pick a simulator and Run. The Xcode build phase calls Gradle to build the Kotlin
 6. Dues → **Raise bill** (A) → **Pay via UPI** then enter the UTR (B) → **Mark paid** (A).
 7. Raise a complaint (B) → change status (A). Create a poll (A) → vote (B). Chat both ways.
 
+## Online payments (Razorpay)
+
+Societies can connect **their own Razorpay account** (Dues → Set up online payments). Residents then tap **Pay online**, pay by UPI, card or net banking, and the due is marked paid with a receipt automatically through a signed webhook. If the webhook is late, the app double-checks the link when the resident returns. Money goes straight to the society's bank, and Notiz never holds funds. Setup: **[docs/PAYMENTS_SETUP.md](docs/PAYMENTS_SETUP.md)**.
+
 ## Receipts and Excel export
 
 - Every payment an admin confirms gets a receipt number, sequential per society (`R-00001`, `R-00002`, …), assigned once in the database.
@@ -118,6 +124,7 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 - **Utilities**: the `util/` unit tests pass.
 - **Push triggers**: every notification case (12 scenarios) checked on PostgreSQL 16 for the right recipients and text; outsiders can't read tokens or the outbox or call the internal functions.
 - **Edge Function**: type-checked with Deno, 6 tests pass (JWT signing, FCM payload, sending, dead-token cleanup, outbox marking).
+- **Online payments**: migration tested on PostgreSQL (keys hidden from app users, server-only recording, idempotent, amount/link checks, cash vs online). Edge Functions type-checked; 11 Deno tests with fake Supabase + Razorpay (link create/reuse, flat check, webhook signature incl. RFC 4231 vector, duplicates, short payments, late-webhook check).
 - **Receipts & export**: receipt numbering tested on PostgreSQL (backfill, no double numbers, cash, permissions). Generated PDFs pass `qpdf --check` and render correctly; `.xlsx` files open in openpyxl with numeric amounts, Tamil text and special characters intact.
 - **Not yet compiled**: the build environment had no access to Maven/Google repositories or Xcode, so the first Gradle sync happens on your machine. If a version clashes, these are the usual fixes:
   - `compose.material3` / `compose.runtime` deprecation warnings are expected with Compose Multiplatform 1.12; they don't fail the build.

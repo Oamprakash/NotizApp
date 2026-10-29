@@ -43,11 +43,13 @@ kotlin {
             implementation(compose.components.resources)
 
             implementation(libs.lifecycle.viewmodel.compose)
+            implementation(libs.lifecycle.runtime.compose)
             implementation(libs.navigation.compose)
 
             implementation(libs.supabase.auth)
             implementation(libs.supabase.postgrest)
             implementation(libs.supabase.realtime)
+            implementation(libs.supabase.functions)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)

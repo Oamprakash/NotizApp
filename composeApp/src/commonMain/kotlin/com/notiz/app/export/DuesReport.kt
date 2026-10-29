@@ -40,7 +40,7 @@ fun buildDuesWorkbook(dues: List<Due>): ByteArray {
     }
 
     val details = XlsxSheet("Dues").apply {
-        header("Bill", "Due date", "Flat", "Amount (Rs.)", "Status", "Paid by", "UPI ref (UTR)", "Paid on", "Receipt no.")
+        header("Bill", "Due date", "Flat", "Amount (Rs.)", "Status", "Paid by", "Reference (UTR)", "Paid on", "Receipt no.")
         columnWidths(26.0, 13.0, 10.0, 14.0, 20.0, 20.0, 18.0, 13.0, 12.0)
         val ordered = dues.sortedWith(compareByDescending<Due> { it.dueDate }.thenBy { it.title }.thenBy { it.flatNo })
         for (d in ordered) {
@@ -62,7 +62,7 @@ fun buildDuesWorkbook(dues: List<Due>): ByteArray {
 }
 
 private fun statusLabel(d: Due) = when (d.status) {
-    DueStatus.PAID -> if (d.utr.isNullOrBlank()) "Paid (cash/other)" else "Paid (UPI)"
+    DueStatus.PAID -> "Paid - ${paymentModeLabel(d.paymentMode, d.utr)}"
     DueStatus.SUBMITTED -> "Reported, to verify"
     else -> "Unpaid"
 }

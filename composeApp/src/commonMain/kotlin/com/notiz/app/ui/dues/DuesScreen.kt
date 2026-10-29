@@ -88,6 +88,7 @@ import com.notiz.app.export.duesFileName
 import com.notiz.app.export.receiptFileName
 import com.notiz.app.export.receiptNumberLabel
 import com.notiz.app.export.rememberFileSharer
+import androidx.lifecycle.compose.LifecycleResumeEffect
 
 enum class DuesFilter(val label: StringResource) {
     ALL(Res.string.dues_filter_all),
@@ -105,6 +106,8 @@ data class DuesUiState(
     val actionError: UiText? = null,
     val info: UiText? = null,
     val busy: Boolean = false,
+    /** The society accepts online (Razorpay) payments */
+    val onlineEnabled: Boolean = false,
 ) {
     val visible: List<Due>
         get() = when (filter) {
@@ -129,8 +132,37 @@ class DuesViewModel(
     fun load(pullToRefresh: Boolean = false) {
         state.update { it.copy(refreshing = pullToRefresh, loadError = null) }
         launchSafe(onError = { msg -> state.update { it.copy(loading = false, refreshing = false, loadError = msg) } }) {
-            val dues = container.dues.dues(session.societyId)
-            state.update { it.copy(loading = false, refreshing = false, dues = dues) }
+            var dues = container.dues.dues(session.societyId)
+            val online = runCatching { container.payments.onlineEnabled(session.societyId) }.getOrDefault(false)
+            state.update { it.copy(loading = false, refreshing = false, dues = dues, onlineEnabled = online) }
+
+            // Came back from Razorpay? Confirm any paid links now in case the webhook is slow.
+            val waiting = dues.filter {
+                it.status == DueStatus.PENDING && it.paymentLinkId != null && it.flatNo == session.flatNo
+            }
+            val nowPaid = waiting.count { due ->
+                runCatching { container.payments.checkOnlinePayment(due.id).status == DueStatus.PAID }.getOrDefault(false)
+            }
+            if (nowPaid > 0) {
+                dues = container.dues.dues(session.societyId)
+                state.update { it.copy(dues = dues, info = uiText(Res.string.dues_online_confirmed)) }
+            }
+        }
+    }
+
+    /** Opens Razorpay for [due] via [openUrl]; the due turns paid by webhook (or the check on return). */
+    fun payOnline(due: Due, openUrl: (String) -> Unit) {
+        state.update { it.copy(busy = true, actionError = null, info = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
+            val result = container.payments.payOnline(due.id)
+            val url = result.url
+            if (result.status == DueStatus.PAID || url == null) {
+                state.update { it.copy(busy = false, info = uiText(Res.string.dues_online_confirmed)) }
+                load()
+            } else {
+                state.update { it.copy(busy = false, info = uiText(Res.string.dues_online_hint)) }
+                openUrl(url)
+            }
         }
     }
 
@@ -169,11 +201,21 @@ class DuesViewModel(
 }
 
 @Composable
-fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
+fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier: Modifier = Modifier) {
     val container = LocalAppContainer.current
     val vm = viewModel { DuesViewModel(container, session) }
     val state by vm.state.collectAsState()
     OnPushUpdate(PushTypes.DUES) { vm.load() }
+    // Returning from the Razorpay page (or any other app): refresh, which also confirms paid links
+    var resumedOnce by remember { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        if (resumedOnce) {
+            vm.load()
+        } else {
+            resumedOnce = true
+        }
+        onPauseOrDispose { }
+    }
     val uriHandler = LocalUriHandler.current
 
     var raising by remember { mutableStateOf(false) }
@@ -203,6 +245,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
             dueDate = due.dueDate,
             amountPaise = due.amountPaise,
             utr = due.utr,
+            paymentMode = due.paymentMode,
         )
         share({ buildReceiptPdf(data) }, receiptFileName(data), MimeTypes.PDF)
     }
@@ -245,7 +288,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (session.isAdmin) {
-                        item { AdminSummary(state, onExport = ::exportExcel) }
+                        item { AdminSummary(state, onExport = ::exportExcel, onOpenPaymentSettings = onOpenPaymentSettings) }
                         item {
                             Row(
                                 Modifier.horizontalScroll(rememberScrollState()),
@@ -282,6 +325,8 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
                             isAdmin = session.isAdmin,
                             isMyFlat = due.flatNo == session.flatNo,
                             busy = state.busy,
+                            onlineEnabled = state.onlineEnabled,
+                            onPayOnline = { vm.payOnline(due) { url -> runCatching { uriHandler.openUri(url) } } },
                             onPay = { openUpi(due) },
                             onReport = { reporting = due },
                             onVerify = { approve -> vm.verify(due, approve) },
@@ -339,7 +384,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AdminSummary(state: DuesUiState, onExport: () -> Unit) {
+private fun AdminSummary(state: DuesUiState, onExport: () -> Unit, onOpenPaymentSettings: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -347,9 +392,16 @@ private fun AdminSummary(state: DuesUiState, onExport: () -> Unit) {
                 SummaryFigure(stringResource(Res.string.dues_outstanding), formatRupees(state.outstandingPaise))
                 SummaryFigure(stringResource(Res.string.dues_to_verify), state.toVerifyCount.toString())
             }
+            Spacer(Modifier.height(12.dp))
             if (state.dues.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
                 OutlinedButton(onClick = onExport) { Text(stringResource(Res.string.dues_export_excel)) }
+            }
+            TextButton(onClick = onOpenPaymentSettings) {
+                Text(
+                    stringResource(
+                        if (state.onlineEnabled) Res.string.dues_online_on else Res.string.dues_online_setup,
+                    ),
+                )
             }
         }
     }
@@ -370,6 +422,8 @@ private fun DueCard(
     isAdmin: Boolean,
     isMyFlat: Boolean,
     busy: Boolean,
+    onlineEnabled: Boolean,
+    onPayOnline: () -> Unit,
     onPay: () -> Unit,
     onReport: () -> Unit,
     onVerify: (approve: Boolean) -> Unit,
@@ -405,9 +459,20 @@ private fun DueCard(
             // Resident (or admin for their own flat): pay
             if (due.status == DueStatus.PENDING && (isMyFlat || !isAdmin)) {
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onPay, enabled = !busy) { Text(stringResource(Res.string.dues_pay_upi)) }
-                    OutlinedButton(onClick = onReport, enabled = !busy) { Text(stringResource(Res.string.dues_already_paid)) }
+                if (onlineEnabled) {
+                    // Online first: confirmed automatically, no UTR to type
+                    Button(onClick = onPayOnline, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(Res.string.dues_pay_online))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        TextButton(onClick = onPay, enabled = !busy) { Text(stringResource(Res.string.dues_pay_upi)) }
+                        TextButton(onClick = onReport, enabled = !busy) { Text(stringResource(Res.string.dues_already_paid)) }
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onPay, enabled = !busy) { Text(stringResource(Res.string.dues_pay_upi)) }
+                        OutlinedButton(onClick = onReport, enabled = !busy) { Text(stringResource(Res.string.dues_already_paid)) }
+                    }
                 }
             }
             // Admin: confirm payments residents reported

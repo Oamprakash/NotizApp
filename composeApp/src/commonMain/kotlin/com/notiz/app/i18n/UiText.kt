@@ -46,6 +46,15 @@ private fun serverError(message: String): UiText? {
         "at least two options" in m -> uiText(Res.string.error_two_options)
         "invalid option" in m -> uiText(Res.string.error_invalid_option)
         "not allowed" in m -> uiText(Res.string.error_not_allowed)
+        // Online payments (create-payment-link Edge Function and payment RPCs)
+        "online_payments_not_enabled" in m -> uiText(Res.string.error_online_off)
+        "not_your_flat" in m -> uiText(Res.string.error_not_allowed)
+        "already_reported" in m -> uiText(Res.string.error_already_submitted)
+        "razorpay 401" in m || "authentication failed" in m -> uiText(Res.string.error_razorpay_keys)
+        "razorpay" in m && "key id" in m -> uiText(Res.string.error_razorpay_key_id)
+        "enter the razorpay key secret" in m -> uiText(Res.string.error_razorpay_secret)
+        "save the razorpay keys first" in m -> uiText(Res.string.error_razorpay_save_first)
+        "server_error" in m && "razorpay" in m -> uiText(Res.string.error_razorpay_down)
         else -> null
     }
 }

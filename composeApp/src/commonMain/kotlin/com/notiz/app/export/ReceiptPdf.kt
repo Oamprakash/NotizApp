@@ -16,6 +16,8 @@ data class ReceiptData(
     val dueDate: String,
     val amountPaise: Long,
     val utr: String?,
+    /** "upi", "cash" or "online" (null for older payments: inferred from [utr]) */
+    val paymentMode: String? = null,
 )
 
 fun receiptNumberLabel(no: Int): String = "R-" + no.toString().padStart(5, '0')
@@ -48,8 +50,14 @@ fun buildReceiptPdf(data: ReceiptData): ByteArray {
     val rows = listOf(
         "Received from" to received,
         "Towards" to "${data.billTitle} (due ${formatDate(data.dueDate)})",
-        "Payment mode" to if (data.utr.isNullOrBlank()) "Cash / other" else "UPI",
-    ) + (if (data.utr.isNullOrBlank()) emptyList() else listOf("UPI reference (UTR)" to data.utr))
+        "Payment mode" to paymentModeLabel(data.paymentMode, data.utr),
+    ) + (
+        if (data.utr.isNullOrBlank()) {
+            emptyList()
+        } else {
+            listOf((if (data.paymentMode == "online") "Bank reference" else "UPI reference (UTR)") to data.utr)
+        }
+        )
     for ((label, value) in rows) {
         page.text(left, y, label, size = 10.0, color = Rgb.MUTED)
         y = page.paragraph(left + labelWidth, y, right - left - labelWidth, value, size = 11.0) + 8.0
@@ -69,6 +77,13 @@ fun buildReceiptPdf(data: ReceiptData): ByteArray {
     page.text(left, footerY + 31.0, "Issued for $societyName via Notiz", size = 8.5, color = Rgb.MUTED)
 
     return buildPdf(page, title = "Receipt ${receiptNumberLabel(data.receiptNo)}")
+}
+
+internal fun paymentModeLabel(mode: String?, utr: String?): String = when (mode) {
+    "online" -> "Online (Razorpay)"
+    "cash" -> "Cash / other"
+    "upi" -> "UPI"
+    else -> if (utr.isNullOrBlank()) "Cash / other" else "UPI"
 }
 
 /** True when every character can be drawn with the built-in PDF fonts (e.g. not Tamil script). */

@@ -6,6 +6,7 @@ import com.notiz.app.data.ChatRepository
 import com.notiz.app.data.ComplaintRepository
 import com.notiz.app.data.DuesRepository
 import com.notiz.app.data.NoticeRepository
+import com.notiz.app.data.PaymentsRepository
 import com.notiz.app.data.PollRepository
 import com.notiz.app.data.PushRepository
 import com.notiz.app.data.SocietyRepository
@@ -23,6 +24,7 @@ class AppContainer {
     val complaints = ComplaintRepository(supabase)
     val polls = PollRepository(supabase)
     val chat = ChatRepository(supabase)
+    val payments = PaymentsRepository(supabase)
     val push = PushManager(PushRepository(supabase), auth)
 
     companion object {
