@@ -49,7 +49,10 @@ class AppViewModel(private val container: AppContainer) : BaseViewModel() {
                         loadedUserId = null
                         _state.value = AppState.SignedOut
                     }
-                    is SessionStatus.Initializing -> _state.value = AppState.Loading
+                    // Supabase also emits Initializing when the app goes to the background (it pauses
+                    // token refresh) and Authenticated again on return. Keep the current screen;
+                    // the very first launch already starts in Loading.
+                    is SessionStatus.Initializing -> Unit
                     is SessionStatus.RefreshFailure -> {
                         if (_state.value == AppState.Loading) {
                             _state.value = AppState.Error("Can't reach the server. Check your internet connection.")
