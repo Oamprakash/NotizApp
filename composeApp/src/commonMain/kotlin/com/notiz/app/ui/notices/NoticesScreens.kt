@@ -55,6 +55,8 @@ import com.notiz.app.AppContainer
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.Notice
 import com.notiz.app.data.NoticeReadCount
+import com.notiz.app.push.OnPushUpdate
+import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
@@ -118,6 +120,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
     val container = LocalAppContainer.current
     val vm = viewModel { NoticesViewModel(container, session) }
     val state by vm.state.collectAsState()
+    OnPushUpdate(PushTypes.NOTICE) { vm.load() }
     var composing by remember { mutableStateOf(false) }
 
     // Refresh read markers when coming back from a notice

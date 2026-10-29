@@ -8,6 +8,14 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Push notifications: the Google services plugin needs composeApp/google-services.json from the
+// Firebase console. Without it the app still builds and runs, just without push.
+if (file("google-services.json").exists()) {
+    apply(plugin = libs.plugins.google.services.get().pluginId)
+} else {
+    logger.warn("Notiz: composeApp/google-services.json not found — push notifications are disabled on Android.")
+}
+
 kotlin {
     androidTarget {
         compilerOptions {
@@ -48,6 +56,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.okhttp)
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.messaging)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

@@ -4,6 +4,10 @@ options:
   bundleIdPrefix: com.notiz
   deploymentTarget:
     iOS: "15.0"
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: "13.0.0"
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -14,6 +18,14 @@ targets:
     platform: iOS
     sources:
       - iosApp
+    dependencies:
+      - package: Firebase
+        product: FirebaseMessaging
+    # Push Notifications capability. Use "production" for TestFlight/App Store builds.
+    entitlements:
+      path: iosApp/iosApp.entitlements
+      properties:
+        aps-environment: development
     info:
       path: iosApp/Info.plist
       properties:

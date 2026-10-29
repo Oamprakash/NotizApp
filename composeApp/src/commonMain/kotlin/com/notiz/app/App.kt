@@ -4,11 +4,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.notiz.app.push.NotificationPermissionRequest
+import com.notiz.app.push.PushEvents
+import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.AppState
 import com.notiz.app.ui.AppViewModel
 import com.notiz.app.ui.MainNavigation
@@ -29,6 +33,18 @@ fun App() {
                 val appViewModel = viewModel { AppViewModel(container) }
                 val state by appViewModel.state.collectAsState()
                 val generation by appViewModel.generation.collectAsState()
+                val openedPush by PushEvents.opened.collectAsState()
+
+                // Ask for notification permission once the user belongs (or applied) to a society
+                if (state is AppState.Pending || state is AppState.Ready) NotificationPermissionRequest()
+
+                // "You're in!" tapped while waiting for approval → reload straight into the app
+                LaunchedEffect(openedPush, state) {
+                    if (openedPush == PushTypes.APPROVED && state is AppState.Pending) {
+                        PushEvents.consumeOpened()
+                        appViewModel.refresh()
+                    }
+                }
 
                 when (val s = state) {
                     AppState.Loading -> LoadingBox()

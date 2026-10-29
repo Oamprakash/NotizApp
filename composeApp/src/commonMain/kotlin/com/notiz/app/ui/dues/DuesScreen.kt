@@ -50,6 +50,8 @@ import com.notiz.app.AppContainer
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.Due
 import com.notiz.app.data.DueStatus
+import com.notiz.app.push.OnPushUpdate
+import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.EmptyState
@@ -152,6 +154,7 @@ fun DuesTab(session: SessionContext, modifier: Modifier = Modifier) {
     val container = LocalAppContainer.current
     val vm = viewModel { DuesViewModel(container, session) }
     val state by vm.state.collectAsState()
+    OnPushUpdate(PushTypes.DUES) { vm.load() }
     val uriHandler = LocalUriHandler.current
 
     var raising by remember { mutableStateOf(false) }

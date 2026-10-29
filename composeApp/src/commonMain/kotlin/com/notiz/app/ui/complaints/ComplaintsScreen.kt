@@ -45,6 +45,8 @@ import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.Complaint
 import com.notiz.app.data.ComplaintRepository
 import com.notiz.app.data.ComplaintStatus
+import com.notiz.app.push.OnPushUpdate
+import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
@@ -121,6 +123,7 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
     val container = LocalAppContainer.current
     val vm = viewModel { ComplaintsViewModel(container, session) }
     val state by vm.state.collectAsState()
+    OnPushUpdate(PushTypes.COMPLAINT) { vm.load() }
     var raising by remember { mutableStateOf(false) }
 
     Box(modifier.fillMaxSize()) {

@@ -43,7 +43,7 @@ One user belongs to one society in v1 (data model already allows more).
 
 | Phase | Feature |
 | --- | --- |
-| 2 | Push notifications (FCM/APNs) for notices, dues reminders, chat |
+| 2 | ✅ Push notifications (FCM/APNs) for notices, dues, reminders, complaints, polls, chat, approvals — see `docs/PUSH_SETUP.md` |
 | 2 | Tamil + Hindi UI (Compose resources), voice notes |
 | 2 | Payment gateway (Razorpay/Cashfree UPI) with auto-reconciliation via webhooks, replacing manual UTR entry |
 | 2 | Receipts as PDF, dues export to Excel for the auditor |

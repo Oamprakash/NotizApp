@@ -46,6 +46,8 @@ import com.notiz.app.AppContainer
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.Poll
 import com.notiz.app.data.PollOption
+import com.notiz.app.push.OnPushUpdate
+import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
@@ -115,6 +117,7 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
     val container = LocalAppContainer.current
     val vm = viewModel { PollsViewModel(container, session) }
     val state by vm.state.collectAsState()
+    OnPushUpdate(PushTypes.POLL) { vm.load() }
     var creating by remember { mutableStateOf(false) }
 
     Box(modifier.fillMaxSize()) {

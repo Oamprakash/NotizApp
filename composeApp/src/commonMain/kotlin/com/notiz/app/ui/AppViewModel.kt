@@ -69,6 +69,7 @@ class AppViewModel(private val container: AppContainer) : BaseViewModel() {
                 _state.value = AppState.NeedsProfile
                 return@launchSafe
             }
+            container.push.onProfileReady()
             val memberships = container.societies.myMemberships()
             val approved = memberships.firstOrNull { it.isApproved && it.societies != null }
             val pending = memberships.firstOrNull { it.isPending }
@@ -82,6 +83,7 @@ class AppViewModel(private val container: AppContainer) : BaseViewModel() {
 
     fun signOut() {
         launchSafe(onError = { _state.value = AppState.Error(it) }) {
+            container.push.onSigningOut()
             container.auth.signOut()
         }
     }

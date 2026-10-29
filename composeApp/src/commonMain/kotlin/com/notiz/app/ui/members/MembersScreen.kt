@@ -39,6 +39,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.notiz.app.AppContainer
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.Membership
+import com.notiz.app.push.OnPushUpdate
+import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
@@ -102,6 +104,7 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit) {
     val container = LocalAppContainer.current
     val vm = viewModel { MembersViewModel(container, session) }
     val state by vm.state.collectAsState()
+    OnPushUpdate(PushTypes.MEMBER) { vm.load() }
     val uriHandler = LocalUriHandler.current
 
     Scaffold(

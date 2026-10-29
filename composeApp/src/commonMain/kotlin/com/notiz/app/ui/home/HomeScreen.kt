@@ -26,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,6 +35,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
+import com.notiz.app.push.PushEvents
+import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.chat.ChatTab
 import com.notiz.app.ui.complaints.ComplaintsTab
@@ -57,6 +61,21 @@ fun HomeScreen(
 ) {
     var tabName by rememberSaveable { mutableStateOf(HomeTab.Notices.name) }
     val tab = HomeTab.valueOf(tabName)
+
+    // Tapped a notification → jump to its tab
+    val openedPush by PushEvents.opened.collectAsState()
+    LaunchedEffect(openedPush) {
+        val target = when (openedPush) {
+            PushTypes.NOTICE -> HomeTab.Notices
+            PushTypes.DUES -> HomeTab.Dues
+            PushTypes.COMPLAINT -> HomeTab.Complaints
+            PushTypes.POLL -> HomeTab.Polls
+            PushTypes.CHAT -> HomeTab.Chat
+            else -> null
+        } ?: return@LaunchedEffect
+        tabName = target.name
+        PushEvents.consumeOpened()
+    }
 
     Scaffold(
         topBar = {

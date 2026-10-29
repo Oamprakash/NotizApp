@@ -7,8 +7,10 @@ import com.notiz.app.data.ComplaintRepository
 import com.notiz.app.data.DuesRepository
 import com.notiz.app.data.NoticeRepository
 import com.notiz.app.data.PollRepository
+import com.notiz.app.data.PushRepository
 import com.notiz.app.data.SocietyRepository
 import com.notiz.app.data.createAppSupabaseClient
+import com.notiz.app.push.PushManager
 
 /** Manual dependency container — one per app process. */
 class AppContainer {
@@ -21,6 +23,7 @@ class AppContainer {
     val complaints = ComplaintRepository(supabase)
     val polls = PollRepository(supabase)
     val chat = ChatRepository(supabase)
+    val push = PushManager(PushRepository(supabase), auth)
 
     companion object {
         /** Created lazily so Android and iOS share a single Supabase client. */
