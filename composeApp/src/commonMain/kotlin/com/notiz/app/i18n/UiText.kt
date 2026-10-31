@@ -54,7 +54,13 @@ private fun serverError(message: String): UiText? {
         "razorpay" in m && "key id" in m -> uiText(Res.string.error_razorpay_key_id)
         "enter the razorpay key secret" in m -> uiText(Res.string.error_razorpay_secret)
         "save the razorpay keys first" in m -> uiText(Res.string.error_razorpay_save_first)
+        "razorpay_error" in m -> razorpayReason(message)?.let { uiText(Res.string.error_razorpay_said, it) }
+            ?: uiText(Res.string.error_razorpay_down)
         "server_error" in m && "razorpay" in m -> uiText(Res.string.error_razorpay_down)
         else -> null
     }
 }
+
+/** "…\"message\":\"Razorpay 400: Order amount less than minimum…\"…" → "Order amount less than minimum…" */
+private fun razorpayReason(message: String): String? =
+    Regex("""Razorpay \d{3}: ([^"\\]+)""").find(message)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }

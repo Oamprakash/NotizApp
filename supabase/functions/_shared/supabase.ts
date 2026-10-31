@@ -72,6 +72,11 @@ export function serve(handler: (req: Request) => Promise<Response>) {
       return await handler(req);
     } catch (e) {
       if (e instanceof HttpError) return json({ error: e.code, message: e.message }, e.status);
+      // Razorpay said no (bad keys, inactive account, invalid field…): pass its reason to the app
+      if (e instanceof Error && e.name === "RazorpayError") {
+        console.error(e.message);
+        return json({ error: "razorpay_error", message: e.message }, 502);
+      }
       console.error(e);
       return json({ error: "server_error", message: e instanceof Error ? e.message : String(e) }, 500);
     }

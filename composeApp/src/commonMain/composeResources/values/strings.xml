@@ -203,6 +203,7 @@
     <string name="pay_remove_title">Remove the Razorpay keys?</string>
     <string name="pay_remove_body">Online payments will turn off. Residents can still pay via UPI and report the UTR.</string>
     <string name="pay_keys_removed">Razorpay keys removed. Online payments are off.</string>
+    <string name="error_razorpay_said">Razorpay couldn't create the payment: %1$s</string>
     <string-array name="months_short">
         <item>Jan</item>
         <item>Feb</item>

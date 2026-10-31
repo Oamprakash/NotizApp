@@ -99,3 +99,29 @@ Deno.test("check: a paid link is recorded even if the webhook never arrives", as
     w.uninstall();
   }
 });
+
+Deno.test("a link made with old keys is replaced with a new one", async () => {
+  const w = world();
+  try {
+    w.dues[0].payment_link_id = "plink_from_old_keys"; // not known to the current account
+    const out = await (await call("tok-ravi", { due_id: DUE })).json();
+    assertEquals(out.status, "created");
+    assertEquals(w.dues[0].payment_link_id, "plink_1");
+  } finally {
+    w.uninstall();
+  }
+});
+
+Deno.test("Razorpay's own error reason reaches the app", async () => {
+  const w = world();
+  try {
+    w.dues[0].amount_paise = 50; // Razorpay's minimum is ₹1
+    const res = await call("tok-ravi", { due_id: DUE });
+    assertEquals(res.status, 502);
+    const body = await res.json();
+    assertEquals(body.error, "razorpay_error");
+    assertEquals(body.message, "Razorpay 400: Order amount less than minimum amount allowed");
+  } finally {
+    w.uninstall();
+  }
+});

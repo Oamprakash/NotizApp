@@ -49,6 +49,7 @@ async function call<T>(keys: RazorpayKeys, path: string, init: RequestInit = {})
 export class RazorpayError extends Error {
   constructor(public status: number, message: string) {
     super(`Razorpay ${status}: ${message}`);
+    this.name = "RazorpayError";
   }
 }
 

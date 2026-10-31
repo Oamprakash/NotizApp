@@ -130,6 +130,7 @@ export class FakeWorld {
       if (u.pathname === "/v1/payment_links" && method === "POST") {
         const b = JSON.parse(String(init.body));
         this.createdLinkBodies.push(b);
+        if (b.amount < 100) return error(400, "Order amount less than minimum amount allowed");
         if (Object.values(this.links).some((l) => l.reference_id === b.reference_id)) {
           return error(400, "reference_id already exists");
         }

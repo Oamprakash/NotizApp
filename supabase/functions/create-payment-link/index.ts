@@ -17,6 +17,7 @@ import {
   fetchPaymentLink,
   type PaymentLink,
   paymentReference,
+  RazorpayError,
   type RazorpayKeys,
 } from "../_shared/razorpay.ts";
 
@@ -73,12 +74,18 @@ export async function handle(req: Request): Promise<Response> {
 
   // Existing link: reuse it, or settle it if it was paid and the webhook is late
   if (due.payment_link_id && keys) {
-    const link = await fetchPaymentLink(keys, due.payment_link_id);
-    if (link.status === "paid") {
+    // A link made with other keys (test ↔ live, or regenerated keys) can't be fetched: start a new one
+    const link = await fetchPaymentLink(keys, due.payment_link_id).catch((e) => {
+      if (e instanceof RazorpayError && (e.status === 400 || e.status === 404)) return null;
+      throw e;
+    });
+    if (!link) {
+      console.warn(`Payment link ${due.payment_link_id} not found with current keys; creating a new one`);
+    } else if (link.status === "paid") {
       await settle(keys, due, link);
       return json({ status: "paid" });
     }
-    if (action === "create" && link.status === "created" && due.status === "pending") {
+    if (link && action === "create" && link.status === "created" && due.status === "pending") {
       return json({ status: "created", url: link.short_url });
     }
   }

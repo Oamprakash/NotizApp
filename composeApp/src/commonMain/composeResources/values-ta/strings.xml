@@ -203,6 +203,7 @@
     <string name="pay_remove_title">Razorpay கீகளை நீக்கவா?</string>
     <string name="pay_remove_body">ஆன்லைன் கட்டணம் நிறுத்தப்படும். குடியிருப்பாளர்கள் UPI மூலம் செலுத்தி UTR-ஐத் தெரிவிக்கலாம்.</string>
     <string name="pay_keys_removed">Razorpay கீகள் நீக்கப்பட்டன. ஆன்லைன் கட்டணம் நிறுத்தப்பட்டது.</string>
+    <string name="error_razorpay_said">Razorpay கட்டணத்தை உருவாக்க முடியவில்லை: %1$s</string>
     <string-array name="months_short">
         <item>ஜன.</item>
         <item>பிப்.</item>
