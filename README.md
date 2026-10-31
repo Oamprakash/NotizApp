@@ -42,6 +42,8 @@ supabase/functions/create-payment-link/, razorpay-webhook/   online payments via
 docs/MVP_SPEC.md           MVP scope and plan
 docs/PUSH_SETUP.md         Firebase / APNs / webhook / cron setup for push
 docs/PAYMENTS_SETUP.md     Razorpay online payments: deploy + per-society setup
+docs/GO_LIVE.md            checklist for launching with the first pilot society
+.github/workflows/         CI: builds a debug APK + runs tests on every push
 ```
 
 ## 1. Set up Supabase (10 minutes)
@@ -58,6 +60,8 @@ docs/PAYMENTS_SETUP.md     Razorpay online payments: deploy + per-society setup
    The anon key is meant to ship in apps; Row Level Security protects the data.
 
 ## 2. Run on Android
+
+Every push to `main` is built by GitHub Actions: open **Actions → latest run → Artifacts → notiz-debug-apk** to download an installable APK (handy for sharing with testers).
 
 Open the root folder in a recent Android Studio (2025.2 or newer), let Gradle sync, choose the `composeApp` run configuration and run on your phone or emulator.
 
