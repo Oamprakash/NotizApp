@@ -34,7 +34,7 @@ Deno.test("creates a link with the society's keys, saves it on the due, and reus
     assertEquals(sent.currency, "INR");
     assertEquals(sent.accept_partial, false);
     assertEquals(sent.notes.due_id, DUE);
-    assertEquals(sent.customer, { contact: "+919999900002" });
+    assertEquals(sent.customer, { contact: "+919876543210" });
     assert(sent.reference_id.length <= 40, "reference_id ≤ 40 chars");
     assertEquals(w.dues[0].payment_link_id, "plink_1");
 
@@ -121,6 +121,19 @@ Deno.test("Razorpay's own error reason reaches the app", async () => {
     const body = await res.json();
     assertEquals(body.error, "razorpay_error");
     assertEquals(body.message, "Razorpay 400: Order amount less than minimum amount allowed");
+  } finally {
+    w.uninstall();
+  }
+});
+
+Deno.test("a phone number Razorpay refuses is dropped and the link still gets created", async () => {
+  const w = world();
+  try {
+    w.users["tok-ravi"].phone = "919999900002"; // Supabase test number: Razorpay rejects repeated digits
+    const out = await (await call("tok-ravi", { due_id: DUE })).json();
+    assertEquals(out.status, "created");
+    assertEquals(w.createdLinkBodies.length, 2, "first try rejected, retried once");
+    assertEquals((w.createdLinkBodies[1] as Record<string, unknown>).customer, undefined);
   } finally {
     w.uninstall();
   }

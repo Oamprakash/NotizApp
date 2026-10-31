@@ -131,6 +131,9 @@ export class FakeWorld {
         const b = JSON.parse(String(init.body));
         this.createdLinkBodies.push(b);
         if (b.amount < 100) return error(400, "Order amount less than minimum amount allowed");
+        if (b.customer?.contact && /(\d)\1{4}/.test(b.customer.contact)) {
+          return error(400, "recurring digits in customer contact are disallowed");
+        }
         if (Object.values(this.links).some((l) => l.reference_id === b.reference_id)) {
           return error(400, "reference_id already exists");
         }
@@ -177,7 +180,7 @@ export function assertEquals<T>(actual: T, expected: T, msg = "") {
 }
 
 export function seed(world: FakeWorld) {
-  world.users["tok-ravi"] = { id: "u-ravi", phone: "919999900002" };
+  world.users["tok-ravi"] = { id: "u-ravi", phone: "919876543210" };
   world.users["tok-other"] = { id: "u-other" };
   world.societies["s1"] = { name: "Green Park", online_payments_enabled: true };
   world.memberships.push(

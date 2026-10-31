@@ -95,14 +95,23 @@ export async function handle(req: Request): Promise<Response> {
   if (due.status !== "pending") throw new HttpError(409, "already_reported");
 
   const contact = user.phone ? `+${user.phone.replace(/^\+/, "")}` : undefined;
-  const link = await createPaymentLink(keys, {
+  const input = {
     amountPaise: due.amount_paise,
     description: `${due.title} - Flat ${due.flat_no} - ${due.societies.name}`,
     // Unique per link (Razorpay rejects reused ids), traceable to the due
     referenceId: `${due.id.replace(/-/g, "").slice(0, 30)}-${Date.now().toString(36)}`,
     notes: { due_id: due.id, society_id: due.society_id, flat_no: due.flat_no },
+    // Only pre-fills Razorpay's checkout, so it's optional
     customer: contact && contact.length >= 8 && contact.length <= 14 ? { contact } : undefined,
     expireBy: Math.floor(Date.now() / 1000) + LINK_LIFETIME_SECONDS,
+  };
+  const link = await createPaymentLink(keys, input).catch((e) => {
+    // Razorpay refuses some numbers (e.g. test numbers like 9999900001): retry without the phone
+    if (input.customer && e instanceof RazorpayError && e.status === 400 && /contact/i.test(e.message)) {
+      console.warn(`Razorpay rejected the customer contact; retrying without it: ${e.message}`);
+      return createPaymentLink(keys, { ...input, customer: undefined });
+    }
+    throw e;
   });
 
   await db(`dues?id=eq.${q(due.id)}`, {
