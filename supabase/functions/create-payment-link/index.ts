@@ -27,7 +27,7 @@ interface DueRow {
   flat_no: string;
   title: string;
   amount_paise: number;
-  status: "pending" | "submitted" | "paid";
+  status: "pending" | "submitted" | "paid" | "cancelled";
   payment_link_id: string | null;
   payment_link_url: string | null;
   societies: { name: string; online_payments_enabled: boolean } | null;
@@ -67,6 +67,7 @@ export async function handle(req: Request): Promise<Response> {
   if (!member || member.flat_no !== due.flat_no) throw new HttpError(403, "not_your_flat");
 
   if (due.status === "paid") return json({ status: "paid" });
+  if (due.status === "cancelled" && action === "create") throw new HttpError(410, "due_cancelled");
 
   const [keys] = await select<RazorpayKeys>(
     `payment_gateways?society_id=eq.${q(due.society_id)}&select=key_id,key_secret`,

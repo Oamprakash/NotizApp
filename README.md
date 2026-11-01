@@ -39,6 +39,7 @@ iosApp/                    SwiftUI host app + AppDelegate for push (XcodeGen pro
 supabase/migrations/       schema, RLS policies, RPC functions, push triggers
 supabase/functions/push/   Edge Function that sends notifications via FCM (+ tests)
 supabase/functions/create-payment-link/, razorpay-webhook/   online payments via Razorpay (+ tests)
+supabase/functions/delete-account/   in-app account deletion (+ tests)
 docs/MVP_SPEC.md           MVP scope and plan
 docs/PUSH_SETUP.md         Firebase / APNs / webhook / cron setup for push
 docs/PAYMENTS_SETUP.md     Razorpay online payments: deploy + per-society setup
@@ -129,11 +130,18 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 - **Push triggers**: every notification case (12 scenarios) checked on PostgreSQL 16 for the right recipients and text; outsiders can't read tokens or the outbox or call the internal functions.
 - **Edge Function**: type-checked with Deno, 6 tests pass (JWT signing, FCM payload, sending, dead-token cleanup, outbox marking).
 - **Online payments**: migration tested on PostgreSQL (keys hidden from app users, server-only recording, idempotent, amount/link checks, cash vs online). Edge Functions type-checked; 11 Deno tests with fake Supabase + Razorpay (link create/reuse, flat check, webhook signature incl. RFC 4231 vector, duplicates, short payments, late-webhook check).
+- **Admin tools** (`20261101000000_admin_tools.sql`): tested on PostgreSQL — edit/cancel a bill (only unpaid dues change), cancel one due, cancelled dues can't be marked paid, society settings only through the RPC, invite code regeneration, change flat, remove member, last-admin guards (demote, remove, leave, delete account), and deleting an account keeps the society's notices/messages without the name. `delete-account` has 3 Deno tests.
 - **Receipts & export**: receipt numbering tested on PostgreSQL (backfill, no double numbers, cash, permissions). Generated PDFs pass `qpdf --check` and render correctly; `.xlsx` files open in openpyxl with numeric amounts, Tamil text and special characters intact.
 - **Not yet compiled**: the build environment had no access to Maven/Google repositories or Xcode, so the first Gradle sync happens on your machine. If a version clashes, these are the usual fixes:
   - `compose.material3` / `compose.runtime` deprecation warnings are expected with Compose Multiplatform 1.12; they don't fail the build.
   - If AGP complains about the KMP + `com.android.application` combination, stay on AGP 8.13.x (AGP 9 needs the new `androidApp` + `com.android.kotlin.multiplatform.library` structure).
   - Keep `ktor` in `libs.versions.toml` equal to the Ktor version supabase-kt uses.
+
+## Admin tools
+
+- **Settings** (gear icon on the home screen): your name, language, society details and UPI ID (admins), a new invite code, leave society, delete account, sign out.
+- **Members** (admins): change a flat number, remove a member. The last admin can't be demoted, removed or leave until someone else is admin.
+- **Dues** (admins): *Cancel due* on any unpaid due; *Manage bills* to edit the title, amount or due date of a bill, or cancel it, for the flats that haven't paid. Paid dues and receipts never change.
 
 ## Known MVP limits (next steps)
 

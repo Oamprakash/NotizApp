@@ -16,6 +16,7 @@ import com.notiz.app.ui.home.HomeScreen
 import com.notiz.app.ui.members.MembersScreen
 import com.notiz.app.ui.payments.PaymentSettingsScreen
 import com.notiz.app.ui.notices.NoticeDetailScreen
+import com.notiz.app.ui.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -30,9 +31,20 @@ data object MembersRoute
 @Serializable
 data object PaymentSettingsRoute
 
-/** Navigation for a signed-in, approved member. */
+@Serializable
+data object SettingsRoute
+
+/**
+ * Navigation for a signed-in, approved member. [onSessionChanged] quietly reloads the membership
+ * and society (after editing settings, changing your own flat or leaving).
+ */
 @Composable
-fun MainNavigation(membership: Membership, society: Society, onSignOut: () -> Unit) {
+fun MainNavigation(
+    membership: Membership,
+    society: Society,
+    onSessionChanged: () -> Unit,
+    onSignOut: () -> Unit,
+) {
     val navController = rememberNavController()
     val session = SessionContext(membership = membership, society = society)
 
@@ -58,7 +70,7 @@ fun MainNavigation(membership: Membership, society: Society, onSignOut: () -> Un
                 onOpenNotice = { navController.navigate(NoticeDetailRoute(it)) },
                 onOpenMembers = { navController.navigate(MembersRoute) },
                 onOpenPaymentSettings = { navController.navigate(PaymentSettingsRoute) },
-                onSignOut = onSignOut,
+                onOpenSettings = { navController.navigate(SettingsRoute) },
             )
         }
         composable<NoticeDetailRoute> { entry ->
@@ -73,7 +85,19 @@ fun MainNavigation(membership: Membership, society: Society, onSignOut: () -> Un
             PaymentSettingsScreen(session = session, onBack = { navController.popBackStack() })
         }
         composable<MembersRoute> {
-            MembersScreen(session = session, onBack = { navController.popBackStack() })
+            MembersScreen(
+                session = session,
+                onBack = { navController.popBackStack() },
+                onSessionChanged = onSessionChanged,
+            )
+        }
+        composable<SettingsRoute> {
+            SettingsScreen(
+                session = session,
+                onBack = { navController.popBackStack() },
+                onSessionChanged = onSessionChanged,
+                onSignOut = onSignOut,
+            )
         }
     }
 }

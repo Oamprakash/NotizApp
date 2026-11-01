@@ -75,5 +75,5 @@ jobs:
       - name: Type-check and test Supabase Edge Functions
         working-directory: supabase/functions
         run: |
-          deno check push/index.ts create-payment-link/index.ts razorpay-webhook/index.ts
-          deno test --allow-env push/index_test.ts create-payment-link/index_test.ts razorpay-webhook/index_test.ts
+          deno check push/index.ts create-payment-link/index.ts razorpay-webhook/index.ts delete-account/index.ts
+          deno test --allow-env push/index_test.ts create-payment-link/index_test.ts razorpay-webhook/index_test.ts delete-account/index_test.ts

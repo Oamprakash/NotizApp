@@ -5,8 +5,13 @@ import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
+import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.json.buildJsonObject
 
 class AuthRepository(private val supabase: SupabaseClient) {
 
@@ -38,5 +43,19 @@ class AuthRepository(private val supabase: SupabaseClient) {
 
     suspend fun saveProfile(fullName: String) {
         supabase.from("profiles").upsert(Profile(id = requireUserId(), fullName = fullName.trim()))
+    }
+
+    /**
+     * Permanently deletes the account (delete-account Edge Function), then forgets the local
+     * session. Fails with "last_admin" if the user must hand over a society first.
+     */
+    suspend fun deleteAccount() {
+        supabase.functions.invoke(
+            function = "delete-account",
+            body = buildJsonObject { },
+            headers = Headers.build { append(HttpHeaders.ContentType, ContentType.Application.Json.toString()) },
+        )
+        // The user no longer exists, so a server sign-out would fail; just drop the session.
+        supabase.auth.clearSession()
     }
 }

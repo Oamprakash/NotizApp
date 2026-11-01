@@ -14,7 +14,10 @@ class DuesRepository(private val supabase: SupabaseClient) {
     suspend fun dues(societyId: String): List<Due> =
         supabase.from("dues")
             .select(Columns.raw("*, payer:profiles!dues_submitted_by_fkey(full_name)")) {
-                filter { eq("society_id", societyId) }
+                filter {
+                    eq("society_id", societyId)
+                    neq("status", DueStatus.CANCELLED)
+                }
                 order("due_date", Order.DESCENDING)
                 order("flat_no", Order.ASCENDING)
             }
@@ -55,4 +58,41 @@ class DuesRepository(private val supabase: SupabaseClient) {
             },
         )
     }
+
+    /** Admin: cancels one unpaid due (e.g. a flat billed by mistake). */
+    suspend fun cancelDue(dueId: String) {
+        supabase.postgrest.rpc("cancel_due", buildJsonObject { put("p_due_id", dueId) })
+    }
+
+    /** Admin: cancels every unpaid due of a bill. Paid ones stay. Returns how many were cancelled. */
+    suspend fun cancelBill(societyId: String, title: String, dueDate: String): Int =
+        supabase.postgrest.rpc(
+            "cancel_bill",
+            buildJsonObject {
+                put("p_society_id", societyId)
+                put("p_title", title)
+                put("p_due_date", dueDate)
+            },
+        ).decodeAs()
+
+    /** Admin: changes the unpaid dues of a bill. Returns how many were changed. */
+    suspend fun editBill(
+        societyId: String,
+        title: String,
+        dueDate: String,
+        newTitle: String,
+        newAmountPaise: Long,
+        newDueDate: String,
+    ): Int =
+        supabase.postgrest.rpc(
+            "edit_bill",
+            buildJsonObject {
+                put("p_society_id", societyId)
+                put("p_title", title)
+                put("p_due_date", dueDate)
+                put("p_new_title", newTitle.trim())
+                put("p_new_amount_paise", newAmountPaise)
+                put("p_new_due_date", newDueDate)
+            },
+        ).decodeAs()
 }

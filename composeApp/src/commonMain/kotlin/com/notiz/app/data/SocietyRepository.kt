@@ -69,4 +69,41 @@ class SocietyRepository(private val supabase: SupabaseClient) {
             filter { eq("id", membershipId) }
         }
     }
+
+    // ───────────── Admin tools ─────────────
+
+    suspend fun updateSettings(societyId: String, name: String, city: String, upiVpa: String, upiPayeeName: String): Society =
+        supabase.postgrest.rpc(
+            "update_society_settings",
+            buildJsonObject {
+                put("p_society_id", societyId)
+                put("p_name", name.trim())
+                put("p_city", city.trim())
+                put("p_upi_vpa", upiVpa.trim())
+                put("p_upi_payee_name", upiPayeeName.trim())
+            },
+        ).decodeAs()
+
+    /** New invite code; the old one stops working. */
+    suspend fun regenerateInviteCode(societyId: String): String =
+        supabase.postgrest.rpc("regenerate_invite_code", buildJsonObject { put("p_society_id", societyId) })
+            .decodeAs()
+
+    suspend fun removeMember(membershipId: String) {
+        supabase.postgrest.rpc("remove_member", buildJsonObject { put("p_membership_id", membershipId) })
+    }
+
+    suspend fun setMemberFlat(membershipId: String, flatNo: String) {
+        supabase.postgrest.rpc(
+            "set_member_flat",
+            buildJsonObject {
+                put("p_membership_id", membershipId)
+                put("p_flat_no", flatNo.trim())
+            },
+        )
+    }
+
+    suspend fun leaveSociety(societyId: String) {
+        supabase.postgrest.rpc("leave_society", buildJsonObject { put("p_society_id", societyId) })
+    }
 }

@@ -96,6 +96,7 @@ object DueStatus {
     const val PENDING = "pending"
     const val SUBMITTED = "submitted"
     const val PAID = "paid"
+    const val CANCELLED = "cancelled"
 }
 
 @Serializable

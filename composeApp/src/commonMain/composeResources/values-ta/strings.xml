@@ -218,4 +218,57 @@
         <item>நவ.</item>
         <item>டிச.</item>
     </string-array>
+
+    <!-- Settings, member and bill management -->
+    <string name="settings_title">அமைப்புகள்</string>
+    <string name="settings_profile">உங்கள் விவரம்</string>
+    <string name="settings_language">மொழி</string>
+    <string name="settings_save">சேமி</string>
+    <string name="settings_saved">சேமிக்கப்பட்டது</string>
+    <string name="settings_society">சங்க விவரங்கள்</string>
+    <string name="settings_society_hint">பெயரும் நகரமும் குடியிருப்பாளர்களுக்குத் தெரியும். UPI மூலம் கட்டணம் செலுத்த UPI ID பயன்படும்.</string>
+    <string name="settings_invite_title">அழைப்புக் குறியீடு</string>
+    <string name="settings_invite_hint">பழைய குறியீடு சங்கத்துக்கு வெளியே பகிரப்பட்டிருந்தால் புதிய குறியீடு எடுங்கள். பழையது வேலை செய்யாது.</string>
+    <string name="settings_new_code">புதிய அழைப்புக் குறியீடு</string>
+    <string name="settings_new_code_confirm">புதிய அழைப்புக் குறியீடு உருவாக்கவா? பழைய குறியீடு (%1$s) உள்ளவர்கள் சேர முடியாது.</string>
+    <string name="settings_new_code_done">புதிய அழைப்புக் குறியீடு: %1$s</string>
+    <string name="settings_account">கணக்கு</string>
+    <string name="settings_leave">சங்கத்திலிருந்து விலகு</string>
+    <string name="settings_leave_confirm">%1$s-இலிருந்து விலகவா? அதன் அறிவிப்புகளும் கட்டணங்களும் இனி வராது. பின்னர் அழைப்புக் குறியீட்டுடன் மீண்டும் சேரலாம்.</string>
+    <string name="settings_delete">என் கணக்கை நீக்கு</string>
+    <string name="settings_delete_hint">உங்கள் பெயர், தொலைபேசி எண், உறுப்பினர் விவரங்கள் நீக்கப்படும். நீங்கள் இட்ட அறிவிப்புகள், செய்திகள், புகார்கள் உங்கள் பெயரின்றி சங்கத்தில் இருக்கும். இதைத் திரும்பப் பெற முடியாது.</string>
+    <string name="settings_delete_confirm">உங்கள் Notiz கணக்கை நிரந்தரமாக நீக்கவா? இதைத் திரும்பப் பெற முடியாது.</string>
+    <string name="settings_delete_type">உறுதிப்படுத்த DELETE என தட்டச்சு செய்யவும்</string>
+    <string name="members_change_flat">வீட்டு எண் மாற்று</string>
+    <string name="members_remove">நீக்கு</string>
+    <string name="members_remove_confirm">%1$s (வீடு %2$s)-ஐ சங்கத்திலிருந்து நீக்கவா? செலுத்திய ரசீதுகள் பதிவில் இருக்கும்.</string>
+    <string name="members_flat_title">வீட்டு எண்ணை மாற்று</string>
+    <string name="members_flat_changed">வீட்டு எண் %1$s ஆக மாற்றப்பட்டது</string>
+    <string name="members_removed">உறுப்பினர் நீக்கப்பட்டார்</string>
+    <string name="dues_cancel_due">கட்டணத்தை ரத்து செய்</string>
+    <string name="dues_cancel_due_confirm">வீடு %3$s-இன் %2$s கட்டணம் %1$s-ஐ ரத்து செய்யவா? குடியிருப்பாளரின் பட்டியலிலிருந்து மறையும்.</string>
+    <string name="dues_due_cancelled">கட்டணம் ரத்து செய்யப்பட்டது</string>
+    <string name="dues_manage_bills">பில்களை நிர்வகி</string>
+    <string name="dues_bills_title">பில்கள்</string>
+    <string name="dues_bills_hint">பில்லைத் திருத்தலாம் அல்லது ரத்து செய்யலாம். செலுத்தப்படாத கட்டணங்கள் மட்டுமே மாறும்; செலுத்தியவையும் ரசீதுகளும் மாறாது.</string>
+    <string name="dues_bill_summary">%1$s · கடைசி நாள் %2$s · %4$d-இல் %3$d செலுத்தவில்லை</string>
+    <string name="dues_bill_edit">திருத்து</string>
+    <string name="dues_bill_cancel">பில்லை ரத்து செய்</string>
+    <string name="dues_bill_cancel_confirm">செலுத்தாத %2$d வீடுகளுக்கு "%1$s"-ஐ ரத்து செய்யவா? குடியிருப்பாளர்களுக்கு அறிவிப்பு செல்லும்.</string>
+    <string name="dues_bill_cancelled">%1$d வீடுகளுக்கு ரத்து செய்யப்பட்டது</string>
+    <string name="dues_bill_edit_title">பில்லைத் திருத்து</string>
+    <string name="dues_bill_edited">செலுத்தாத %1$d வீடுகளுக்குப் புதுப்பிக்கப்பட்டது</string>
+    <string name="dues_bills_none">இன்னும் பில்கள் இல்லை.</string>
+    <string name="action_save_changes">மாற்றங்களைச் சேமி</string>
+    <string name="action_keep">வேண்டாம்</string>
+    <string name="action_confirm">உறுதிசெய்</string>
+    <string name="error_only_unpaid">செலுத்தப்படாத கட்டணங்களை மட்டுமே ரத்து செய்ய முடியும்.</string>
+    <string name="error_due_cancelled">இந்தக் கட்டணம் ரத்து செய்யப்பட்டது.</string>
+    <string name="error_make_admin_first">முதலில் வேறொரு உறுப்பினரை நிர்வாகி ஆக்குங்கள்.</string>
+    <string name="error_use_leave">உங்களை நீக்க, அமைப்புகளில் 'சங்கத்திலிருந்து விலகு' பயன்படுத்தவும்.</string>
+    <string name="error_society_name">சங்கத்தின் பெயரை உள்ளிடவும்.</string>
+    <string name="error_flat_no">வீட்டு எண்ணை உள்ளிடவும்.</string>
+    <string name="error_enter_title">தலைப்பை உள்ளிடவும்.</string>
+    <string name="error_enter_amount">சரியான தொகையை உள்ளிடவும்.</string>
+    <string name="error_last_admin_delete">%1$s-இன் ஒரே நிர்வாகி நீங்கள். வேறொரு உறுப்பினரை நிர்வாகி ஆக்கிய பின் கணக்கை நீக்கவும்.</string>
 </resources>

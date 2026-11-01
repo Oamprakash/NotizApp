@@ -138,3 +138,15 @@ Deno.test("a phone number Razorpay refuses is dropped and the link still gets cr
     w.uninstall();
   }
 });
+
+Deno.test("a cancelled due can't be paid online", async () => {
+  const w = world();
+  try {
+    w.dues[0].status = "cancelled";
+    const res = await call("tok-ravi", { due_id: DUE });
+    assertEquals(res.status, 410);
+    assertEquals((await res.json()).error, "due_cancelled");
+  } finally {
+    w.uninstall();
+  }
+});

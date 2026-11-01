@@ -2,6 +2,13 @@
 
 package com.notiz.app.ui.members
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -100,17 +107,39 @@ class MembersViewModel(
         container.societies.setMembershipRole(m.id, if (m.isAdmin) "resident" else "admin")
     }
 
+    /** Changing your own flat also updates the signed-in session via [onOwnFlatChanged]. */
+    fun changeFlat(m: Membership, flatNo: String, onOwnFlatChanged: () -> Unit) {
+        state.update { it.copy(busy = true, actionError = null, info = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
+            container.societies.setMemberFlat(m.id, flatNo)
+            state.update { it.copy(busy = false, info = uiText(Res.string.members_flat_changed, flatNo.trim())) }
+            if (m.userId == session.userId) onOwnFlatChanged()
+            load()
+        }
+    }
+
+    fun remove(m: Membership) {
+        state.update { it.copy(busy = true, actionError = null, info = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
+            container.societies.removeMember(m.id)
+            state.update { it.copy(busy = false, info = uiText(Res.string.members_removed)) }
+            load()
+        }
+    }
+
     fun showInfo(text: UiText) = state.update { it.copy(info = text) }
     fun dismiss() = state.update { it.copy(actionError = null, info = null) }
 }
 
 @Composable
-fun MembersScreen(session: SessionContext, onBack: () -> Unit) {
+fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged: () -> Unit) {
     val container = LocalAppContainer.current
     val vm = viewModel { MembersViewModel(container, session) }
     val state by vm.state.collectAsState()
     OnPushUpdate(PushTypes.MEMBER) { vm.load() }
     val uriHandler = LocalUriHandler.current
+    var editingFlat by remember { mutableStateOf<Membership?>(null) }
+    var removing by remember { mutableStateOf<Membership?>(null) }
 
     Scaffold(
         topBar = {
@@ -158,15 +187,74 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit) {
                 item { SectionTitle(stringResource(Res.string.members_count, state.approved.size)) }
                 items(state.approved, key = { it.id }) { m ->
                     MemberRow(m) {
-                        if (session.isAdmin && m.userId != session.userId) {
-                            TextButton(onClick = { vm.toggleAdmin(m) }, enabled = !state.busy) {
-                                Text(stringResource(if (m.isAdmin) Res.string.members_remove_admin else Res.string.members_make_admin))
+                        if (session.isAdmin) {
+                            Row(Modifier.horizontalScroll(rememberScrollState())) {
+                                if (m.userId != session.userId) {
+                                    TextButton(onClick = { vm.toggleAdmin(m) }, enabled = !state.busy) {
+                                        Text(stringResource(if (m.isAdmin) Res.string.members_remove_admin else Res.string.members_make_admin))
+                                    }
+                                }
+                                TextButton(onClick = { editingFlat = m }, enabled = !state.busy) {
+                                    Text(stringResource(Res.string.members_change_flat))
+                                }
+                                if (m.userId != session.userId) {
+                                    TextButton(onClick = { removing = m }, enabled = !state.busy) {
+                                        Text(stringResource(Res.string.members_remove), color = MaterialTheme.colorScheme.error)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    editingFlat?.let { m ->
+        var flat by remember(m.id) { mutableStateOf(m.flatNo) }
+        AlertDialog(
+            onDismissRequest = { editingFlat = null },
+            title = { Text(stringResource(Res.string.members_flat_title)) },
+            text = {
+                OutlinedTextField(
+                    value = flat,
+                    onValueChange = { flat = it.take(20) },
+                    label = { Text(stringResource(Res.string.setup_flat_number)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        editingFlat = null
+                        vm.changeFlat(m, flat, onOwnFlatChanged = onSessionChanged)
+                    },
+                    enabled = flat.isNotBlank() && flat.trim() != m.flatNo,
+                ) { Text(stringResource(Res.string.action_save_changes)) }
+            },
+            dismissButton = { TextButton(onClick = { editingFlat = null }) { Text(stringResource(Res.string.action_cancel)) } },
+        )
+    }
+    removing?.let { m ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            text = {
+                Text(
+                    stringResource(
+                        Res.string.members_remove_confirm,
+                        m.profiles?.fullName ?: stringResource(Res.string.members_resident),
+                        m.flatNo,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { removing = null; vm.remove(m) }) {
+                    Text(stringResource(Res.string.members_remove), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(Res.string.action_keep)) } },
+        )
     }
 }
 

@@ -73,6 +73,7 @@ private fun AppContent(container: AppContainer) {
                     is AppState.Ready -> MainNavigation(
                         membership = s.membership,
                         society = s.society,
+                        onSessionChanged = appViewModel::reloadQuietly,
                         onSignOut = appViewModel::signOut,
                     )
                     is AppState.Error -> ErrorBox(message = s.message.asString(), onRetry = appViewModel::refresh)

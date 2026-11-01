@@ -69,21 +69,27 @@ class AppViewModel(private val container: AppContainer) : BaseViewModel() {
     /** Re-reads profile and memberships and moves to the right onboarding step. */
     fun refresh() {
         _state.value = AppState.Loading
-        launchSafe(onError = { _state.value = AppState.Error(it) }) {
-            val profile = container.auth.myProfile()
-            if (profile == null) {
-                _state.value = AppState.NeedsProfile
-                return@launchSafe
-            }
-            container.push.onProfileReady()
-            val memberships = container.societies.myMemberships()
-            val approved = memberships.firstOrNull { it.isApproved && it.societies != null }
-            val pending = memberships.firstOrNull { it.isPending }
-            _state.value = when {
-                approved != null -> AppState.Ready(approved, approved.societies!!)
-                pending != null -> AppState.Pending(pending)
-                else -> AppState.NeedsSociety
-            }
+        launchSafe(onError = { _state.value = AppState.Error(it) }) { _state.value = resolveState() }
+    }
+
+    /**
+     * Like [refresh] but keeps the current screen while loading — after editing society details,
+     * changing a flat or leaving. Failures are ignored; the next refresh will pick changes up.
+     */
+    fun reloadQuietly() {
+        launchSafe(onError = {}) { _state.value = resolveState() }
+    }
+
+    private suspend fun resolveState(): AppState {
+        val profile = container.auth.myProfile() ?: return AppState.NeedsProfile
+        container.push.onProfileReady()
+        val memberships = container.societies.myMemberships()
+        val approved = memberships.firstOrNull { it.isApproved && it.societies != null }
+        val pending = memberships.firstOrNull { it.isPending }
+        return when {
+            approved != null -> AppState.Ready(approved, approved.societies!!)
+            pending != null -> AppState.Pending(pending)
+            else -> AppState.NeedsSociety
         }
     }
 

@@ -46,6 +46,17 @@ private fun serverError(message: String): UiText? {
         "at least two options" in m -> uiText(Res.string.error_two_options)
         "invalid option" in m -> uiText(Res.string.error_invalid_option)
         "not allowed" in m -> uiText(Res.string.error_not_allowed)
+        // Admin tools (20261101000000_admin_tools.sql, delete-account Edge Function)
+        "only unpaid dues can be cancelled" in m -> uiText(Res.string.error_only_unpaid)
+        "this due was cancelled" in m || "due_cancelled" in m -> uiText(Res.string.error_due_cancelled)
+        "make another member admin first" in m -> uiText(Res.string.error_make_admin_first)
+        "use leave society" in m -> uiText(Res.string.error_use_leave)
+        "enter the society name" in m -> uiText(Res.string.error_society_name)
+        "enter the flat number" in m -> uiText(Res.string.error_flat_no)
+        "enter a title" in m -> uiText(Res.string.error_enter_title)
+        "enter a valid amount" in m -> uiText(Res.string.error_enter_amount)
+        "upi id should look like" in m -> uiText(Res.string.setup_upi_invalid)
+        "last_admin" in m -> uiText(Res.string.error_last_admin_delete, jsonMessage(message) ?: "")
         // Online payments (create-payment-link Edge Function and payment RPCs)
         "online_payments_not_enabled" in m -> uiText(Res.string.error_online_off)
         "not_your_flat" in m -> uiText(Res.string.error_not_allowed)
@@ -64,3 +75,7 @@ private fun serverError(message: String): UiText? {
 /** "…\"message\":\"Razorpay 400: Order amount less than minimum…\"…" → "Order amount less than minimum…" */
 private fun razorpayReason(message: String): String? =
     Regex("""Razorpay \d{3}: ([^"\\]+)""").find(message)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
+
+/** The "message" field of a JSON error body returned by our Edge Functions. */
+private fun jsonMessage(body: String): String? =
+    Regex(""""message"\s*:\s*"([^"\\]+)"""").find(body)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }

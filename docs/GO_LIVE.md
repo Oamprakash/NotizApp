@@ -4,8 +4,8 @@ Goal: one housing society using Notiz for real notices, dues and complaints for 
 
 ## 1. Backend (Supabase)
 
-- [ ] All migrations run, in date order (`supabase/migrations/`): init, push notifications, receipts, razorpay.
-- [ ] Edge Functions deployed to the **Notiz** project: `push`, `create-payment-link`, `razorpay-webhook` (the last two with `--no-verify-jwt` where noted in their setup docs).
+- [ ] All migrations run, in date order (`supabase/migrations/`): init, push notifications, receipts, razorpay, admin tools.
+- [ ] Edge Functions deployed to the **Notiz** project: `push`, `create-payment-link`, `razorpay-webhook`, `delete-account` (`--no-verify-jwt` only where noted in their setup docs; `delete-account` deploys normally: `supabase functions deploy delete-account`).
 - [ ] Push webhook (`notification_outbox` → `push`) and daily `dues-reminders` cron are set up ([PUSH_SETUP.md](PUSH_SETUP.md)).
 - [ ] Upgrade the project to **Supabase Pro** so it never pauses on residents. Free projects pause after a week of inactivity.
 - [ ] Turn on daily backups (included on Pro) and note how to restore.
@@ -51,7 +51,7 @@ For quick installs before Play Console is ready, the GitHub Actions build produc
 - [ ] Privacy policy page (what's collected: phone, name, flat number, payments metadata; where it's stored: Supabase, region; contact email; how to delete an account). Host it on a simple site or a public doc.
 - [ ] Terms of use (Notiz isn't a party to payments; societies are responsible for their dues).
 - [ ] Support contact: an email or WhatsApp number shown in the app listing.
-- [ ] Account deletion: Play requires a way to request deletion — at minimum an email address on the privacy page; later an in-app button.
+- [ ] Account deletion: in the app under Settings → Delete my account. Play *also* asks for a web link where people can request deletion without the app: add a short "Delete your account" section to the privacy page (open Notiz → Settings → Delete my account, or email us from your registered number) and paste that URL into Play Console → App content → Data deletion. Say what's deleted (name, phone, memberships, device tokens) and what's kept (posts without your name; paid dues and receipts as society records).
 
 ## 7. Onboarding the pilot society (in person)
 

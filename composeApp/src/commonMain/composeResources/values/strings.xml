@@ -218,4 +218,57 @@
         <item>Nov</item>
         <item>Dec</item>
     </string-array>
+
+    <!-- Settings, member and bill management -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_profile">Your profile</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_saved">Saved</string>
+    <string name="settings_society">Society details</string>
+    <string name="settings_society_hint">Residents see the name and city. The UPI ID is where residents pay dues by UPI.</string>
+    <string name="settings_invite_title">Invite code</string>
+    <string name="settings_invite_hint">Get a new code if the old one was shared outside the society. The old code stops working.</string>
+    <string name="settings_new_code">New invite code</string>
+    <string name="settings_new_code_confirm">Make a new invite code? Anyone with the old code (%1$s) won't be able to join.</string>
+    <string name="settings_new_code_done">New invite code: %1$s</string>
+    <string name="settings_account">Account</string>
+    <string name="settings_leave">Leave society</string>
+    <string name="settings_leave_confirm">Leave %1$s? You'll stop getting its notices and dues. You can join again later with the invite code.</string>
+    <string name="settings_delete">Delete my account</string>
+    <string name="settings_delete_hint">Removes your name, phone number and memberships. Notices, messages and complaints you posted stay for the society without your name. This can't be undone.</string>
+    <string name="settings_delete_confirm">Delete your Notiz account permanently? This can't be undone.</string>
+    <string name="settings_delete_type">Type DELETE to confirm</string>
+    <string name="members_change_flat">Change flat</string>
+    <string name="members_remove">Remove</string>
+    <string name="members_remove_confirm">Remove %1$s (flat %2$s) from the society? Their paid receipts stay in the records.</string>
+    <string name="members_flat_title">Change flat number</string>
+    <string name="members_flat_changed">Flat changed to %1$s</string>
+    <string name="members_removed">Member removed</string>
+    <string name="dues_cancel_due">Cancel due</string>
+    <string name="dues_cancel_due_confirm">Cancel the %1$s due of %2$s for flat %3$s? It disappears from the resident's list.</string>
+    <string name="dues_due_cancelled">Due cancelled</string>
+    <string name="dues_manage_bills">Manage bills</string>
+    <string name="dues_bills_title">Bills</string>
+    <string name="dues_bills_hint">Edit or cancel a bill. Only unpaid dues change; paid dues and receipts stay as they are.</string>
+    <string name="dues_bill_summary">%1$s · due %2$s · %3$d of %4$d unpaid</string>
+    <string name="dues_bill_edit">Edit</string>
+    <string name="dues_bill_cancel">Cancel bill</string>
+    <string name="dues_bill_cancel_confirm">Cancel "%1$s" for the %2$d flats that haven't paid? Residents get a notification.</string>
+    <string name="dues_bill_cancelled">Cancelled for %1$d flats</string>
+    <string name="dues_bill_edit_title">Edit bill</string>
+    <string name="dues_bill_edited">Updated for %1$d unpaid flats</string>
+    <string name="dues_bills_none">No bills yet.</string>
+    <string name="action_save_changes">Save changes</string>
+    <string name="action_keep">Keep</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="error_only_unpaid">Only unpaid dues can be cancelled.</string>
+    <string name="error_due_cancelled">This due was cancelled.</string>
+    <string name="error_make_admin_first">Make another member admin first.</string>
+    <string name="error_use_leave">Use Leave society in Settings to remove yourself.</string>
+    <string name="error_society_name">Enter the society name.</string>
+    <string name="error_flat_no">Enter the flat number.</string>
+    <string name="error_enter_title">Enter a title.</string>
+    <string name="error_enter_amount">Enter a valid amount.</string>
+    <string name="error_last_admin_delete">You're the only admin of %1$s. Make another member admin, then delete your account.</string>
 </resources>

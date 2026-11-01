@@ -119,7 +119,31 @@ data class DuesUiState(
     val collectedPaise get() = dues.filter { it.status == DueStatus.PAID }.sumOf { it.amountPaise }
     val outstandingPaise get() = dues.filter { it.status != DueStatus.PAID }.sumOf { it.amountPaise }
     val toVerifyCount get() = dues.count { it.status == DueStatus.SUBMITTED }
+
+    /** Dues grouped into the bills that raised them (same title and due date), newest first. */
+    val bills: List<Bill>
+        get() = dues.groupBy { it.title to it.dueDate }
+            .map { (key, group) ->
+                val unpaid = group.filter { it.status == DueStatus.PENDING }
+                Bill(
+                    title = key.first,
+                    dueDate = key.second,
+                    amountPaise = (unpaid.firstOrNull() ?: group.first()).amountPaise,
+                    unpaidCount = unpaid.size,
+                    totalCount = group.size,
+                )
+            }
+            .sortedByDescending { it.dueDate }
 }
+
+/** One "Raise bill" — every flat's due with the same title and due date. */
+data class Bill(
+    val title: String,
+    val dueDate: String,
+    val amountPaise: Long,
+    val unpaidCount: Int,
+    val totalCount: Int,
+)
 
 class DuesViewModel(
     private val container: AppContainer,
@@ -189,6 +213,29 @@ class DuesViewModel(
             container.dues.verifyPayment(due.id, approve)
         }
 
+    fun cancelDue(due: Due) = action(uiText(Res.string.dues_due_cancelled)) {
+        container.dues.cancelDue(due.id)
+    }
+
+    fun cancelBill(bill: Bill) {
+        state.update { it.copy(busy = true, actionError = null, info = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
+            val n = container.dues.cancelBill(session.societyId, bill.title, bill.dueDate)
+            state.update { it.copy(busy = false, info = uiText(Res.string.dues_bill_cancelled, n)) }
+            load()
+        }
+    }
+
+    fun editBill(bill: Bill, title: String, amountPaise: Long, dueDate: String, onDone: () -> Unit) {
+        state.update { it.copy(busy = true, actionError = null, info = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
+            val n = container.dues.editBill(session.societyId, bill.title, bill.dueDate, title, amountPaise, dueDate)
+            state.update { it.copy(busy = false, info = uiText(Res.string.dues_bill_edited, n)) }
+            onDone()
+            load()
+        }
+    }
+
     fun raiseBill(title: String, amountPaise: Long, dueDate: String, onDone: () -> Unit) {
         state.update { it.copy(busy = true, actionError = null, info = null) }
         launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
@@ -222,6 +269,10 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
     var reporting by remember { mutableStateOf<Due?>(null) }
     var payError by remember { mutableStateOf<UiText?>(null) }
     var cashFor by remember { mutableStateOf<Due?>(null) }
+    var cancelling by remember { mutableStateOf<Due?>(null) }
+    var managingBills by remember { mutableStateOf(false) }
+    var editingBill by remember { mutableStateOf<Bill?>(null) }
+    var cancellingBill by remember { mutableStateOf<Bill?>(null) }
     val sharer = rememberFileSharer()
 
     fun share(build: () -> ByteArray, fileName: String, mimeType: String) {
@@ -288,7 +339,14 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (session.isAdmin) {
-                        item { AdminSummary(state, onExport = ::exportExcel, onOpenPaymentSettings = onOpenPaymentSettings) }
+                        item {
+                            AdminSummary(
+                                state,
+                                onExport = ::exportExcel,
+                                onManageBills = { managingBills = true },
+                                onOpenPaymentSettings = onOpenPaymentSettings,
+                            )
+                        }
                         item {
                             Row(
                                 Modifier.horizontalScroll(rememberScrollState()),
@@ -331,6 +389,7 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                             onReport = { reporting = due },
                             onVerify = { approve -> vm.verify(due, approve) },
                             onPaidInCash = { cashFor = due },
+                            onCancel = { cancelling = due },
                             onReceipt = { shareReceipt(due) },
                         )
                     }
@@ -374,6 +433,55 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
             dismissButton = { TextButton(onClick = { cashFor = null }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
+    cancelling?.let { due ->
+        AlertDialog(
+            onDismissRequest = { cancelling = null },
+            title = { Text(stringResource(Res.string.dues_cancel_due)) },
+            text = { Text(stringResource(Res.string.dues_cancel_due_confirm, due.title, formatRupees(due.amountPaise), due.flatNo)) },
+            confirmButton = {
+                TextButton(onClick = { cancelling = null; vm.cancelDue(due) }) {
+                    Text(stringResource(Res.string.dues_cancel_due), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { cancelling = null }) { Text(stringResource(Res.string.action_keep)) } },
+        )
+    }
+    if (managingBills) {
+        BillsDialog(
+            bills = state.bills,
+            busy = state.busy,
+            onDismiss = { managingBills = false },
+            onEdit = { managingBills = false; editingBill = it },
+            onCancel = { managingBills = false; cancellingBill = it },
+        )
+    }
+    cancellingBill?.let { bill ->
+        AlertDialog(
+            onDismissRequest = { cancellingBill = null },
+            title = { Text(stringResource(Res.string.dues_bill_cancel)) },
+            text = { Text(stringResource(Res.string.dues_bill_cancel_confirm, bill.title, bill.unpaidCount)) },
+            confirmButton = {
+                TextButton(onClick = { cancellingBill = null; vm.cancelBill(bill) }) {
+                    Text(stringResource(Res.string.dues_bill_cancel), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { cancellingBill = null }) { Text(stringResource(Res.string.action_keep)) } },
+        )
+    }
+    editingBill?.let { bill ->
+        BillFormDialog(
+            heading = stringResource(Res.string.dues_bill_edit_title),
+            hint = stringResource(Res.string.dues_bills_hint),
+            initialTitle = bill.title,
+            initialAmount = rupeesInput(bill.amountPaise),
+            initialDueDate = bill.dueDate,
+            confirmLabel = stringResource(Res.string.action_save_changes),
+            busyLabel = stringResource(Res.string.action_sending),
+            busy = state.busy,
+            onDismiss = { editingBill = null },
+            onConfirm = { title, paise, date -> vm.editBill(bill, title, paise, date) { editingBill = null } },
+        )
+    }
     if (raising) {
         RaiseBillDialog(
             busy = state.busy,
@@ -384,7 +492,12 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
 }
 
 @Composable
-private fun AdminSummary(state: DuesUiState, onExport: () -> Unit, onOpenPaymentSettings: () -> Unit) {
+private fun AdminSummary(
+    state: DuesUiState,
+    onExport: () -> Unit,
+    onManageBills: () -> Unit,
+    onOpenPaymentSettings: () -> Unit,
+) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -394,7 +507,10 @@ private fun AdminSummary(state: DuesUiState, onExport: () -> Unit, onOpenPayment
             }
             Spacer(Modifier.height(12.dp))
             if (state.dues.isNotEmpty()) {
-                OutlinedButton(onClick = onExport) { Text(stringResource(Res.string.dues_export_excel)) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onExport) { Text(stringResource(Res.string.dues_export_excel)) }
+                    OutlinedButton(onClick = onManageBills) { Text(stringResource(Res.string.dues_manage_bills)) }
+                }
             }
             TextButton(onClick = onOpenPaymentSettings) {
                 Text(
@@ -428,6 +544,7 @@ private fun DueCard(
     onReport: () -> Unit,
     onVerify: (approve: Boolean) -> Unit,
     onPaidInCash: () -> Unit,
+    onCancel: () -> Unit,
     onReceipt: () -> Unit,
 ) {
     Card(Modifier.fillMaxWidth()) {
@@ -486,7 +603,12 @@ private fun DueCard(
             // Admin: record a cash / cheque payment for an unpaid flat
             if (isAdmin && due.status == DueStatus.PENDING) {
                 Spacer(Modifier.height(if (isMyFlat) 4.dp else 12.dp))
-                TextButton(onClick = onPaidInCash, enabled = !busy) { Text(stringResource(Res.string.dues_paid_cash)) }
+                Row {
+                    TextButton(onClick = onPaidInCash, enabled = !busy) { Text(stringResource(Res.string.dues_paid_cash)) }
+                    TextButton(onClick = onCancel, enabled = !busy) {
+                        Text(stringResource(Res.string.dues_cancel_due), color = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
             // Paid: receipt number + share the PDF
             if (due.status == DueStatus.PAID && due.receiptNo != null) {
@@ -569,19 +691,49 @@ private fun RaiseBillDialog(
     onDismiss: () -> Unit,
     onRaise: (title: String, amountPaise: Long, dueDate: String) -> Unit,
 ) {
-    val defaultTitle = stringResource(Res.string.dues_default_title)
-    var title by remember { mutableStateOf(defaultTitle) }
-    var amount by remember { mutableStateOf("") }
-    var dueDate by remember { mutableStateOf(defaultDueDate()) }
+    BillFormDialog(
+        heading = stringResource(Res.string.dues_raise_title),
+        hint = stringResource(Res.string.dues_raise_hint),
+        initialTitle = stringResource(Res.string.dues_default_title),
+        initialAmount = "",
+        initialDueDate = defaultDueDate(),
+        confirmLabel = stringResource(Res.string.dues_raise_bill),
+        busyLabel = stringResource(Res.string.dues_raising),
+        busy = busy,
+        onDismiss = onDismiss,
+        onConfirm = onRaise,
+    )
+}
+
+/** "1500.00" → "1500", "1500.50" → "1500.50" for pre-filling the amount field. */
+private fun rupeesInput(paise: Long): String =
+    if (paise % 100 == 0L) (paise / 100).toString() else "${paise / 100}.${(paise % 100).toString().padStart(2, '0')}"
+
+@Composable
+private fun BillFormDialog(
+    heading: String,
+    hint: String,
+    initialTitle: String,
+    initialAmount: String,
+    initialDueDate: String,
+    confirmLabel: String,
+    busyLabel: String,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, amountPaise: Long, dueDate: String) -> Unit,
+) {
+    var title by remember { mutableStateOf(initialTitle) }
+    var amount by remember { mutableStateOf(initialAmount) }
+    var dueDate by remember { mutableStateOf(initialDueDate) }
     val paise = parseRupeesToPaise(amount)
     val dateOk = isValidIsoDate(dueDate)
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(stringResource(Res.string.dues_raise_title)) },
+        title = { Text(heading) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(Res.string.dues_raise_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(hint, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = title, onValueChange = { title = it.take(80) },
                     label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
@@ -603,10 +755,55 @@ private fun RaiseBillDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { if (paise != null) onRaise(title, paise, dueDate.trim()) },
+                onClick = { if (paise != null) onConfirm(title, paise, dueDate.trim()) },
                 enabled = title.isNotBlank() && paise != null && dateOk && !busy,
-            ) { Text(stringResource(if (busy) Res.string.dues_raising else Res.string.dues_raise_bill)) }
+            ) { Text(if (busy) busyLabel else confirmLabel) }
         },
         dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
+    )
+}
+
+@Composable
+private fun BillsDialog(
+    bills: List<Bill>,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onEdit: (Bill) -> Unit,
+    onCancel: (Bill) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.dues_bills_title)) },
+        text = {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                item { Text(stringResource(Res.string.dues_bills_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (bills.isEmpty()) item { Text(stringResource(Res.string.dues_bills_none)) }
+                items(bills, key = { "${it.title}|${it.dueDate}" }) { bill ->
+                    Column {
+                        Text(bill.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            stringResource(
+                                Res.string.dues_bill_summary,
+                                formatRupees(bill.amountPaise),
+                                localDate(bill.dueDate),
+                                bill.unpaidCount,
+                                bill.totalCount,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (bill.unpaidCount > 0) {
+                            Row {
+                                TextButton(onClick = { onEdit(bill) }, enabled = !busy) { Text(stringResource(Res.string.dues_bill_edit)) }
+                                TextButton(onClick = { onCancel(bill) }, enabled = !busy) {
+                                    Text(stringResource(Res.string.dues_bill_cancel), color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_dismiss)) } },
     )
 }
