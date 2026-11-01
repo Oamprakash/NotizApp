@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.notiz.app.i18n.AppEnvironment
 import com.notiz.app.i18n.asString
+import com.notiz.app.i18n.currentLanguage
 import com.notiz.app.push.NotificationPermissionRequest
 import com.notiz.app.push.OnPushUpdate
 import com.notiz.app.push.PushEvents
@@ -55,6 +56,13 @@ private fun AppContent(container: AppContainer) {
                         PushEvents.consumeOpened()
                         appViewModel.refresh()
                     }
+                }
+
+                // Notifications from the server follow the language shown in the app
+                val language = currentLanguage()
+                val hasProfile = state is AppState.Ready || state is AppState.Pending || state is AppState.NeedsSociety
+                LaunchedEffect(language, hasProfile) {
+                    if (hasProfile) runCatching { container.auth.setLanguage(language.code) }
                 }
 
                 // Flat, role, society details changed or removed: reload without leaving the screen

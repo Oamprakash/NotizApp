@@ -22,8 +22,12 @@ Notiz sends push notifications for:
 | Removed by an admin | That member |
 | Member left the society or deleted their account | Admins |
 | Society renamed, new UPI ID, online payments turned on / paused | All members except the admin who changed it |
+| Chat message reported | Admins |
+| Muted / unmuted in chat | That member |
 
 Tapping a notification opens the matching tab (join requests open Members). Membership and society changes also refresh the app in place (new flat number, admin tools appearing, or back to the join screen after removal).
+
+Notifications are sent in each person's language (English or Tamil — whatever they picked in the app), from `20261102300000_push_tamil.sql`. Names, bill titles and messages stay as typed.
 
 Change notifications come from `20261101000000_admin_tools.sql` and `20261102000000_change_notifications.sql` — run them after the push migration.
 

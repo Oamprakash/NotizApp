@@ -4,7 +4,7 @@ Goal: one housing society using Notiz for real notices, dues and complaints for 
 
 ## 1. Backend (Supabase)
 
-- [ ] All migrations run, in date order (`supabase/migrations/`): init, push notifications, receipts, razorpay, admin tools, change notifications.
+- [ ] All migrations run, in date order (`supabase/migrations/`): init, push notifications, receipts, razorpay, admin tools, change notifications, photos, chat moderation, push in Tamil.
 - [ ] Edge Functions deployed to the **Notiz** project: `push`, `create-payment-link`, `razorpay-webhook`, `delete-account` (`--no-verify-jwt` only where noted in their setup docs; `delete-account` deploys normally: `supabase functions deploy delete-account`).
 - [ ] Push webhook (`notification_outbox` → `push`) and daily `dues-reminders` cron are set up ([PUSH_SETUP.md](PUSH_SETUP.md)).
 - [ ] Upgrade the project to **Supabase Pro** so it never pauses on residents. Free projects pause after a week of inactivity.
@@ -28,11 +28,10 @@ Goal: one housing society using Notiz for real notices, dues and complaints for 
 
 ## 4. Android release
 
-- [ ] Create an upload keystore and keep it safe (losing it means you can't update the app):
-      `keytool -genkeypair -v -keystore notiz-upload.jks -alias notiz -keyalg RSA -keysize 2048 -validity 10000`
-- [ ] Add a release `signingConfig` that reads the keystore path and passwords from `local.properties` (never commit them), and bump `versionCode` for every upload.
+- [ ] Create the upload keystore and `keystore.properties` ([RELEASE.md](RELEASE.md) §1); bump `notiz.versionCode` in `gradle.properties` for every upload.
+- [ ] Enable Crashlytics in the Firebase console and check a test crash arrives ([RELEASE.md](RELEASE.md) §2).
 - [ ] Build: `./gradlew :composeApp:bundleRelease` → `composeApp/build/outputs/bundle/release/*.aab`.
-- [ ] Play Console: create the app (`com.notiz.app`), fill in the store listing basics, **Data safety** form (phone number, name, payment info handled by Razorpay) and a **privacy policy URL**.
+- [ ] Play Console: create the app (`com.notiz.app`), fill in the store listing basics, **Data safety**, **privacy policy URL** and **data deletion URL** (answers in [RELEASE.md](RELEASE.md) §3).
 - [ ] Upload to **Internal testing**, add the pilot residents' Google account emails (up to 100), and share the opt-in link.
 - [ ] Before a public launch: a personal developer account needs **closed testing with 12+ testers for 14 days** first. Start that during the pilot.
 - [ ] Turn on R8 (`isMinifyEnabled = true`) only after testing; add keep rules for kotlinx.serialization if needed.
@@ -48,10 +47,10 @@ For quick installs before Play Console is ready, the GitHub Actions build produc
 
 ## 6. Legal and trust
 
-- [ ] Privacy policy page (what's collected: phone, name, flat number, payments metadata; where it's stored: Supabase, region; contact email; how to delete an account). Host it on a simple site or a public doc.
+- [ ] Privacy policy: fill in the name and support email in `docs/privacy.html` and publish it with GitHub Pages ([RELEASE.md](RELEASE.md) §3).
 - [ ] Terms of use (Notiz isn't a party to payments; societies are responsible for their dues).
 - [ ] Support contact: an email or WhatsApp number shown in the app listing.
-- [ ] Account deletion: in the app under Settings → Delete my account. Play *also* asks for a web link where people can request deletion without the app: add a short "Delete your account" section to the privacy page (open Notiz → Settings → Delete my account, or email us from your registered number) and paste that URL into Play Console → App content → Data deletion. Say what's deleted (name, phone, memberships, device tokens) and what's kept (posts without your name; paid dues and receipts as society records).
+- [ ] Account deletion: in the app (Settings → Delete my account) and on the web at `privacy.html#delete` — paste that URL into Play Console → App content → Data deletion.
 
 ## 7. Onboarding the pilot society (in person)
 
@@ -78,4 +77,5 @@ For quick installs before Play Console is ready, the GitHub Actions build produc
 - [ ] Supabase → Reports: database size, auth users, Edge Function errors — check weekly.
 - [ ] Edge Function logs for `push`, `create-payment-link`, `razorpay-webhook` after each big announcement or billing day.
 - [ ] Razorpay → Webhooks → delivery log: no failed deliveries.
-- [ ] Add crash reporting before scaling beyond one society (e.g. Firebase Crashlytics or Sentry for KMP).
+- [ ] Firebase → Crashlytics: check for new crashes after each release.
+- [ ] Supabase → Storage → attachments: photo storage size (free plan: 1 GB; photos are ~300 KB each).

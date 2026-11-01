@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -10,8 +11,10 @@ plugins {
 
 // Push notifications: the Google services plugin needs composeApp/google-services.json from the
 // Firebase console. Without it the app still builds and runs, just without push.
+// Crash reporting (Firebase Crashlytics) uses the same file.
 if (file("google-services.json").exists()) {
     apply(plugin = libs.plugins.google.services.get().pluginId)
+    apply(plugin = libs.plugins.firebase.crashlytics.get().pluginId)
 } else {
     logger.warn("Notiz: composeApp/google-services.json not found — push notifications are disabled on Android.")
 }
@@ -50,6 +53,7 @@ kotlin {
             implementation(libs.supabase.postgrest)
             implementation(libs.supabase.realtime)
             implementation(libs.supabase.functions)
+            implementation(libs.supabase.storage)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
@@ -62,6 +66,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
+            implementation(libs.firebase.crashlytics)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -78,6 +83,15 @@ compose.resources {
     publicResClass = false
 }
 
+// Release signing: keystore.properties in the project root (never commit it), or the
+// NOTIZ_KEYSTORE_* environment variables on CI. See docs/RELEASE.md.
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun signingValue(key: String, env: String): String? = keystoreProps.getProperty(key) ?: System.getenv(env)
+val releaseStoreFile = signingValue("storeFile", "NOTIZ_KEYSTORE_FILE")
+
 android {
     namespace = "com.notiz.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -86,8 +100,18 @@ android {
         applicationId = "com.notiz.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (findProperty("notiz.versionCode") as String? ?: "1").toInt()
+        versionName = findProperty("notiz.versionName") as String? ?: "0.1.0"
+    }
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile)
+                storePassword = signingValue("storePassword", "NOTIZ_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "NOTIZ_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "NOTIZ_KEY_PASSWORD")
+            }
+        }
     }
     packaging {
         resources {
@@ -97,6 +121,11 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            if (releaseStoreFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                logger.warn("Notiz: no keystore.properties — the release build will be unsigned (see docs/RELEASE.md).")
+            }
         }
     }
     compileOptions {

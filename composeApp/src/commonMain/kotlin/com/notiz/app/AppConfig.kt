@@ -10,4 +10,7 @@ object AppConfig {
 
     /** Country code prefixed to the phone number on the login screen. */
     const val DEFAULT_COUNTRY_CODE = "+91"
+
+    /** docs/privacy.html published with GitHub Pages (see docs/RELEASE.md). Also used in Play Console. */
+    const val PRIVACY_POLICY_URL = "https://oamprakash.github.io/NotizApp/privacy.html"
 }

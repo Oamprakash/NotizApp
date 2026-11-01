@@ -1,5 +1,15 @@
 package com.notiz.app.ui.chat
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.ui.text.font.FontStyle
+import com.notiz.app.ui.components.InfoBanner
+import com.notiz.app.i18n.uiText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +70,7 @@ data class ChatUiState(
     val messages: List<Message> = emptyList(),
     val loadError: UiText? = null,
     val sendError: UiText? = null,
+    val info: UiText? = null,
     val sending: Boolean = false,
 )
 
@@ -73,9 +84,9 @@ class ChatViewModel(
         load()
         // Live updates; RLS ensures only this society's members receive them.
         viewModelScope.launch {
-            container.chat.newMessages(session.societyId)
+            container.chat.liveMessages(session.societyId)
                 .catch { /* realtime dropped — pull-to-load still works */ }
-                .collect { msg -> addMessage(msg) }
+                .collect { msg -> upsertMessage(msg) }
         }
     }
 
@@ -95,6 +106,42 @@ class ChatViewModel(
         if (s.messages.any { it.id == msg.id }) s else s.copy(messages = s.messages + msg)
     }
 
+    /** New message, or a change to one we have (e.g. deleted). */
+    private fun upsertMessage(msg: Message) = state.update { s ->
+        if (s.messages.any { it.id == msg.id }) {
+            s.copy(messages = s.messages.map { if (it.id == msg.id) msg else it })
+        } else {
+            s.copy(messages = s.messages + msg)
+        }
+    }
+
+    private fun moderate(block: suspend () -> UiText?) {
+        state.update { it.copy(sendError = null, info = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(sendError = msg) } }) {
+            val info = block()
+            state.update { it.copy(info = info) }
+        }
+    }
+
+    fun delete(message: Message) = moderate {
+        container.chat.deleteMessage(message.id)
+        // Show the stub now even if realtime is slow
+        state.update { s ->
+            s.copy(messages = s.messages.map { if (it.id == message.id) it.copy(body = "", deletedAt = "now", deletedBy = session.userId) else it })
+        }
+        null
+    }
+
+    fun report(message: Message) = moderate {
+        val first = container.chat.reportMessage(message.id)
+        uiText(if (first) Res.string.chat_reported else Res.string.chat_already_reported)
+    }
+
+    fun mute(message: Message) = moderate {
+        container.chat.setMuted(session.societyId, message.senderId, true)
+        uiText(Res.string.chat_muted_member, message.senderName.ifBlank { message.flatNo })
+    }
+
     fun send(text: String, onSent: () -> Unit) {
         if (text.isBlank()) return
         state.update { it.copy(sending = true, sendError = null) }
@@ -106,7 +153,7 @@ class ChatViewModel(
         }
     }
 
-    fun dismissError() = state.update { it.copy(sendError = null) }
+    fun dismissError() = state.update { it.copy(sendError = null, info = null) }
 }
 
 @Composable
@@ -116,6 +163,31 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
     val state by vm.state.collectAsState()
     var draft by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
+    var confirmDelete by remember { mutableStateOf<Message?>(null) }
+    var confirmMute by remember { mutableStateOf<Message?>(null) }
+
+    confirmDelete?.let { message ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            text = { Text(stringResource(Res.string.chat_delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = null; vm.delete(message) }) {
+                    Text(stringResource(Res.string.action_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(Res.string.action_keep)) } },
+        )
+    }
+    confirmMute?.let { message ->
+        AlertDialog(
+            onDismissRequest = { confirmMute = null },
+            text = { Text(stringResource(Res.string.chat_mute_confirm, message.senderName, message.flatNo)) },
+            confirmButton = {
+                TextButton(onClick = { confirmMute = null; vm.mute(message) }) { Text(stringResource(Res.string.chat_mute)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmMute = null }) { Text(stringResource(Res.string.action_keep)) } },
+        )
+    }
 
     // Stick to the newest message
     LaunchedEffect(state.messages.size) {
@@ -135,63 +207,124 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     items(state.messages, key = { it.id }) { message ->
-                        MessageBubble(message, mine = message.senderId == session.userId)
+                        val mine = message.senderId == session.userId
+                        MessageBubble(
+                            message = message,
+                            mine = mine,
+                            canDelete = !message.isDeleted && (mine || session.isAdmin),
+                            canReport = !message.isDeleted && !mine,
+                            canMute = !message.isDeleted && !mine && session.isAdmin,
+                            onDelete = { confirmDelete = message },
+                            onReport = { vm.report(message) },
+                            onMute = { confirmMute = message },
+                        )
                     }
                 }
             }
         }
         ErrorBanner(state.sendError?.asString(), onDismiss = vm::dismissError)
+        InfoBanner(state.info?.asString(), onDismiss = vm::dismissError)
         HorizontalDivider()
-        Row(
-            Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedTextField(
-                value = draft,
-                onValueChange = { draft = it.take(4000) },
-                placeholder = { Text(stringResource(Res.string.chat_message_hint)) },
-                maxLines = 4,
-                modifier = Modifier.weight(1f),
+        if (session.membership.chatMuted) {
+            Text(
+                stringResource(Res.string.chat_you_are_muted),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
             )
-            FilledIconButton(
-                onClick = { vm.send(draft) { draft = "" } },
-                enabled = draft.isNotBlank() && !state.sending,
+        } else {
+            Row(
+                Modifier.fillMaxWidth().padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(Res.string.chat_send))
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it.take(4000) },
+                    placeholder = { Text(stringResource(Res.string.chat_message_hint)) },
+                    maxLines = 4,
+                    modifier = Modifier.weight(1f),
+                )
+                FilledIconButton(
+                    onClick = { vm.send(draft) { draft = "" } },
+                    enabled = draft.isNotBlank() && !state.sending,
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(Res.string.chat_send))
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MessageBubble(message: Message, mine: Boolean) {
+private fun MessageBubble(
+    message: Message,
+    mine: Boolean,
+    canDelete: Boolean,
+    canReport: Boolean,
+    canMute: Boolean,
+    onDelete: () -> Unit,
+    onReport: () -> Unit,
+    onMute: () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val hasActions = canDelete || canReport || canMute
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
-        Surface(
-            color = if (mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(
-                topStart = 16.dp, topEnd = 16.dp,
-                bottomStart = if (mine) 16.dp else 4.dp,
-                bottomEnd = if (mine) 4.dp else 16.dp,
-            ),
-            modifier = Modifier.widthIn(max = 300.dp),
-        ) {
-            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                if (!mine) {
+        Box {
+            Surface(
+                color = if (mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(
+                    topStart = 16.dp, topEnd = 16.dp,
+                    bottomStart = if (mine) 16.dp else 4.dp,
+                    bottomEnd = if (mine) 4.dp else 16.dp,
+                ),
+                modifier = Modifier.widthIn(max = 300.dp)
+                    .combinedClickable(enabled = hasActions, onClick = {}, onLongClick = { menu = true }),
+            ) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    if (!mine) {
+                        Text(
+                            "${message.senderName} · ${message.flatNo}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    if (message.isDeleted) {
+                        Text(
+                            stringResource(
+                                if (message.deletedBy != null && message.deletedBy != message.senderId) {
+                                    Res.string.chat_deleted_by_admin
+                                } else {
+                                    Res.string.chat_deleted
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Text(message.body, style = MaterialTheme.typography.bodyLarge)
+                    }
                     Text(
-                        "${message.senderName} · ${message.flatNo}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
+                        formatTime(message.createdAt),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.align(Alignment.End),
                     )
                 }
-                Text(message.body, style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    formatTime(message.createdAt),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.End),
-                )
+            }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                if (canDelete) {
+                    DropdownMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = { menu = false; onDelete() })
+                }
+                if (canReport) {
+                    DropdownMenuItem(text = { Text(stringResource(Res.string.chat_report)) }, onClick = { menu = false; onReport() })
+                }
+                if (canMute) {
+                    DropdownMenuItem(text = { Text(stringResource(Res.string.chat_mute)) }, onClick = { menu = false; onMute() })
+                }
             }
         }
     }

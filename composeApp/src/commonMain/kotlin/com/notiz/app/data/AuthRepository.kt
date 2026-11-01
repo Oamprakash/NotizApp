@@ -41,6 +41,13 @@ class AuthRepository(private val supabase: SupabaseClient) {
             .select { filter { eq("id", requireUserId()) } }
             .decodeSingleOrNull<Profile>()
 
+    /** Language for push notifications sent by the server ("en" or "ta"). */
+    suspend fun setLanguage(code: String) {
+        supabase.from("profiles").update({ set("language", code) }) {
+            filter { eq("id", requireUserId()) }
+        }
+    }
+
     suspend fun saveProfile(fullName: String) {
         supabase.from("profiles").upsert(Profile(id = requireUserId(), fullName = fullName.trim()))
     }

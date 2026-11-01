@@ -127,6 +127,8 @@ class MembersViewModel(
         }
     }
 
+    fun toggleMute(m: Membership) = act { container.chat.setMuted(session.societyId, m.userId, !m.chatMuted) }
+
     fun showInfo(text: UiText) = state.update { it.copy(info = text) }
     fun dismiss() = state.update { it.copy(actionError = null, info = null) }
 }
@@ -196,6 +198,11 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                                 }
                                 TextButton(onClick = { editingFlat = m }, enabled = !state.busy) {
                                     Text(stringResource(Res.string.members_change_flat))
+                                }
+                                if (m.userId != session.userId) {
+                                    TextButton(onClick = { vm.toggleMute(m) }, enabled = !state.busy) {
+                                        Text(stringResource(if (m.chatMuted) Res.string.chat_unmute else Res.string.chat_mute))
+                                    }
                                 }
                                 if (m.userId != session.userId) {
                                     TextButton(onClick = { removing = m }, enabled = !state.busy) {
@@ -299,6 +306,7 @@ private fun MemberRow(m: Membership, actions: @Composable () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                if (m.chatMuted) StatusPill(stringResource(Res.string.chat_muted_pill), MaterialTheme.colorScheme.error)
                 if (m.isAdmin) StatusPill(stringResource(Res.string.members_admin), MaterialTheme.colorScheme.primary)
             }
             actions()

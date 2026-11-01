@@ -271,4 +271,26 @@
     <string name="error_enter_title">Enter a title.</string>
     <string name="error_enter_amount">Enter a valid amount.</string>
     <string name="error_last_admin_delete">You're the only admin of %1$s. Make another member admin, then delete your account.</string>
+
+    <!-- Photos and chat moderation -->
+    <string name="photos_add">Add photo</string>
+    <string name="photos_remove">Remove photo</string>
+    <string name="photos_retry">Couldn't load. Tap to retry</string>
+    <string name="photos_pick_failed">Couldn't use that photo. Try another one.</string>
+    <string name="photos_complaint_hint">Add up to 3 photos of the problem (optional).</string>
+    <string name="chat_report">Report to admins</string>
+    <string name="chat_reported">Reported. The admins have been notified.</string>
+    <string name="chat_already_reported">You've already reported this message.</string>
+    <string name="chat_mute">Mute in chat</string>
+    <string name="chat_unmute">Unmute in chat</string>
+    <string name="chat_muted_pill">Muted</string>
+    <string name="chat_muted_member">%1$s can no longer send messages. Unmute them from Members.</string>
+    <string name="chat_mute_confirm">Mute %1$s (flat %2$s)? They can still read the chat but can't send messages.</string>
+    <string name="chat_delete_confirm">Delete this message for everyone?</string>
+    <string name="chat_deleted">Message deleted</string>
+    <string name="chat_deleted_by_admin">Message removed by an admin</string>
+    <string name="chat_you_are_muted">An admin has muted you in this chat. You can still read messages.</string>
+    <string name="error_cant_mute_self">You can't mute yourself.</string>
+    <string name="error_cant_report_own">You can't report your own message.</string>
+    <string name="settings_privacy">Privacy policy</string>
 </resources>

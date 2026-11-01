@@ -36,9 +36,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.notiz.app.AppConfig
 import com.notiz.app.AppContainer
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.i18n.UiText
@@ -155,6 +157,7 @@ fun SettingsScreen(
     var confirmLeave by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmNewCode by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
 
     Scaffold(
         topBar = {
@@ -239,6 +242,9 @@ fun SettingsScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(Res.string.settings_delete)) }
+                TextButton(onClick = { runCatching { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) } }) {
+                    Text(stringResource(Res.string.settings_privacy))
+                }
             }
         }
     }

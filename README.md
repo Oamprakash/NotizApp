@@ -44,6 +44,8 @@ docs/MVP_SPEC.md           MVP scope and plan
 docs/PUSH_SETUP.md         Firebase / APNs / webhook / cron setup for push
 docs/PAYMENTS_SETUP.md     Razorpay online payments: deploy + per-society setup
 docs/GO_LIVE.md            checklist for launching with the first pilot society
+docs/RELEASE.md            release signing, Crashlytics, privacy policy + Play data safety
+docs/privacy.html          privacy policy and account deletion page (publish with GitHub Pages)
 .github/workflows/         CI: builds a debug APK + runs tests on every push
 ```
 
@@ -131,6 +133,7 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 - **Edge Function**: type-checked with Deno, 6 tests pass (JWT signing, FCM payload, sending, dead-token cleanup, outbox marking).
 - **Online payments**: migration tested on PostgreSQL (keys hidden from app users, server-only recording, idempotent, amount/link checks, cash vs online). Edge Functions type-checked; 11 Deno tests with fake Supabase + Razorpay (link create/reuse, flat check, webhook signature incl. RFC 4231 vector, duplicates, short payments, late-webhook check).
 - **Admin tools** (`20261101000000_admin_tools.sql`): tested on PostgreSQL — edit/cancel a bill (only unpaid dues change), cancel one due, cancelled dues can't be marked paid, society settings only through the RPC, invite code regeneration, change flat, remove member, last-admin guards (demote, remove, leave, delete account), and deleting an account keeps the society's notices/messages without the name. `delete-account` has 3 Deno tests.
+- **Photos, chat moderation, Tamil push**: tested on PostgreSQL with a stand-in Storage schema — upload/read rules per role and folder, bad paths and other societies' paths refused, max 3 photos; delete own vs admin, report once per member, muted members blocked by RLS; English/Tamil recipients split correctly for every trigger, including bill edits and reminders.
 - **Receipts & export**: receipt numbering tested on PostgreSQL (backfill, no double numbers, cash, permissions). Generated PDFs pass `qpdf --check` and render correctly; `.xlsx` files open in openpyxl with numeric amounts, Tamil text and special characters intact.
 - **Not yet compiled**: the build environment had no access to Maven/Google repositories or Xcode, so the first Gradle sync happens on your machine. If a version clashes, these are the usual fixes:
   - `compose.material3` / `compose.runtime` deprecation warnings are expected with Compose Multiplatform 1.12; they don't fail the build.
@@ -142,6 +145,12 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 - **Settings** (gear icon on the home screen): your name, language, society details and UPI ID (admins), a new invite code, leave society, delete account, sign out.
 - **Members** (admins): change a flat number, remove a member. The last admin can't be demoted, removed or leave until someone else is admin.
 - **Dues** (admins): *Cancel due* on any unpaid due; *Manage bills* to edit the title, amount or due date of a bill, or cancel it, for the flats that haven't paid. Paid dues and receipts never change.
+
+## Photos and chat moderation
+
+- **Photos**: up to 3 photos on a notice (admins) or a complaint. The app shrinks them to about 1600 px JPEG before upload. Stored in the private Storage bucket `attachments`: notice photos are visible to the society, complaint photos only to the resident and the admins.
+- **Chat**: long-press a message to delete it (your own, or any message if you're an admin), report it to the admins (they get a push), or mute the sender (admins). Muted members can read but not send; unmute from Members.
+- **Notifications in Tamil**: the app saves the language you picked, and every server notification is sent in English or Tamil to match.
 
 ## Known MVP limits (next steps)
 

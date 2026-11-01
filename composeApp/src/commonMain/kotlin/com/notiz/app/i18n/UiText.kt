@@ -56,6 +56,10 @@ private fun serverError(message: String): UiText? {
         "enter a title" in m -> uiText(Res.string.error_enter_title)
         "enter a valid amount" in m -> uiText(Res.string.error_enter_amount)
         "upi id should look like" in m -> uiText(Res.string.setup_upi_invalid)
+        "can't mute yourself" in m -> uiText(Res.string.error_cant_mute_self)
+        "can't report your own message" in m -> uiText(Res.string.error_cant_report_own)
+        // A muted member's insert is refused by the messages RLS policy
+        "row-level security" in m && "messages" in m -> uiText(Res.string.chat_you_are_muted)
         "last_admin" in m -> uiText(Res.string.error_last_admin_delete, jsonMessage(message) ?: "")
         // Online payments (create-payment-link Edge Function and payment RPCs)
         "online_payments_not_enabled" in m -> uiText(Res.string.error_online_off)

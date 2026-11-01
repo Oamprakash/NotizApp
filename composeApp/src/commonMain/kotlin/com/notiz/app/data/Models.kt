@@ -30,6 +30,7 @@ data class Membership(
     @SerialName("flat_no") val flatNo: String,
     val role: String,
     val status: String,
+    @SerialName("chat_muted") val chatMuted: Boolean = false,
     // Present when selected with an embed: memberships?select=*,societies(*)
     val societies: Society? = null,
     // Present when selected with an embed: memberships?select=*,profiles(id,full_name)
@@ -48,6 +49,7 @@ data class Notice(
     val body: String = "",
     val pinned: Boolean = false,
     @SerialName("created_at") val createdAt: String = "",
+    @SerialName("photo_paths") val photoPaths: List<String> = emptyList(),
 )
 
 @Serializable
@@ -57,6 +59,7 @@ data class NewNotice(
     val title: String,
     val body: String,
     val pinned: Boolean,
+    @SerialName("photo_paths") val photoPaths: List<String> = emptyList(),
 )
 
 @Serializable
@@ -108,6 +111,7 @@ data class Complaint(
     val description: String,
     val status: String,
     @SerialName("created_at") val createdAt: String = "",
+    @SerialName("photo_paths") val photoPaths: List<String> = emptyList(),
 )
 
 @Serializable
@@ -116,6 +120,7 @@ data class NewComplaint(
     @SerialName("raised_by") val raisedBy: String,
     val category: String,
     val description: String,
+    @SerialName("photo_paths") val photoPaths: List<String> = emptyList(),
 )
 
 object ComplaintStatus {
@@ -163,7 +168,11 @@ data class Message(
     @SerialName("flat_no") val flatNo: String = "",
     val body: String,
     @SerialName("created_at") val createdAt: String = "",
-)
+    @SerialName("deleted_at") val deletedAt: String? = null,
+    @SerialName("deleted_by") val deletedBy: String? = null,
+) {
+    val isDeleted get() = deletedAt != null
+}
 
 @Serializable
 data class NewMessage(

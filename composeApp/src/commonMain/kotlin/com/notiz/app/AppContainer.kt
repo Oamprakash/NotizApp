@@ -1,6 +1,7 @@
 package com.notiz.app
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.notiz.app.data.AttachmentRepository
 import com.notiz.app.data.AuthRepository
 import com.notiz.app.data.ChatRepository
 import com.notiz.app.data.ComplaintRepository
@@ -25,6 +26,7 @@ class AppContainer {
     val polls = PollRepository(supabase)
     val chat = ChatRepository(supabase)
     val payments = PaymentsRepository(supabase)
+    val attachments = AttachmentRepository(supabase)
     val push = PushManager(PushRepository(supabase), auth)
 
     companion object {

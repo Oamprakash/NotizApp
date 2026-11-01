@@ -7,6 +7,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.storage.Storage
 
 fun createAppSupabaseClient(): SupabaseClient =
     createSupabaseClient(
@@ -17,4 +18,5 @@ fun createAppSupabaseClient(): SupabaseClient =
         install(Postgrest)
         install(Realtime)
         install(Functions)
+        install(Storage)
     }

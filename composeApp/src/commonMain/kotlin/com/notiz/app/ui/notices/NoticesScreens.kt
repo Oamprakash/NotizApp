@@ -67,6 +67,9 @@ import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.components.UnreadDot
 import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.notiz.app.data.AttachmentRepository
+import com.notiz.app.photos.PhotoPickerRow
+import com.notiz.app.photos.RemotePhotoStrip
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -106,10 +109,17 @@ class NoticesViewModel(
         }
     }
 
-    fun post(title: String, body: String, pinned: Boolean, onDone: () -> Unit) {
+    fun post(title: String, body: String, pinned: Boolean, photos: List<ByteArray>, onDone: () -> Unit) {
         state.update { it.copy(posting = true, actionError = null) }
         launchSafe(onError = { msg -> state.update { it.copy(posting = false, actionError = msg) } }) {
-            container.notices.post(session.societyId, title, body, pinned)
+            val paths = mutableListOf<String>()
+            try {
+                photos.forEach { paths += container.attachments.upload(session.societyId, AttachmentRepository.Kind.NOTICE, it) }
+                container.notices.post(session.societyId, title, body, pinned, paths)
+            } catch (e: Throwable) {
+                container.attachments.delete(paths) // don't leave orphan photos behind
+                throw e
+            }
             state.update { it.copy(posting = false) }
             onDone()
             load()
@@ -178,7 +188,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
         NewNoticeDialog(
             posting = state.posting,
             onDismiss = { composing = false },
-            onPost = { title, body, pinned -> vm.post(title, body, pinned) { composing = false } },
+            onPost = { title, body, pinned, photos -> vm.post(title, body, pinned, photos) { composing = false } },
         )
     }
 }
@@ -212,6 +222,10 @@ private fun NoticeCard(notice: Notice, unread: Boolean, readCount: NoticeReadCou
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            if (notice.photoPaths.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                RemotePhotoStrip(notice.photoPaths, size = 64.dp)
+            }
             Spacer(Modifier.height(8.dp))
             Text(
                 localTimestamp(notice.createdAt),
@@ -242,16 +256,18 @@ private fun ReadProgress(count: NoticeReadCount) {
 private fun NewNoticeDialog(
     posting: Boolean,
     onDismiss: () -> Unit,
-    onPost: (title: String, body: String, pinned: Boolean) -> Unit,
+    onPost: (title: String, body: String, pinned: Boolean, photos: List<ByteArray>) -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
     var pinned by remember { mutableStateOf(false) }
+    var photos by remember { mutableStateOf(listOf<ByteArray>()) }
+    var pickFailed by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = { if (!posting) onDismiss() },
         title = { Text(stringResource(Res.string.notice_new)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title, onValueChange = { title = it.take(200) },
                     label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
@@ -265,10 +281,20 @@ private fun NewNoticeDialog(
                     Checkbox(checked = pinned, onCheckedChange = { pinned = it })
                     Text(stringResource(Res.string.notice_pin))
                 }
+                PhotoPickerRow(
+                    photos = photos,
+                    enabled = !posting,
+                    onAdd = { photos = photos + it; pickFailed = false },
+                    onRemove = { i -> photos = photos.filterIndexed { index, _ -> index != i } },
+                    onPickFailed = { pickFailed = true },
+                )
+                if (pickFailed) {
+                    Text(stringResource(Res.string.photos_pick_failed), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onPost(title, body, pinned) }, enabled = title.isNotBlank() && !posting) {
+            TextButton(onClick = { onPost(title, body, pinned, photos) }, enabled = title.isNotBlank() && !posting) {
                 Text(stringResource(if (posting) Res.string.notice_posting else Res.string.notice_post))
             }
         },
@@ -317,6 +343,7 @@ class NoticeDetailViewModel(
         if (!session.isAdmin) return
         launchSafe(onError = { msg -> state.update { it.copy(error = msg) } }) {
             container.notices.delete(notice.id)
+            container.attachments.delete(notice.photoPaths)
             onDone()
         }
     }
@@ -361,6 +388,10 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(notice.body, style = MaterialTheme.typography.bodyLarge)
+                if (notice.photoPaths.isNotEmpty()) {
+                    Spacer(Modifier.height(16.dp))
+                    RemotePhotoStrip(notice.photoPaths, size = 140.dp)
+                }
 
                 if (session.isAdmin) {
                     Spacer(Modifier.height(32.dp))

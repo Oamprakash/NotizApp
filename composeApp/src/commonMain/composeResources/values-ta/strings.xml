@@ -271,4 +271,26 @@
     <string name="error_enter_title">தலைப்பை உள்ளிடவும்.</string>
     <string name="error_enter_amount">சரியான தொகையை உள்ளிடவும்.</string>
     <string name="error_last_admin_delete">%1$s-இன் ஒரே நிர்வாகி நீங்கள். வேறொரு உறுப்பினரை நிர்வாகி ஆக்கிய பின் கணக்கை நீக்கவும்.</string>
+
+    <!-- Photos and chat moderation -->
+    <string name="photos_add">படம் சேர்</string>
+    <string name="photos_remove">படத்தை நீக்கு</string>
+    <string name="photos_retry">ஏற்ற முடியவில்லை. மீண்டும் முயல தட்டவும்</string>
+    <string name="photos_pick_failed">அந்தப் படத்தைப் பயன்படுத்த முடியவில்லை. வேறு படத்தை முயலவும்.</string>
+    <string name="photos_complaint_hint">பிரச்சினையின் 3 படங்கள் வரை சேர்க்கலாம் (விருப்பம்).</string>
+    <string name="chat_report">நிர்வாகிகளிடம் புகார் செய்</string>
+    <string name="chat_reported">புகார் செய்யப்பட்டது. நிர்வாகிகளுக்குத் தெரிவிக்கப்பட்டது.</string>
+    <string name="chat_already_reported">இந்தச் செய்தி மீது ஏற்கனவே புகார் செய்துள்ளீர்கள்.</string>
+    <string name="chat_mute">அரட்டையில் முடக்கு</string>
+    <string name="chat_unmute">அரட்டையில் அனுமதி</string>
+    <string name="chat_muted_pill">முடக்கப்பட்டவர்</string>
+    <string name="chat_muted_member">%1$s இனி செய்தி அனுப்ப முடியாது. உறுப்பினர்கள் பக்கத்தில் மீண்டும் அனுமதிக்கலாம்.</string>
+    <string name="chat_mute_confirm">%1$s (வீடு %2$s)-ஐ முடக்கவா? அரட்டையைப் படிக்கலாம், ஆனால் செய்தி அனுப்ப முடியாது.</string>
+    <string name="chat_delete_confirm">இந்தச் செய்தியை அனைவருக்கும் நீக்கவா?</string>
+    <string name="chat_deleted">செய்தி நீக்கப்பட்டது</string>
+    <string name="chat_deleted_by_admin">நிர்வாகி செய்தியை நீக்கினார்</string>
+    <string name="chat_you_are_muted">ஒரு நிர்வாகி உங்களை இந்த அரட்டையில் முடக்கியுள்ளார். செய்திகளைப் படிக்கலாம்.</string>
+    <string name="error_cant_mute_self">உங்களை நீங்களே முடக்க முடியாது.</string>
+    <string name="error_cant_report_own">உங்கள் சொந்தச் செய்தி மீது புகார் செய்ய முடியாது.</string>
+    <string name="settings_privacy">தனியுரிமைக் கொள்கை</string>
 </resources>

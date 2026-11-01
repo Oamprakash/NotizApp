@@ -45,7 +45,7 @@ class NoticeRepository(private val supabase: SupabaseClient) {
             .decodeList<NoticeReadCount>()
             .associateBy { it.noticeId }
 
-    suspend fun post(societyId: String, title: String, body: String, pinned: Boolean) {
+    suspend fun post(societyId: String, title: String, body: String, pinned: Boolean, photoPaths: List<String> = emptyList()) {
         supabase.from("notices").insert(
             NewNotice(
                 societyId = societyId,
@@ -53,6 +53,7 @@ class NoticeRepository(private val supabase: SupabaseClient) {
                 title = title.trim(),
                 body = body.trim(),
                 pinned = pinned,
+                photoPaths = photoPaths,
             )
         )
     }

@@ -3,6 +3,7 @@ package com.notiz.app.data
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class ChatRepository(private val supabase: SupabaseClient) {
 
@@ -39,23 +42,57 @@ class ChatRepository(private val supabase: SupabaseClient) {
             .insert(NewMessage(societyId = societyId, senderId = uid(), body = body.trim())) { select() }
             .decodeSingle()
 
-    /** New messages for a society, live over Supabase Realtime. Unsubscribes when collection stops. */
-    fun newMessages(societyId: String): Flow<Message> = channelFlow {
+    /**
+     * New and changed (deleted) messages for a society, live over Supabase Realtime.
+     * Unsubscribes when collection stops.
+     */
+    fun liveMessages(societyId: String): Flow<Message> = channelFlow {
         val channel = supabase.channel("chat-$societyId")
         val inserts = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
             table = "messages"
             filter("society_id", FilterOperator.EQ, societyId)
         }
+        val updates = channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+            table = "messages"
+            filter("society_id", FilterOperator.EQ, societyId)
+        }
         // Start collecting before subscribing so no early message is missed
-        val job = launch(start = CoroutineStart.UNDISPATCHED) {
+        val insertJob = launch(start = CoroutineStart.UNDISPATCHED) {
             inserts.collect { action -> send(action.decodeRecord<Message>()) }
+        }
+        val updateJob = launch(start = CoroutineStart.UNDISPATCHED) {
+            updates.collect { action -> send(action.decodeRecord<Message>()) }
         }
         channel.subscribe()
         try {
             awaitCancellation()
         } finally {
-            job.cancel()
+            insertJob.cancel()
+            updateJob.cancel()
             withContext(NonCancellable) { supabase.realtime.removeChannel(channel) }
         }
+    }
+
+    // ───────────── Moderation ─────────────
+
+    /** Sender or admin. Wipes the text; a "message deleted" stub stays in the chat. */
+    suspend fun deleteMessage(messageId: String) {
+        supabase.postgrest.rpc("delete_message", buildJsonObject { put("p_message_id", messageId) })
+    }
+
+    /** Tells the admins. Returns false if you had already reported this message. */
+    suspend fun reportMessage(messageId: String): Boolean =
+        supabase.postgrest.rpc("report_message", buildJsonObject { put("p_message_id", messageId) }).decodeAs()
+
+    /** Admin: stop (or allow again) a member sending chat messages. */
+    suspend fun setMuted(societyId: String, userId: String, muted: Boolean) {
+        supabase.postgrest.rpc(
+            "set_chat_muted",
+            buildJsonObject {
+                put("p_society_id", societyId)
+                put("p_user_id", userId)
+                put("p_muted", muted)
+            },
+        )
     }
 }

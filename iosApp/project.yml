@@ -21,6 +21,8 @@ targets:
     dependencies:
       - package: Firebase
         product: FirebaseMessaging
+      - package: Firebase
+        product: FirebaseCrashlytics
     # Push Notifications capability. Use "production" for TestFlight/App Store builds.
     entitlements:
       path: iosApp/iosApp.entitlements
@@ -31,7 +33,7 @@ targets:
       properties:
         CFBundleDisplayName: Notiz
         CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: "1" # bump for every TestFlight upload
         UILaunchScreen: {}
         CADisableMinimumFrameDurationOnPhone: true
         LSApplicationQueriesSchemes:
@@ -46,6 +48,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.notiz.app
         FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
         OTHER_LDFLAGS: "$(inherited) -framework ComposeApp"
+        # dSYMs let Crashlytics show readable stack traces (Swift and Kotlin)
+        DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
     preBuildScripts:
       - name: Compile Kotlin Framework
         basedOnDependencyAnalysis: false
@@ -56,3 +60,16 @@ targets:
           fi
           cd "$SRCROOT/.."
           ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
+    postBuildScripts:
+      - name: Upload dSYMs to Crashlytics
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}
+          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}
+          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist
+          - $(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)
+        script: |
+          if [ -f "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run" ]; then
+            "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
+          fi

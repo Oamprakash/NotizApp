@@ -2,6 +2,8 @@
 
 package com.notiz.app.ui.complaints
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +59,9 @@ import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.theme.StatusColors
 import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.notiz.app.data.AttachmentRepository
+import com.notiz.app.photos.PhotoPickerRow
+import com.notiz.app.photos.RemotePhotoStrip
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -88,10 +93,17 @@ class ComplaintsViewModel(
         }
     }
 
-    fun raise(category: String, description: String, onDone: () -> Unit) {
+    fun raise(category: String, description: String, photos: List<ByteArray>, onDone: () -> Unit) {
         state.update { it.copy(busy = true, actionError = null) }
         launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
-            container.complaints.raise(session.societyId, category, description)
+            val paths = mutableListOf<String>()
+            try {
+                photos.forEach { paths += container.attachments.upload(session.societyId, AttachmentRepository.Kind.COMPLAINT, it) }
+                container.complaints.raise(session.societyId, category, description, paths)
+            } catch (e: Throwable) {
+                container.attachments.delete(paths) // don't leave orphan photos behind
+                throw e
+            }
             state.update { it.copy(busy = false) }
             onDone()
             load()
@@ -188,7 +200,7 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
         RaiseComplaintDialog(
             busy = state.busy,
             onDismiss = { raising = false },
-            onRaise = { category, description -> vm.raise(category, description) { raising = false } },
+            onRaise = { category, description, photos -> vm.raise(category, description, photos) { raising = false } },
         )
     }
 }
@@ -213,6 +225,10 @@ private fun ComplaintCard(complaint: Complaint, isAdmin: Boolean, onStatus: (Str
             }
             Spacer(Modifier.height(6.dp))
             Text(complaint.description, style = MaterialTheme.typography.bodyMedium)
+            if (complaint.photoPaths.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                RemotePhotoStrip(complaint.photoPaths)
+            }
             Spacer(Modifier.height(8.dp))
             Text(
                 localTimestamp(complaint.createdAt),
@@ -239,15 +255,17 @@ private fun ComplaintCard(complaint: Complaint, isAdmin: Boolean, onStatus: (Str
 private fun RaiseComplaintDialog(
     busy: Boolean,
     onDismiss: () -> Unit,
-    onRaise: (category: String, description: String) -> Unit,
+    onRaise: (category: String, description: String, photos: List<ByteArray>) -> Unit,
 ) {
     var category by remember { mutableStateOf(ComplaintRepository.categories.first()) }
     var description by remember { mutableStateOf("") }
+    var photos by remember { mutableStateOf(listOf<ByteArray>()) }
+    var pickFailed by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(stringResource(Res.string.complaints_raise_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ComplaintRepository.categories.forEach { c ->
                         FilterChip(selected = category == c, onClick = { category = c }, label = { Text(categoryLabel(c)) })
@@ -260,10 +278,21 @@ private fun RaiseComplaintDialog(
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Text(stringResource(Res.string.photos_complaint_hint), style = MaterialTheme.typography.bodySmall)
+                PhotoPickerRow(
+                    photos = photos,
+                    enabled = !busy,
+                    onAdd = { photos = photos + it; pickFailed = false },
+                    onRemove = { i -> photos = photos.filterIndexed { index, _ -> index != i } },
+                    onPickFailed = { pickFailed = true },
+                )
+                if (pickFailed) {
+                    Text(stringResource(Res.string.photos_pick_failed), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onRaise(category, description) }, enabled = description.isNotBlank() && !busy) {
+            TextButton(onClick = { onRaise(category, description, photos) }, enabled = description.isNotBlank() && !busy) {
                 Text(stringResource(if (busy) Res.string.action_sending else Res.string.action_submit))
             }
         },

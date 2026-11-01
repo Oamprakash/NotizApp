@@ -18,13 +18,14 @@ class ComplaintRepository(private val supabase: SupabaseClient) {
             }
             .decodeList()
 
-    suspend fun raise(societyId: String, category: String, description: String) {
+    suspend fun raise(societyId: String, category: String, description: String, photoPaths: List<String> = emptyList()) {
         supabase.from("complaints").insert(
             NewComplaint(
                 societyId = societyId,
                 raisedBy = uid(),
                 category = category,
                 description = description.trim(),
+                photoPaths = photoPaths,
             )
         )
     }
