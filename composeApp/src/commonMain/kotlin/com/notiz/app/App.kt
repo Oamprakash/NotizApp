@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.notiz.app.i18n.AppEnvironment
 import com.notiz.app.i18n.asString
 import com.notiz.app.push.NotificationPermissionRequest
+import com.notiz.app.push.OnPushUpdate
 import com.notiz.app.push.PushEvents
 import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.AppState
@@ -54,6 +55,11 @@ private fun AppContent(container: AppContainer) {
                         PushEvents.consumeOpened()
                         appViewModel.refresh()
                     }
+                }
+
+                // Flat, role, society details changed or removed: reload without leaving the screen
+                OnPushUpdate(PushTypes.SOCIETY) {
+                    if (state is AppState.Ready || state is AppState.Pending) appViewModel.reloadQuietly()
                 }
 
                 when (val s = state) {

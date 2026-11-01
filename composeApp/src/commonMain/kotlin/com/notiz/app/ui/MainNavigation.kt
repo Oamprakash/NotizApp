@@ -54,7 +54,7 @@ fun MainNavigation(
     LaunchedEffect(openedPush) {
         when (openedPush) {
             null -> Unit
-            PushTypes.APPROVED -> PushEvents.consumeOpened()
+            PushTypes.APPROVED, PushTypes.SOCIETY -> PushEvents.consumeOpened()
             PushTypes.MEMBER -> {
                 navController.navigate(MembersRoute) { launchSingleTop = true }
                 PushEvents.consumeOpened()

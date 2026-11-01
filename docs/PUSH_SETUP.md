@@ -8,15 +8,24 @@ Notiz sends push notifications for:
 | New bill raised | That flat |
 | Payment reported (UTR entered) | Admins |
 | Payment confirmed / not received | That flat |
+| Bill edited (amount, due date or title) — says what changed | That flat |
+| Bill or single due cancelled | That flat |
 | Dues reminder: 2 days before, on the due date, 3 days overdue | That flat |
 | New complaint | Admins |
 | Complaint status changed | Resident who raised it |
 | New poll | All members except the creator |
 | Chat message | All members except the sender (grouped per society) |
 | Join request | Admins |
-| Request approved | The new member |
+| Request approved / not approved | The person who asked |
+| Made admin / no longer admin | That member |
+| Flat number changed by an admin | That member |
+| Removed by an admin | That member |
+| Member left the society or deleted their account | Admins |
+| Society renamed, new UPI ID, online payments turned on / paused | All members except the admin who changed it |
 
-Tapping a notification opens the matching tab (join requests open Members).
+Tapping a notification opens the matching tab (join requests open Members). Membership and society changes also refresh the app in place (new flat number, admin tools appearing, or back to the join screen after removal).
+
+Change notifications come from `20261101000000_admin_tools.sql` and `20261102000000_change_notifications.sql` — run them after the push migration.
 
 ## How it works
 
