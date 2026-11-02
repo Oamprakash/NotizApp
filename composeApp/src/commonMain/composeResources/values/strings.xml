@@ -407,4 +407,18 @@ all in one place.</string>
     <string name="notice_body_placeholder">What should residents know?</string>
     <string name="notice_pin_hint">Stays at the top of Notices</string>
     <string name="notice_photos_hint">Add up to 3 photos (optional).</string>
+
+    <!-- Poll, report payment, change flat sheets -->
+    <string name="polls_question_placeholder">e.g. Which colour for the main gate?</string>
+    <string name="polls_options_label">Options</string>
+    <string name="polls_option_n">Option %1$d</string>
+    <string name="polls_remove_option">Remove option</string>
+    <string name="polls_add_option">Add option</string>
+    <string name="polls_one_vote_hint">Each flat gets one vote and can change it later.</string>
+    <string name="dues_paid_to">Paid to</string>
+    <string name="dues_report_simple">Paid by UPI, bank transfer or another app? Enter the reference number so the treasurer can match it.</string>
+    <string name="dues_utr_where">In your UPI app: open the payment → UTR / UPI Ref No. (usually 12 digits).</string>
+    <string name="dues_send_for_check">Send for checking</string>
+    <string name="members_new_flat">New flat number</string>
+    <string name="members_flat_hint">Their unpaid dues stay with the old flat; new bills use the new number.</string>
 </resources>

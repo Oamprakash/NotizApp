@@ -35,6 +35,9 @@ targets:
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1" # bump for every TestFlight upload
         UILaunchScreen: {}
+        # The app sets the status bar style itself (white icons on teal screens, see SystemBars.ios.kt)
+        UIViewControllerBasedStatusBarAppearance: false
+        UIStatusBarStyle: UIStatusBarStyleDarkContent
         CADisableMinimumFrameDurationOnPhone: true
         LSApplicationQueriesSchemes:
           - upi

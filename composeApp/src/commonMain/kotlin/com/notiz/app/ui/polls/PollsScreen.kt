@@ -2,6 +2,13 @@
 
 package com.notiz.app.ui.polls
 
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.components.PrimaryButton
+import com.notiz.app.ui.components.NotizSheet
 import com.notiz.app.ui.components.NotizTextButton
 import com.notiz.app.ui.components.NotizTextField
 import com.notiz.app.ui.components.NotizDialog
@@ -244,36 +251,55 @@ private fun OptionRow(option: PollOption, votes: Long, total: Long, selected: Bo
     }
 }
 
+/** New poll as a bottom sheet: the question, then one row per option (2–6) with add / remove. */
 @Composable
 private fun NewPollDialog(busy: Boolean, onDismiss: () -> Unit, onCreate: (String, List<String>) -> Unit) {
     var question by remember { mutableStateOf("") }
-    val defaultOptions = stringResource(Res.string.polls_default_options)
-    var optionsText by remember { mutableStateOf(defaultOptions) }
-    val options = optionsText.lines().map { it.trim() }.filter { it.isNotEmpty() }
+    val defaults = stringResource(Res.string.polls_default_options).lines().map { it.trim() }.filter { it.isNotEmpty() }
+    var options by remember { mutableStateOf(defaults.ifEmpty { listOf("", "") }) }
+    val filled = options.map { it.trim() }.filter { it.isNotEmpty() }
 
-    NotizDialog(
-        onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(stringResource(Res.string.polls_new)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    NotizSheet(stringResource(Res.string.polls_new), onDismissRequest = onDismiss, dismissible = !busy) {
+        NotizTextField(
+            value = question, onValueChange = { question = it.take(300) },
+            label = { Text(stringResource(Res.string.polls_question_field)) },
+            placeholder = { Text(stringResource(Res.string.polls_question_placeholder)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(stringResource(Res.string.polls_options_label), color = Palette.inkSoft, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        options.forEachIndexed { index, option ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(28.dp).background(Palette.purpleSoft, CircleShape), contentAlignment = Alignment.Center) {
+                    Text("${index + 1}", color = Palette.purple, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
                 NotizTextField(
-                    value = question, onValueChange = { question = it.take(300) },
-                    label = { Text(stringResource(Res.string.polls_question_field)) }, modifier = Modifier.fillMaxWidth(),
+                    value = option,
+                    onValueChange = { v -> options = options.toMutableList().also { it[index] = v.take(80) } },
+                    placeholder = { Text(stringResource(Res.string.polls_option_n, index + 1)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
                 )
-                NotizTextField(
-                    value = optionsText, onValueChange = { optionsText = it.take(1000) },
-                    label = { Text(stringResource(Res.string.polls_options_field)) }, minLines = 3,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(0.dp))
+                if (options.size > 2) {
+                    IconButton(onClick = { options = options.filterIndexed { i, _ -> i != index } }) {
+                        Icon(NotizIcons.Close, contentDescription = stringResource(Res.string.polls_remove_option), tint = Palette.muted)
+                    }
+                }
             }
-        },
-        confirmButton = {
-            NotizTextButton(
-                onClick = { onCreate(question, options) },
-                enabled = question.isNotBlank() && options.size >= 2 && !busy,
-            ) { Text(stringResource(if (busy) Res.string.polls_creating else Res.string.polls_create)) }
-        },
-        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
-    )
+        }
+        if (options.size < 6) {
+            NotizTextButton(onClick = { options = options + "" }) {
+                Icon(NotizIcons.Plus, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(Res.string.polls_add_option), modifier = Modifier.padding(start = 6.dp))
+            }
+        }
+        Text(stringResource(Res.string.polls_one_vote_hint), color = Palette.muted, fontSize = 12.sp)
+        PrimaryButton(
+            stringResource(if (busy) Res.string.polls_creating else Res.string.polls_create),
+            onClick = { onCreate(question, filled) },
+            enabled = question.isNotBlank() && filled.size >= 2 && !busy,
+            icon = NotizIcons.Poll,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            height = 52.dp,
+        )
+    }
 }

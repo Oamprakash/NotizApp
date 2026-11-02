@@ -5,7 +5,9 @@ package com.notiz.app.ui.dues
 import com.notiz.app.ui.components.NotizTextButton
 import com.notiz.app.ui.components.NotizTextField
 import com.notiz.app.ui.components.NotizDialog
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -728,35 +730,46 @@ private fun ReportPaymentDialog(
     onSubmit: (utr: String) -> Unit,
 ) {
     var utr by remember { mutableStateOf("") }
-    NotizDialog(
-        onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(stringResource(Res.string.dues_report_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    if (upiVpa.isNotBlank()) {
-                        stringResource(Res.string.dues_report_body_vpa, formatRupees(due.amountPaise), upiVpa)
-                    } else {
-                        stringResource(Res.string.dues_report_body, formatRupees(due.amountPaise))
-                    },
-                )
-                NotizTextField(
-                    value = utr,
-                    onValueChange = { utr = it.filter(Char::isLetterOrDigit).take(30) },
-                    label = { Text(stringResource(Res.string.dues_utr_field)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+    NotizSheet(stringResource(Res.string.dues_report_title), onDismissRequest = onDismiss, dismissible = !busy) {
+        Row(
+            Modifier.fillMaxWidth().background(Palette.tealSoft, RoundedCornerShape(18.dp)).padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(due.title, color = Palette.tealDark, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(formatRupees(due.amountPaise), color = Palette.ink, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
             }
-        },
-        confirmButton = {
-            NotizTextButton(onClick = { onSubmit(utr) }, enabled = utr.length >= 6 && !busy) {
-                Text(stringResource(if (busy) Res.string.action_sending else Res.string.action_submit))
+            if (upiVpa.isNotBlank()) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(stringResource(Res.string.dues_paid_to), color = Palette.muted, fontSize = 12.sp)
+                    Text(upiVpa, color = Palette.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
-        },
-        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_later)) } },
-    )
+        }
+        Text(stringResource(Res.string.dues_report_simple), color = Palette.inkSoft, fontSize = 14.sp, lineHeight = 20.sp)
+        NotizTextField(
+            value = utr,
+            onValueChange = { utr = it.filter(Char::isLetterOrDigit).take(30) },
+            label = { Text(stringResource(Res.string.dues_utr_field)) },
+            placeholder = { Text("4328 1190 9921") },
+            supportingText = { Text(stringResource(Res.string.dues_utr_where)) },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.titleLarge.copy(letterSpacing = 2.sp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        PrimaryButton(
+            stringResource(if (busy) Res.string.action_sending else Res.string.dues_send_for_check),
+            onClick = { onSubmit(utr) },
+            enabled = utr.length >= 6 && !busy,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            height = 52.dp,
+        )
+        NotizTextButton(onClick = onDismiss, enabled = !busy, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Text(stringResource(Res.string.action_later), color = Palette.muted)
+        }
+    }
 }
 
 @OptIn(ExperimentalTime::class)

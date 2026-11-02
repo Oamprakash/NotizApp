@@ -2,6 +2,7 @@
 
 package com.notiz.app.ui.members
 
+import com.notiz.app.ui.components.NotizSheet
 import com.notiz.app.ui.components.NotizMenu
 import com.notiz.app.ui.components.NotizMenuItem
 import com.notiz.app.ui.components.NotizTextButton
@@ -229,29 +230,32 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
 
     editingFlat?.let { m ->
         var flat by remember(m.id) { mutableStateOf(m.flatNo) }
-        NotizDialog(
-            onDismissRequest = { editingFlat = null },
-            title = { Text(stringResource(Res.string.members_flat_title)) },
-            text = {
-                NotizTextField(
-                    value = flat,
-                    onValueChange = { flat = it.take(20) },
-                    label = { Text(stringResource(Res.string.setup_flat_number)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            confirmButton = {
-                NotizTextButton(
-                    onClick = {
-                        editingFlat = null
-                        vm.changeFlat(m, flat, onOwnFlatChanged = onSessionChanged)
-                    },
-                    enabled = flat.isNotBlank() && flat.trim() != m.flatNo,
-                ) { Text(stringResource(Res.string.action_save_changes)) }
-            },
-            dismissButton = { NotizTextButton(onClick = { editingFlat = null }) { Text(stringResource(Res.string.action_cancel)) } },
-        )
+        NotizSheet(stringResource(Res.string.members_flat_title), onDismissRequest = { editingFlat = null }) {
+            Row(
+                Modifier.fillMaxWidth().background(Palette.chip, RoundedCornerShape(16.dp)).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) { MemberLine(m) }
+            NotizTextField(
+                value = flat,
+                onValueChange = { flat = it.uppercase().take(20) },
+                label = { Text(stringResource(Res.string.members_new_flat)) },
+                placeholder = { Text("B-202") },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(stringResource(Res.string.members_flat_hint), color = Palette.muted, fontSize = 12.sp)
+            PrimaryButton(
+                stringResource(Res.string.action_save_changes),
+                onClick = {
+                    editingFlat = null
+                    vm.changeFlat(m, flat, onOwnFlatChanged = onSessionChanged)
+                },
+                enabled = flat.isNotBlank() && flat.trim() != m.flatNo,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                height = 52.dp,
+            )
+        }
     }
     removing?.let { m ->
         NotizDialog(
