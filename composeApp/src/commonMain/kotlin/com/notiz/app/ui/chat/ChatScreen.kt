@@ -334,14 +334,16 @@ private fun MessageBubble(
 ) {
     var menu by remember { mutableStateOf(false) }
     val hasActions = canReply || canDelete || canReport || canMute
-    val swipe = rememberSwipeToReply(enabled = canReply, onReply = onReply)
+    // Others' messages (left side) swipe right; your own (right side) swipe left — towards the middle
+    val swipe = rememberSwipeToReply(enabled = canReply, towardsStart = mine, onReply = onReply)
     Box(Modifier.fillMaxWidth()) {
-        // Reply arrow revealed behind the message while it's dragged right
+        // Reply arrow revealed behind the message while it's dragged
         Icon(
             ReplyIcon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.align(Alignment.CenterStart).padding(start = 8.dp)
+            modifier = Modifier.align(if (mine) Alignment.CenterEnd else Alignment.CenterStart)
+                .padding(horizontal = 8.dp)
                 .graphicsLayer { alpha = swipe.progress; scaleX = 0.6f + 0.4f * swipe.progress; scaleY = scaleX },
         )
         Row(
@@ -480,23 +482,26 @@ private class SwipeToReply(val modifier: Modifier, private val offsetPx: () -> F
 }
 
 /**
- * Drag a message to the right to reply, like WhatsApp: a light vibration when it's far enough,
- * reply on release, and the message springs back.
+ * Drag a message sideways to reply, like WhatsApp: to the right for others' messages, to the left
+ * ([towardsStart]) for your own. A light vibration when it's far enough, reply on release, and the
+ * message springs back.
  */
 @Composable
-private fun rememberSwipeToReply(enabled: Boolean, onReply: () -> Unit): SwipeToReply {
+private fun rememberSwipeToReply(enabled: Boolean, towardsStart: Boolean, onReply: () -> Unit): SwipeToReply {
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
     val density = LocalDensity.current
     val triggerPx = with(density) { 64.dp.toPx() }
     val maxPx = with(density) { 96.dp.toPx() }
+    // Distance dragged in the reply direction (always ≥ 0); drawn as a negative x offset for your own
     val offset = remember { Animatable(0f) }
+    val sign = if (towardsStart) -1f else 1f
     val reply by rememberUpdatedState(onReply)
     var armed by remember { mutableStateOf(false) }
 
     val modifier = Modifier
-        .offset { IntOffset(offset.value.roundToInt(), 0) }
-        .pointerInput(enabled) {
+        .offset { IntOffset((sign * offset.value).roundToInt(), 0) }
+        .pointerInput(enabled, towardsStart) {
             if (!enabled) return@pointerInput
             detectHorizontalDragGestures(
                 onDragStart = { armed = false },
@@ -510,8 +515,9 @@ private fun rememberSwipeToReply(enabled: Boolean, onReply: () -> Unit): SwipeTo
                     scope.launch { offset.animateTo(0f) }
                 },
             ) { change, dragAmount ->
-                // Resist the further it goes, and only to the right
-                val next = (offset.value + dragAmount * if (offset.value > triggerPx) 0.4f else 1f).coerceIn(0f, maxPx)
+                // Only in the reply direction, resisting once past the reply point
+                val delta = sign * dragAmount
+                val next = (offset.value + delta * if (offset.value > triggerPx) 0.4f else 1f).coerceIn(0f, maxPx)
                 if (next != offset.value) change.consume()
                 scope.launch { offset.snapTo(next) }
                 if (!armed && next >= triggerPx) {

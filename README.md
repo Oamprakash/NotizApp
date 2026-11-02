@@ -149,7 +149,7 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 ## Photos and chat moderation
 
 - **Photos**: up to 3 photos on a notice (admins) or a complaint. The app shrinks them to about 1600 px JPEG before upload. Stored in the private Storage bucket `attachments`: notice photos are visible to the society, complaint photos only to the resident and the admins.
-- **Chat**: swipe a message right to reply (the quote shows above your message; tap it to jump to the original). Long-press a message to reply, delete it (your own, or any message if you're an admin), report it to the admins (they get a push), or mute the sender (admins). Muted members can read but not send; unmute from Members.
+- **Chat**: swipe a message to reply — right on others' messages, left on your own (the quote shows above your message; tap it to jump to the original). Long-press a message to reply, delete it (your own, or any message if you're an admin), report it to the admins (they get a push), or mute the sender (admins). Muted members can read but not send; unmute from Members.
 - **Notifications in Tamil**: the app saves the language you picked, and every server notification is sent in English or Tamil to match.
 
 ## Known MVP limits (next steps)
