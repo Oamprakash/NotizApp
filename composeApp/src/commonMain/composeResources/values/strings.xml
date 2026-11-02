@@ -369,4 +369,18 @@ all in one place.</string>
     <string name="login_title">Log in with your mobile</string>
     <string name="login_subtitle">We'll send a 6-digit code by SMS.</string>
     <string name="login_new_here">New here? Ask your secretary for the society's invite code after you log in.</string>
+
+    <!-- Home v2 -->
+    <string name="home_committee">Committee</string>
+    <string name="home_tray_notice">Notice</string>
+    <string name="home_tray_poll">Poll</string>
+    <string name="home_tray_invite">Invite</string>
+    <string name="home_tray_request">Request</string>
+    <string name="home_calm_requests">Nothing open</string>
+    <string name="home_calm_verify">All checked</string>
+    <string name="home_calm_join">None waiting</string>
+    <string name="home_calm_chat">Chat is calm</string>
+    <string name="home_collected">%1$s · collected</string>
+    <string name="home_stat_paid">paid</string>
+    <string name="home_already_paid_q">Already paid?</string>
 </resources>

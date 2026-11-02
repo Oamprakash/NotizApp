@@ -369,4 +369,18 @@
     <string name="login_title">உங்கள் மொபைல் எண்ணுடன் உள்நுழையவும்</string>
     <string name="login_subtitle">SMS மூலம் 6 இலக்கக் குறியீடு அனுப்புவோம்.</string>
     <string name="login_new_here">புதியவரா? உள்நுழைந்த பின் சங்கத்தின் அழைப்புக் குறியீட்டைச் செயலாளரிடம் கேளுங்கள்.</string>
+
+    <!-- Home v2 -->
+    <string name="home_committee">குழு</string>
+    <string name="home_tray_notice">அறிவிப்பு</string>
+    <string name="home_tray_poll">வாக்கெடுப்பு</string>
+    <string name="home_tray_invite">அழை</string>
+    <string name="home_tray_request">புகார்</string>
+    <string name="home_calm_requests">திறந்தவை இல்லை</string>
+    <string name="home_calm_verify">அனைத்தும் சரிபார்க்கப்பட்டன</string>
+    <string name="home_calm_join">காத்திருப்பவர் இல்லை</string>
+    <string name="home_calm_chat">அரட்டை அமைதியாக உள்ளது</string>
+    <string name="home_collected">%1$s · வசூல்</string>
+    <string name="home_stat_paid">செலுத்தின</string>
+    <string name="home_already_paid_q">ஏற்கனவே செலுத்தினீர்களா?</string>
 </resources>

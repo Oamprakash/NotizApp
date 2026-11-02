@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -40,7 +41,11 @@ import com.notiz.app.ui.theme.Palette
 
 // Building blocks of the "Neighbourly" redesign, shared by every screen.
 
-/** White rounded card with a hairline border. Clickable when [onClick] is set. */
+/** Barely-there shadow that lifts white cards off the grey ground (instead of outlines). */
+fun Modifier.softShadow(shape: androidx.compose.ui.graphics.Shape, elevation: Dp = 3.dp): Modifier =
+    shadow(elevation, shape, clip = false, ambientColor = Color(0x2214201C), spotColor = Color(0x2214201C))
+
+/** White rounded card with a soft shadow. Clickable when [onClick] is set. */
 @Composable
 fun NotizCard(
     modifier: Modifier = Modifier,
@@ -54,9 +59,9 @@ fun NotizCard(
     Column(
         modifier
             .fillMaxWidth()
+            .then(if (color == Color.White) Modifier.softShadow(shape) else Modifier)
             .clip(shape)
             .background(color)
-            .border(1.dp, if (color == Color.White) Palette.line else color, shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(padding),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -223,21 +228,22 @@ fun PrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: ImageVector? = null,
+    height: Dp = 48.dp,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Palette.teal),
         contentPadding = PaddingValues(horizontal = 20.dp),
-        modifier = modifier.height(56.dp),
+        modifier = modifier.height(height),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
             Box(Modifier.size(8.dp))
         }
-        Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         trailing()
     }
 }
@@ -257,8 +263,11 @@ fun SecondaryButton(
         onClick = onClick,
         enabled = enabled,
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(if (accent) 1.5.dp else 1.dp, if (accent) Palette.teal else Palette.line),
-        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White, contentColor = if (accent) Palette.teal else Palette.ink),
+        border = if (accent) BorderStroke(1.5.dp, Palette.teal) else null,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (accent) Color.White else Palette.chip,
+            contentColor = if (accent) Palette.teal else Palette.ink,
+        ),
         contentPadding = PaddingValues(horizontal = 14.dp),
         modifier = modifier.height(height),
     ) {
@@ -308,10 +317,9 @@ fun ListRow(
 @Composable
 fun GroupCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
         color = Color.White,
-        border = BorderStroke(1.dp, Palette.line),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().softShadow(RoundedCornerShape(18.dp)),
     ) {
         Column(content = content)
     }
@@ -322,7 +330,7 @@ fun GroupCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.()
 fun ScreenTitle(title: String, modifier: Modifier = Modifier, subtitle: String? = null, trailing: @Composable RowScope.() -> Unit = {}) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.headlineMedium)
+            Text(title, style = MaterialTheme.typography.headlineSmall)
             if (subtitle != null) Text(subtitle, color = Palette.muted, fontSize = 14.sp)
         }
         trailing()

@@ -161,6 +161,7 @@ fun LoginScreen(generation: Int) {
 /** Teal header with the logo, tagline and what Notiz does (design: Login). */
 @Composable
 private fun BrandPanel() {
+    com.notiz.app.ui.theme.LightStatusBarIcons()
     Column(
         Modifier
             .fillMaxWidth()

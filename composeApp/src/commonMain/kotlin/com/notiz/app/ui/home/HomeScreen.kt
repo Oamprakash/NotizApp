@@ -152,6 +152,7 @@ fun HomeScreen(
         // consumeWindowInsets stops the chat's imePadding from double-counting the bottom bar
         val modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
         when (tab) {
+            // Home draws its teal band behind the status bar, so it only takes the bottom padding
             HomeTab.Home -> HomeTabContent(
                 session = session,
                 state = home,
@@ -159,7 +160,7 @@ fun HomeScreen(
                 onVote = homeVm::vote,
                 onDismissError = homeVm::dismissError,
                 actions = actions,
-                modifier = modifier,
+                modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
             )
             HomeTab.Notices -> NoticesHub(
                 session = session,

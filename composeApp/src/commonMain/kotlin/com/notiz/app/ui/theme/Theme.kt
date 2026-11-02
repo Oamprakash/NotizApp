@@ -49,6 +49,7 @@ object Palette {
     val ground = Color(0xFFF4F6F5)
     val track = Color(0xFFE6ECE9)
     val photo = Color(0xFFDCE7E2)
+    val chip = Color(0xFFEFF3F1) // soft filled buttons and poll options
 }
 
 private val LightColors = lightColorScheme(
@@ -115,7 +116,7 @@ private fun appTypography(): Typography {
     return Typography(
         displaySmall = style(36, FontWeight.ExtraBold, 42, -1.0),
         headlineLarge = style(32, FontWeight.ExtraBold, 38, -0.8),
-        headlineMedium = style(26, FontWeight.ExtraBold, 32, -0.5),
+        headlineMedium = style(24, FontWeight.ExtraBold, 30, -0.5),
         headlineSmall = style(22, FontWeight.ExtraBold, 28, -0.3),
         titleLarge = style(19, FontWeight.Bold, 24),
         titleMedium = style(16, FontWeight.Bold, 22),
