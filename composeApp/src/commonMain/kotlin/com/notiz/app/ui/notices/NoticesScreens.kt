@@ -2,6 +2,12 @@
 
 package com.notiz.app.ui.notices
 
+import androidx.compose.foundation.background
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
+import com.notiz.app.ui.components.PrimaryButton
+import com.notiz.app.ui.components.NotizSwitch
+import com.notiz.app.ui.components.NotizSheet
 import com.notiz.app.ui.components.NotizCheckbox
 import com.notiz.app.ui.components.ProgressBar
 import com.notiz.app.ui.components.NotizTextButton
@@ -277,43 +283,53 @@ private fun NewNoticeDialog(
     var pinned by remember { mutableStateOf(false) }
     var photos by remember { mutableStateOf(listOf<ByteArray>()) }
     var pickFailed by remember { mutableStateOf(false) }
-    NotizDialog(
-        onDismissRequest = { if (!posting) onDismiss() },
-        title = { Text(stringResource(Res.string.notice_new)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                NotizTextField(
-                    value = title, onValueChange = { title = it.take(200) },
-                    label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                )
-                NotizTextField(
-                    value = body, onValueChange = { body = it.take(4000) },
-                    label = { Text(stringResource(Res.string.notice_field_details)) }, minLines = 4,
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp),
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    NotizCheckbox(checked = pinned, onCheckedChange = { pinned = it })
-                    Text(stringResource(Res.string.notice_pin), fontSize = 15.sp, modifier = Modifier.padding(start = 10.dp))
-                }
-                PhotoPickerRow(
-                    photos = photos,
-                    enabled = !posting,
-                    onAdd = { photos = photos + it; pickFailed = false },
-                    onRemove = { i -> photos = photos.filterIndexed { index, _ -> index != i } },
-                    onPickFailed = { pickFailed = true },
-                )
-                if (pickFailed) {
-                    Text(stringResource(Res.string.photos_pick_failed), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
+    NotizSheet(stringResource(Res.string.notice_new), onDismissRequest = onDismiss, dismissible = !posting) {
+        NotizTextField(
+            value = title, onValueChange = { title = it.take(200) },
+            label = { Text(stringResource(Res.string.notice_field_title)) },
+            placeholder = { Text(stringResource(Res.string.notice_title_placeholder)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        NotizTextField(
+            value = body, onValueChange = { body = it.take(4000) },
+            label = { Text(stringResource(Res.string.notice_field_details)) },
+            placeholder = { Text(stringResource(Res.string.notice_body_placeholder)) },
+            minLines = 4,
+            modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp),
+        )
+        Row(
+            Modifier.fillMaxWidth().background(Palette.chip, RoundedCornerShape(14.dp)).padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(NotizIcons.Pin, contentDescription = null, tint = Palette.amberText, modifier = Modifier.size(20.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(Res.string.notice_pin), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.notice_pin_hint), color = Palette.muted, fontSize = 12.sp)
             }
-        },
-        confirmButton = {
-            NotizTextButton(onClick = { onPost(title, body, pinned, photos) }, enabled = title.isNotBlank() && !posting) {
-                Text(stringResource(if (posting) Res.string.notice_posting else Res.string.notice_post))
-            }
-        },
-        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !posting) { Text(stringResource(Res.string.action_cancel)) } },
-    )
+            NotizSwitch(checked = pinned, onCheckedChange = { pinned = it })
+        }
+        Text(stringResource(Res.string.notice_photos_hint), color = Palette.muted, fontSize = 12.sp)
+        PhotoPickerRow(
+            photos = photos,
+            enabled = !posting,
+            onAdd = { photos = photos + it; pickFailed = false },
+            onRemove = { i -> photos = photos.filterIndexed { index, _ -> index != i } },
+            onPickFailed = { pickFailed = true },
+        )
+        if (pickFailed) {
+            Text(stringResource(Res.string.photos_pick_failed), color = Palette.red, fontSize = 12.sp)
+        }
+        PrimaryButton(
+            stringResource(if (posting) Res.string.notice_posting else Res.string.notice_post),
+            onClick = { onPost(title, body, pinned, photos) },
+            enabled = title.isNotBlank() && !posting,
+            icon = NotizIcons.Send,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            height = 52.dp,
+        )
+    }
 }
 
 // ───────────────────────────── Detail ─────────────────────────────

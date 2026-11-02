@@ -6,6 +6,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -288,5 +291,62 @@ fun NotizCheckbox(checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifier
 fun ProgressBar(progress: Float, modifier: Modifier = Modifier, color: Color = Palette.teal, track: Color = Palette.track, height: androidx.compose.ui.unit.Dp = 6.dp) {
     Box(modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(height / 2)).background(track)) {
         if (progress > 0f) Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).fillMaxHeight().background(color))
+    }
+}
+
+/**
+ * Bottom sheet used for every "create" form (raise a request, raise a bill, new notice…):
+ * white, rounded top, a small grey handle and a bold title; content scrolls above the keyboard.
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun NotizSheet(
+    title: String,
+    onDismissRequest: () -> Unit,
+    dismissible: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = { if (dismissible) onDismissRequest() },
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color.White,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = {
+            Box(Modifier.padding(top = 10.dp, bottom = 8.dp).size(width = 40.dp, height = 4.dp).background(Color(0xFFD5DDD9), RoundedCornerShape(2.dp)))
+        },
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, end = 20.dp, bottom = 24.dp)
+                .imePadding(),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            androidx.compose.material3.Text(title, color = Palette.ink, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+            content()
+        }
+    }
+}
+
+/** Small selectable pill for quick picks (bill names, due dates). */
+@Composable
+fun QuickPick(text: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .heightIn(min = 36.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) Palette.tealSoft else Palette.chip)
+            .border(if (selected) 1.5.dp else 0.dp, if (selected) Palette.teal else Color.Transparent, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.material3.Text(
+            text,
+            color = if (selected) Palette.teal else Palette.ink,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+        )
     }
 }

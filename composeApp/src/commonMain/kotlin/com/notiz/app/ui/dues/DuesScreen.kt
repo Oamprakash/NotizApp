@@ -73,6 +73,10 @@ import com.notiz.app.ui.theme.Palette
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.DateTimeUnit
+import com.notiz.app.ui.components.QuickPick
+import com.notiz.app.ui.components.NotizSheet
+import kotlinx.datetime.minus
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
@@ -788,6 +792,22 @@ private fun RaiseBillDialog(
 private fun rupeesInput(paise: Long): String =
     if (paise % 100 == 0L) (paise / 100).toString() else "${paise / 100}.${(paise % 100).toString().padStart(2, '0')}"
 
+@OptIn(ExperimentalTime::class)
+private fun dateIn(days: Int): String {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    return today.plus(days, DateTimeUnit.DAY).toString()
+}
+
+@OptIn(ExperimentalTime::class)
+private fun endOfMonth(): String {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    return LocalDate(today.year, today.month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY).toString()
+}
+
+/**
+ * Raise / edit a bill as a bottom sheet (like "Raise a request"): quick bill names, a big amount
+ * field with ₹, quick due dates, then one clear button.
+ */
 @Composable
 private fun BillFormDialog(
     heading: String,
@@ -807,39 +827,66 @@ private fun BillFormDialog(
     val paise = parseRupeesToPaise(amount)
     val dateOk = isValidIsoDate(dueDate)
 
-    NotizDialog(
-        onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(heading) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(hint, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                NotizTextField(
-                    value = title, onValueChange = { title = it.take(80) },
-                    label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                )
-                NotizTextField(
-                    value = amount, onValueChange = { amount = it.take(10) },
-                    label = { Text(stringResource(Res.string.dues_amount_field)) }, singleLine = true,
-                    isError = amount.isNotEmpty() && paise == null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                NotizTextField(
-                    value = dueDate, onValueChange = { dueDate = it.take(10) },
-                    label = { Text(stringResource(Res.string.dues_date_field)) }, singleLine = true,
-                    isError = !dateOk,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {
-            NotizTextButton(
-                onClick = { if (paise != null) onConfirm(title, paise, dueDate.trim()) },
-                enabled = title.isNotBlank() && paise != null && dateOk && !busy,
-            ) { Text(if (busy) busyLabel else confirmLabel) }
-        },
-        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
+    val presets = listOf(
+        stringResource(Res.string.dues_default_title),
+        stringResource(Res.string.dues_preset_water),
+        stringResource(Res.string.dues_preset_sinking),
+        stringResource(Res.string.dues_preset_event),
     )
+    val dates = listOf(
+        stringResource(Res.string.dues_due_in_7) to dateIn(7),
+        stringResource(Res.string.dues_due_in_15) to dateIn(15),
+        stringResource(Res.string.dues_due_month_end) to endOfMonth(),
+    )
+
+    NotizSheet(heading, onDismissRequest = onDismiss, dismissible = !busy) {
+        Text(hint, color = Palette.muted, fontSize = 14.sp, lineHeight = 20.sp)
+
+        FieldLabel(stringResource(Res.string.dues_bill_for))
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            presets.forEach { p -> QuickPick(p, selected = title == p, onClick = { title = p }) }
+        }
+        NotizTextField(
+            value = title, onValueChange = { title = it.take(80) },
+            label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+        NotizTextField(
+            value = amount, onValueChange = { amount = it.filter { c -> c.isDigit() || c == '.' }.take(10) },
+            label = { Text(stringResource(Res.string.dues_amount_per_flat)) },
+            prefix = { Text("₹", fontWeight = FontWeight.ExtraBold) },
+            placeholder = { Text("2500") },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.headlineSmall,
+            isError = amount.isNotEmpty() && paise == null,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        FieldLabel(stringResource(Res.string.dues_date_field))
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            dates.forEach { (label, date) -> QuickPick(label, selected = dueDate == date, onClick = { dueDate = date }) }
+        }
+        NotizTextField(
+            value = dueDate, onValueChange = { dueDate = it.take(10) },
+            supportingText = { Text(if (dateOk) localDate(dueDate) else stringResource(Res.string.dues_date_format)) },
+            singleLine = true,
+            isError = !dateOk,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        PrimaryButton(
+            if (busy) busyLabel else confirmLabel,
+            onClick = { if (paise != null) onConfirm(title, paise, dueDate.trim()) },
+            enabled = title.isNotBlank() && paise != null && dateOk && !busy,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            height = 52.dp,
+        )
+    }
+}
+
+@Composable
+private fun FieldLabel(text: String) {
+    Text(text, color = Palette.inkSoft, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 2.dp))
 }
 
 @Composable

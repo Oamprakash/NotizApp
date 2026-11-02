@@ -392,4 +392,19 @@
     <string name="pay_hero_on_sub">குடியிருப்பாளர்கள் Razorpay மூலம் செலுத்தலாம்; உடனே உறுதியாகும்.</string>
     <string name="pay_hero_off">ஆன்லைன் கட்டணம் நிறுத்தத்தில் உள்ளது</string>
     <string name="pay_hero_off_sub">இயக்க கீழே உள்ள 3 படிகளைப் பின்பற்றவும்.</string>
+
+    <!-- Bill and notice sheets -->
+    <string name="dues_preset_water">தண்ணீர் கட்டணம்</string>
+    <string name="dues_preset_sinking">சேமிப்பு நிதி</string>
+    <string name="dues_preset_event">விழா / நிகழ்வு</string>
+    <string name="dues_due_in_7">7 நாளில்</string>
+    <string name="dues_due_in_15">15 நாளில்</string>
+    <string name="dues_due_month_end">மாத இறுதி</string>
+    <string name="dues_bill_for">எதற்காக?</string>
+    <string name="dues_amount_per_flat">ஒரு வீட்டுக்கான தொகை</string>
+    <string name="dues_date_format">YYYY-MM-DD வடிவில், எ.கா. 2026-11-10</string>
+    <string name="notice_title_placeholder">எ.கா. ஞாயிறு காலை 9–1 தண்ணீர் இருக்காது</string>
+    <string name="notice_body_placeholder">குடியிருப்பாளர்கள் என்ன தெரிந்துகொள்ள வேண்டும்?</string>
+    <string name="notice_pin_hint">அறிவிப்புகளின் மேலே இருக்கும்</string>
+    <string name="notice_photos_hint">3 படங்கள் வரை சேர்க்கலாம் (விருப்பம்).</string>
 </resources>
