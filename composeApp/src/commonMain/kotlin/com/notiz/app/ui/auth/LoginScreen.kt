@@ -1,5 +1,7 @@
 package com.notiz.app.ui.auth
 
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,9 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -121,7 +121,7 @@ fun LoginScreen(generation: Int) {
             Spacer(Modifier.height(16.dp))
 
             if (!state.otpSent) {
-                OutlinedTextField(
+                NotizTextField(
                     value = state.phoneDigits,
                     onValueChange = vm::onPhoneChange,
                     label = { Text(stringResource(Res.string.login_mobile_number)) },
@@ -137,7 +137,7 @@ fun LoginScreen(generation: Int) {
             } else {
                 Text(stringResource(Res.string.login_enter_code, state.fullPhone), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
+                NotizTextField(
                     value = state.otp,
                     onValueChange = vm::onOtpChange,
                     label = { Text(stringResource(Res.string.login_otp)) },
@@ -147,8 +147,8 @@ fun LoginScreen(generation: Int) {
                 )
                 Spacer(Modifier.height(16.dp))
                 LoadingButton(text = stringResource(Res.string.login_verify), loading = state.loading, enabled = state.canVerify, onClick = vm::verifyOtp)
-                TextButton(onClick = vm::changeNumber) { Text(stringResource(Res.string.login_change_number)) }
-                TextButton(onClick = vm::sendOtp, enabled = !state.loading) { Text(stringResource(Res.string.login_resend)) }
+                NotizTextButton(onClick = vm::changeNumber) { Text(stringResource(Res.string.login_change_number)) }
+                NotizTextButton(onClick = vm::sendOtp, enabled = !state.loading) { Text(stringResource(Res.string.login_resend)) }
             }
 
             ErrorBanner(state.error?.asString(), onDismiss = vm::dismissError, modifier = Modifier.padding(top = 8.dp))

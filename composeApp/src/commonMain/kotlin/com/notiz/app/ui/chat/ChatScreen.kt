@@ -1,11 +1,12 @@
 package com.notiz.app.ui.chat
 
+import com.notiz.app.ui.components.NotizMenu
+import com.notiz.app.ui.components.NotizMenuItem
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
+import com.notiz.app.ui.components.NotizDialog
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontStyle
 import com.notiz.app.ui.components.InfoBanner
@@ -13,6 +14,7 @@ import com.notiz.app.i18n.uiText
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -53,11 +55,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,7 +87,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.ui.unit.sp
 import com.notiz.app.ui.components.Avatar
 import com.notiz.app.ui.components.IconTile
@@ -219,25 +218,25 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
     var confirmMute by remember { mutableStateOf<Message?>(null) }
 
     confirmDelete?.let { message ->
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { confirmDelete = null },
             text = { Text(stringResource(Res.string.chat_delete_confirm)) },
             confirmButton = {
-                TextButton(onClick = { confirmDelete = null; vm.delete(message) }) {
+                NotizTextButton(onClick = { confirmDelete = null; vm.delete(message) }) {
                     Text(stringResource(Res.string.action_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(Res.string.action_keep)) } },
+            dismissButton = { NotizTextButton(onClick = { confirmDelete = null }) { Text(stringResource(Res.string.action_keep)) } },
         )
     }
     confirmMute?.let { message ->
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { confirmMute = null },
             text = { Text(stringResource(Res.string.chat_mute_confirm, message.senderName, message.flatNo)) },
             confirmButton = {
-                TextButton(onClick = { confirmMute = null; vm.mute(message) }) { Text(stringResource(Res.string.chat_mute)) }
+                NotizTextButton(onClick = { confirmMute = null; vm.mute(message) }) { Text(stringResource(Res.string.chat_mute)) }
             },
-            dismissButton = { TextButton(onClick = { confirmMute = null }) { Text(stringResource(Res.string.action_keep)) } },
+            dismissButton = { NotizTextButton(onClick = { confirmMute = null }) { Text(stringResource(Res.string.action_keep)) } },
         )
     }
 
@@ -319,7 +318,7 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedTextField(
+                NotizTextField(
                     value = draft,
                     onValueChange = { draft = it.take(4000) },
                     placeholder = { Text(stringResource(Res.string.chat_message_hint)) },
@@ -327,13 +326,13 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                     shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.weight(1f).focusRequester(focusRequester),
                 )
-                FilledIconButton(
-                    onClick = { vm.send(draft) { draft = "" } },
-                    enabled = draft.isNotBlank() && !state.sending,
-                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = Palette.teal, contentColor = Color.White),
-                    modifier = Modifier.size(48.dp),
+                val canSend = draft.isNotBlank() && !state.sending
+                Box(
+                    Modifier.size(48.dp).clip(CircleShape).background(if (canSend) Palette.teal else Color(0xFFB9C5C0))
+                        .clickable(enabled = canSend) { vm.send(draft) { draft = "" } },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(NotizIcons.Send, contentDescription = stringResource(Res.string.chat_send), modifier = Modifier.size(20.dp))
+                    Icon(NotizIcons.Send, contentDescription = stringResource(Res.string.chat_send), tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -431,18 +430,18 @@ private fun MessageBubble(
                         )
                     }
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                NotizMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     if (canReply) {
-                        DropdownMenuItem(text = { Text(stringResource(Res.string.chat_reply)) }, onClick = { menu = false; onReply() })
+                        NotizMenuItem(text = { Text(stringResource(Res.string.chat_reply)) }, onClick = { menu = false; onReply() })
                     }
                     if (canDelete) {
-                        DropdownMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = { menu = false; onDelete() })
+                        NotizMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = { menu = false; onDelete() })
                     }
                     if (canReport) {
-                        DropdownMenuItem(text = { Text(stringResource(Res.string.chat_report)) }, onClick = { menu = false; onReport() })
+                        NotizMenuItem(text = { Text(stringResource(Res.string.chat_report)) }, onClick = { menu = false; onReport() })
                     }
                     if (canMute) {
-                        DropdownMenuItem(text = { Text(stringResource(Res.string.chat_mute)) }, onClick = { menu = false; onMute() })
+                        NotizMenuItem(text = { Text(stringResource(Res.string.chat_mute)) }, onClick = { menu = false; onMute() })
                     }
                 }
             }

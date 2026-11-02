@@ -2,6 +2,9 @@
 
 package com.notiz.app.ui.polls
 
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
+import com.notiz.app.ui.components.NotizDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,18 +21,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -256,16 +251,16 @@ private fun NewPollDialog(busy: Boolean, onDismiss: () -> Unit, onCreate: (Strin
     var optionsText by remember { mutableStateOf(defaultOptions) }
     val options = optionsText.lines().map { it.trim() }.filter { it.isNotEmpty() }
 
-    AlertDialog(
+    NotizDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(stringResource(Res.string.polls_new)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                NotizTextField(
                     value = question, onValueChange = { question = it.take(300) },
                     label = { Text(stringResource(Res.string.polls_question_field)) }, modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                NotizTextField(
                     value = optionsText, onValueChange = { optionsText = it.take(1000) },
                     label = { Text(stringResource(Res.string.polls_options_field)) }, minLines = 3,
                     modifier = Modifier.fillMaxWidth(),
@@ -274,11 +269,11 @@ private fun NewPollDialog(busy: Boolean, onDismiss: () -> Unit, onCreate: (Strin
             }
         },
         confirmButton = {
-            TextButton(
+            NotizTextButton(
                 onClick = { onCreate(question, options) },
                 enabled = question.isNotBlank() && options.size >= 2 && !busy,
             ) { Text(stringResource(if (busy) Res.string.polls_creating else Res.string.polls_create)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
+        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }

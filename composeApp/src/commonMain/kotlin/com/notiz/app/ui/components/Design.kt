@@ -19,16 +19,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -221,7 +219,7 @@ fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** Big filled action (56 dp). */
+/** Filled teal action. */
 @Composable
 fun PrimaryButton(
     text: String,
@@ -232,19 +230,22 @@ fun PrimaryButton(
     height: Dp = 48.dp,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Palette.teal),
-        contentPadding = PaddingValues(horizontal = 20.dp),
-        modifier = modifier.height(height),
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier
+            .height(height)
+            .clip(shape)
+            .background(if (enabled) Palette.teal else Color(0xFFB9C5C0), shape)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
             Box(Modifier.size(8.dp))
         }
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         trailing()
     }
 }
@@ -260,23 +261,25 @@ fun SecondaryButton(
     icon: ImageVector? = null,
     height: Dp = 48.dp,
 ) {
-    OutlinedButton(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(14.dp),
-        border = if (accent) BorderStroke(1.5.dp, Palette.teal) else null,
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (accent) Color.White else Palette.chip,
-            contentColor = if (accent) Palette.teal else Palette.ink,
-        ),
-        contentPadding = PaddingValues(horizontal = 14.dp),
-        modifier = modifier.height(height),
+    val shape = RoundedCornerShape(14.dp)
+    val content = if (accent) Palette.teal else Palette.ink
+    Row(
+        modifier
+            .height(height)
+            .clip(shape)
+            .background(if (accent) Color.White else Palette.chip, shape)
+            .then(if (accent) Modifier.border(1.5.dp, Palette.teal, shape) else Modifier)
+            .clickable(enabled = enabled, onClick = onClick)
+            .alpha(if (enabled) 1f else 0.45f)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(18.dp))
             Box(Modifier.size(6.dp))
         }
-        Text(text, fontSize = 14.sp, fontWeight = if (accent) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1)
+        Text(text, color = content, fontSize = 14.sp, fontWeight = if (accent) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -341,15 +344,21 @@ fun ScreenTitle(title: String, modifier: Modifier = Modifier, subtitle: String? 
 /** Floating action for the main "create" action of a tab (New notice, Raise bill…). */
 @Composable
 fun NotizFab(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector = com.notiz.app.ui.theme.NotizIcons.Plus) {
-    androidx.compose.material3.ExtendedFloatingActionButton(
-        onClick = onClick,
-        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
-        text = { Text(text, fontWeight = FontWeight.Bold, fontSize = 15.sp) },
-        shape = RoundedCornerShape(18.dp),
-        containerColor = Palette.teal,
-        contentColor = Color.White,
-        modifier = modifier,
-    )
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        modifier
+            .height(54.dp)
+            .shadow(10.dp, shape, ambientColor = Palette.teal, spotColor = Palette.teal)
+            .clip(shape)
+            .background(Palette.teal)
+            .clickable(onClick = onClick)
+            .padding(start = 16.dp, end = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+        Text(text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+    }
 }
 
 /** Back arrow + title for pushed screens (Members, Payments, Notice, Settings). */

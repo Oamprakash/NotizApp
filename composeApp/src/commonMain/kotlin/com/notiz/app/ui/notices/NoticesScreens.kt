@@ -2,6 +2,11 @@
 
 package com.notiz.app.ui.notices
 
+import com.notiz.app.ui.components.NotizCheckbox
+import com.notiz.app.ui.components.ProgressBar
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
+import com.notiz.app.ui.components.NotizDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,24 +24,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -272,12 +263,7 @@ private fun ReadProgress(count: NoticeReadCount) {
         style = MaterialTheme.typography.labelMedium,
         color = Palette.teal,
     )
-    LinearProgressIndicator(
-        progress = { if (count.members == 0L) 0f else count.reads.toFloat() / count.members },
-        color = Palette.teal,
-        trackColor = Palette.track,
-        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-    )
+    ProgressBar(if (count.members == 0L) 0f else count.reads.toFloat() / count.members)
 }
 
 @Composable
@@ -291,23 +277,23 @@ private fun NewNoticeDialog(
     var pinned by remember { mutableStateOf(false) }
     var photos by remember { mutableStateOf(listOf<ByteArray>()) }
     var pickFailed by remember { mutableStateOf(false) }
-    AlertDialog(
+    NotizDialog(
         onDismissRequest = { if (!posting) onDismiss() },
         title = { Text(stringResource(Res.string.notice_new)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                NotizTextField(
                     value = title, onValueChange = { title = it.take(200) },
                     label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                NotizTextField(
                     value = body, onValueChange = { body = it.take(4000) },
                     label = { Text(stringResource(Res.string.notice_field_details)) }, minLines = 4,
                     modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = pinned, onCheckedChange = { pinned = it })
-                    Text(stringResource(Res.string.notice_pin))
+                    NotizCheckbox(checked = pinned, onCheckedChange = { pinned = it })
+                    Text(stringResource(Res.string.notice_pin), fontSize = 15.sp, modifier = Modifier.padding(start = 10.dp))
                 }
                 PhotoPickerRow(
                     photos = photos,
@@ -322,11 +308,11 @@ private fun NewNoticeDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onPost(title, body, pinned, photos) }, enabled = title.isNotBlank() && !posting) {
+            NotizTextButton(onClick = { onPost(title, body, pinned, photos) }, enabled = title.isNotBlank() && !posting) {
                 Text(stringResource(if (posting) Res.string.notice_posting else Res.string.notice_post))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !posting) { Text(stringResource(Res.string.action_cancel)) } },
+        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !posting) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }
 
@@ -427,14 +413,14 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
     }
 
     if (confirmDelete) {
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(Res.string.notice_delete_title)) },
             text = { Text(stringResource(Res.string.notice_delete_body)) },
             confirmButton = {
-                TextButton(onClick = { confirmDelete = false; vm.delete(onBack) }) { Text(stringResource(Res.string.action_delete)) }
+                NotizTextButton(onClick = { confirmDelete = false; vm.delete(onBack) }) { Text(stringResource(Res.string.action_delete)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_cancel)) } },
+            dismissButton = { NotizTextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
 }

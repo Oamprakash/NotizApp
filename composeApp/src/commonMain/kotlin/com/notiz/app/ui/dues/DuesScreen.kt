@@ -2,6 +2,9 @@
 
 package com.notiz.app.ui.dues
 
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
+import com.notiz.app.ui.components.NotizDialog
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,21 +20,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -455,29 +446,29 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
         )
     }
     cashFor?.let { due ->
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { cashFor = null },
             title = { Text(stringResource(Res.string.dues_cash_title)) },
             text = { Text(stringResource(Res.string.dues_cash_body, due.flatNo, formatRupees(due.amountPaise), due.title)) },
             confirmButton = {
-                TextButton(onClick = { cashFor = null; vm.verify(due, approve = true) }) {
+                NotizTextButton(onClick = { cashFor = null; vm.verify(due, approve = true) }) {
                     Text(stringResource(Res.string.dues_mark_paid))
                 }
             },
-            dismissButton = { TextButton(onClick = { cashFor = null }) { Text(stringResource(Res.string.action_cancel)) } },
+            dismissButton = { NotizTextButton(onClick = { cashFor = null }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
     cancelling?.let { due ->
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { cancelling = null },
             title = { Text(stringResource(Res.string.dues_cancel_due)) },
             text = { Text(stringResource(Res.string.dues_cancel_due_confirm, due.title, formatRupees(due.amountPaise), due.flatNo)) },
             confirmButton = {
-                TextButton(onClick = { cancelling = null; vm.cancelDue(due) }) {
+                NotizTextButton(onClick = { cancelling = null; vm.cancelDue(due) }) {
                     Text(stringResource(Res.string.dues_cancel_due), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { cancelling = null }) { Text(stringResource(Res.string.action_keep)) } },
+            dismissButton = { NotizTextButton(onClick = { cancelling = null }) { Text(stringResource(Res.string.action_keep)) } },
         )
     }
     if (managingBills) {
@@ -490,16 +481,16 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
         )
     }
     cancellingBill?.let { bill ->
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { cancellingBill = null },
             title = { Text(stringResource(Res.string.dues_bill_cancel)) },
             text = { Text(stringResource(Res.string.dues_bill_cancel_confirm, bill.title, bill.unpaidCount)) },
             confirmButton = {
-                TextButton(onClick = { cancellingBill = null; vm.cancelBill(bill) }) {
+                NotizTextButton(onClick = { cancellingBill = null; vm.cancelBill(bill) }) {
                     Text(stringResource(Res.string.dues_bill_cancel), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { cancellingBill = null }) { Text(stringResource(Res.string.action_keep)) } },
+            dismissButton = { NotizTextButton(onClick = { cancellingBill = null }) { Text(stringResource(Res.string.action_keep)) } },
         )
     }
     editingBill?.let { bill ->
@@ -546,7 +537,7 @@ private fun AdminSummary(
                     SecondaryButton(stringResource(Res.string.dues_manage_bills), onClick = onManageBills, modifier = Modifier.weight(1f))
                 }
             }
-            TextButton(onClick = onOpenPaymentSettings) {
+            NotizTextButton(onClick = onOpenPaymentSettings) {
                 Text(
                     stringResource(
                         if (state.onlineEnabled) Res.string.dues_online_on else Res.string.dues_online_setup,
@@ -611,17 +602,15 @@ private fun DueCard(
                 Spacer(Modifier.height(12.dp))
                 if (onlineEnabled) {
                     // Online first: confirmed automatically, no UTR to type
-                    Button(onClick = onPayOnline, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(Res.string.dues_pay_online))
-                    }
+                    PrimaryButton(stringResource(Res.string.dues_pay_online), onClick = onPayOnline, enabled = !busy, modifier = Modifier.fillMaxWidth())
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(onClick = onPay, enabled = !busy) { Text(stringResource(Res.string.dues_pay_upi)) }
-                        TextButton(onClick = onReport, enabled = !busy) { Text(stringResource(Res.string.dues_already_paid)) }
+                        NotizTextButton(onClick = onPay, enabled = !busy) { Text(stringResource(Res.string.dues_pay_upi)) }
+                        NotizTextButton(onClick = onReport, enabled = !busy) { Text(stringResource(Res.string.dues_already_paid)) }
                     }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = onPay, enabled = !busy) { Text(stringResource(Res.string.dues_pay_upi)) }
-                        OutlinedButton(onClick = onReport, enabled = !busy) { Text(stringResource(Res.string.dues_already_paid)) }
+                        PrimaryButton(stringResource(Res.string.dues_pay_upi), onClick = onPay, enabled = !busy, modifier = Modifier.weight(1f))
+                        SecondaryButton(stringResource(Res.string.dues_already_paid), onClick = onReport, enabled = !busy, modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -637,9 +626,9 @@ private fun DueCard(
             if (isAdmin && due.status == DueStatus.PENDING) {
                 Spacer(Modifier.height(if (isMyFlat) 4.dp else 12.dp))
                 Row {
-                    TextButton(onClick = onPaidInCash, enabled = !busy) { Text(stringResource(Res.string.dues_paid_cash)) }
-                    TextButton(onClick = onCancel, enabled = !busy) {
-                        Text(stringResource(Res.string.dues_cancel_due), color = MaterialTheme.colorScheme.error)
+                    NotizTextButton(onClick = onPaidInCash, enabled = !busy) { Text(stringResource(Res.string.dues_paid_cash)) }
+                    NotizTextButton(onClick = onCancel, enabled = !busy) {
+                        Text(stringResource(Res.string.dues_cancel_due), color = Palette.red)
                     }
                 }
             }
@@ -653,7 +642,7 @@ private fun DueCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
                     )
-                    OutlinedButton(onClick = onReceipt) { Text(stringResource(Res.string.dues_receipt)) }
+                    SecondaryButton(stringResource(Res.string.dues_receipt), onClick = onReceipt, accent = true, icon = NotizIcons.Download, height = 40.dp)
                 }
             }
         }
@@ -735,7 +724,7 @@ private fun ReportPaymentDialog(
     onSubmit: (utr: String) -> Unit,
 ) {
     var utr by remember { mutableStateOf("") }
-    AlertDialog(
+    NotizDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(stringResource(Res.string.dues_report_title)) },
         text = {
@@ -747,7 +736,7 @@ private fun ReportPaymentDialog(
                         stringResource(Res.string.dues_report_body, formatRupees(due.amountPaise))
                     },
                 )
-                OutlinedTextField(
+                NotizTextField(
                     value = utr,
                     onValueChange = { utr = it.filter(Char::isLetterOrDigit).take(30) },
                     label = { Text(stringResource(Res.string.dues_utr_field)) },
@@ -758,11 +747,11 @@ private fun ReportPaymentDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSubmit(utr) }, enabled = utr.length >= 6 && !busy) {
+            NotizTextButton(onClick = { onSubmit(utr) }, enabled = utr.length >= 6 && !busy) {
                 Text(stringResource(if (busy) Res.string.action_sending else Res.string.action_submit))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_later)) } },
+        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_later)) } },
     )
 }
 
@@ -818,24 +807,24 @@ private fun BillFormDialog(
     val paise = parseRupeesToPaise(amount)
     val dateOk = isValidIsoDate(dueDate)
 
-    AlertDialog(
+    NotizDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(heading) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(hint, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedTextField(
+                NotizTextField(
                     value = title, onValueChange = { title = it.take(80) },
                     label = { Text(stringResource(Res.string.notice_field_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                NotizTextField(
                     value = amount, onValueChange = { amount = it.take(10) },
                     label = { Text(stringResource(Res.string.dues_amount_field)) }, singleLine = true,
                     isError = amount.isNotEmpty() && paise == null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                NotizTextField(
                     value = dueDate, onValueChange = { dueDate = it.take(10) },
                     label = { Text(stringResource(Res.string.dues_date_field)) }, singleLine = true,
                     isError = !dateOk,
@@ -844,12 +833,12 @@ private fun BillFormDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            NotizTextButton(
                 onClick = { if (paise != null) onConfirm(title, paise, dueDate.trim()) },
                 enabled = title.isNotBlank() && paise != null && dateOk && !busy,
             ) { Text(if (busy) busyLabel else confirmLabel) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
+        dismissButton = { NotizTextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }
 
@@ -861,7 +850,7 @@ private fun BillsDialog(
     onEdit: (Bill) -> Unit,
     onCancel: (Bill) -> Unit,
 ) {
-    AlertDialog(
+    NotizDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.dues_bills_title)) },
         text = {
@@ -884,8 +873,8 @@ private fun BillsDialog(
                         )
                         if (bill.unpaidCount > 0) {
                             Row {
-                                TextButton(onClick = { onEdit(bill) }, enabled = !busy) { Text(stringResource(Res.string.dues_bill_edit)) }
-                                TextButton(onClick = { onCancel(bill) }, enabled = !busy) {
+                                NotizTextButton(onClick = { onEdit(bill) }, enabled = !busy) { Text(stringResource(Res.string.dues_bill_edit)) }
+                                NotizTextButton(onClick = { onCancel(bill) }, enabled = !busy) {
                                     Text(stringResource(Res.string.dues_bill_cancel), color = MaterialTheme.colorScheme.error)
                                 }
                             }
@@ -894,6 +883,6 @@ private fun BillsDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_dismiss)) } },
+        confirmButton = { NotizTextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_dismiss)) } },
     )
 }

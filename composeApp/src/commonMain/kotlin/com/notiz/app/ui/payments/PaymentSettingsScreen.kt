@@ -2,6 +2,10 @@
 
 package com.notiz.app.ui.payments
 
+import com.notiz.app.ui.components.NotizSwitch
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
+import com.notiz.app.ui.components.NotizDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,21 +19,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,7 +62,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import com.notiz.app.ui.components.DetailTopBar
@@ -178,7 +171,7 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
                         onCopy = ::copy,
                     )
                     TurnOnStep(state.status, state.busy, onToggle = vm::setOnline)
-                    TextButton(onClick = { confirmRemove = true }, enabled = !state.busy, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    NotizTextButton(onClick = { confirmRemove = true }, enabled = !state.busy, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Text(stringResource(Res.string.pay_remove), color = Palette.red, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -187,14 +180,14 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
     }
 
     if (confirmRemove) {
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { confirmRemove = false },
             title = { Text(stringResource(Res.string.pay_remove_title)) },
             text = { Text(stringResource(Res.string.pay_remove_body)) },
             confirmButton = {
-                TextButton(onClick = { confirmRemove = false; vm.removeKeys() }) { Text(stringResource(Res.string.pay_remove)) }
+                NotizTextButton(onClick = { confirmRemove = false; vm.removeKeys() }) { Text(stringResource(Res.string.pay_remove)) }
             },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(Res.string.action_cancel)) } },
+            dismissButton = { NotizTextButton(onClick = { confirmRemove = false }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
 }
@@ -257,7 +250,7 @@ private fun KeysStep(status: GatewayStatus, busy: Boolean, onSave: (keyId: Strin
     StepCard(1, stringResource(Res.string.pay_step_keys), done = status.configured) {
         Text(stringResource(Res.string.pay_keys_help), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedTextField(
+        NotizTextField(
             value = keyId,
             onValueChange = { keyId = it.trim().take(40) },
             label = { Text(stringResource(Res.string.pay_key_id)) },
@@ -265,7 +258,7 @@ private fun KeysStep(status: GatewayStatus, busy: Boolean, onSave: (keyId: Strin
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
+        NotizTextField(
             value = secret,
             onValueChange = { secret = it.trim().take(80) },
             label = { Text(stringResource(Res.string.pay_key_secret)) },
@@ -307,7 +300,7 @@ private fun CopyField(label: String, value: String, onCopy: (String) -> Unit) {
             SelectionContainer(Modifier.weight(1f).padding(vertical = 10.dp)) {
                 Text(value, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Palette.ink)
             }
-            TextButton(onClick = { onCopy(value) }) { Text(stringResource(Res.string.pay_copy), color = Palette.teal, fontWeight = FontWeight.Bold) }
+            NotizTextButton(onClick = { onCopy(value) }) { Text(stringResource(Res.string.pay_copy), color = Palette.teal, fontWeight = FontWeight.Bold) }
         }
     }
 }
@@ -324,12 +317,7 @@ private fun TurnOnStep(status: GatewayStatus, busy: Boolean, onToggle: (Boolean)
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(
-                checked = status.onlineEnabled,
-                onCheckedChange = onToggle,
-                enabled = !busy,
-                colors = SwitchDefaults.colors(checkedTrackColor = Palette.teal),
-            )
+            NotizSwitch(checked = status.onlineEnabled, onCheckedChange = onToggle, enabled = !busy)
         }
         if (status.testMode) {
             Column(Modifier.fillMaxWidth().background(Palette.amberSoft, RoundedCornerShape(14.dp))) {

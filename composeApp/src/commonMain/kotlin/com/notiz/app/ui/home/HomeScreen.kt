@@ -1,18 +1,28 @@
 package com.notiz.app.ui.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -109,44 +119,18 @@ fun HomeScreen(
     Scaffold(
         containerColor = Palette.ground,
         bottomBar = {
-            Column {
-                HorizontalDivider(color = Palette.line)
-                NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
-                    HomeTab.entries.forEach { item ->
-                        val badge = when (item) {
-                            HomeTab.Notices -> home.unreadNotices
-                            HomeTab.Dues -> if (session.isAdmin) home.toVerify else home.duesBadge
-                            HomeTab.HelpDesk -> if (session.isAdmin) home.openRequests else 0
-                            else -> 0
-                        }
-                        NavigationBarItem(
-                            selected = item == tab,
-                            onClick = { open(item) },
-                            icon = {
-                                BadgedBox(badge = { if (badge > 0) Badge(containerColor = Palette.orange) { Text(if (badge > 99) "99+" else "$badge") } }) {
-                                    Icon(item.icon(), contentDescription = null, modifier = Modifier.size(22.dp))
-                                }
-                            },
-                            label = {
-                                Text(
-                                    stringResource(item.label),
-                                    fontSize = 11.sp,
-                                    fontWeight = if (item == tab) FontWeight.Bold else FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Palette.teal,
-                                selectedTextColor = Palette.teal,
-                                indicatorColor = Palette.tealSoft,
-                                unselectedIconColor = Palette.muted,
-                                unselectedTextColor = Palette.muted,
-                            ),
-                        )
+            BottomBar(
+                selected = tab,
+                badgeFor = { item ->
+                    when (item) {
+                        HomeTab.Notices -> home.unreadNotices
+                        HomeTab.Dues -> if (session.isAdmin) home.toVerify else home.duesBadge
+                        HomeTab.HelpDesk -> if (session.isAdmin) home.openRequests else 0
+                        else -> 0
                     }
-                }
-            }
+                },
+                onSelect = ::open,
+            )
         },
     ) { padding ->
         // consumeWindowInsets stops the chat's imePadding from double-counting the bottom bar
@@ -173,6 +157,60 @@ fun HomeScreen(
             HomeTab.Dues -> DuesTab(session, onOpenPaymentSettings, modifier)
             HomeTab.HelpDesk -> ComplaintsTab(session, modifier)
             HomeTab.Chat -> ChatTab(session, modifier)
+        }
+    }
+}
+
+/** Notiz's own tab bar: soft teal pill behind the selected icon, small orange count badges. */
+@Composable
+private fun BottomBar(selected: HomeTab, badgeFor: (HomeTab) -> Int, onSelect: (HomeTab) -> Unit) {
+    Column(Modifier.fillMaxWidth().background(Color.White)) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Palette.line))
+        Row(Modifier.fillMaxWidth().navigationBarsPadding().height(66.dp).padding(horizontal = 4.dp)) {
+            HomeTab.entries.forEach { item ->
+                val active = item == selected
+                val badge = badgeFor(item)
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onSelect(item) }
+                        .padding(top = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Box {
+                        Box(
+                            Modifier.size(width = 56.dp, height = 30.dp).background(if (active) Palette.tealSoft else Color.Transparent, RoundedCornerShape(15.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(item.icon(), contentDescription = null, tint = if (active) Palette.teal else Palette.muted, modifier = Modifier.size(22.dp))
+                        }
+                        if (badge > 0) {
+                            Box(
+                                Modifier.align(Alignment.TopEnd).offset(x = (-6).dp, y = (-3).dp)
+                                    .heightIn(min = 18.dp).widthIn(min = 18.dp)
+                                    .background(Color.White, RoundedCornerShape(9.dp)).padding(2.dp)
+                                    .background(Palette.orange, RoundedCornerShape(8.dp)).padding(horizontal = 4.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(if (badge > 99) "99+" else "$badge", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    Text(
+                        stringResource(item.label),
+                        color = if (active) Palette.teal else Palette.muted,
+                        fontSize = 11.sp,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }

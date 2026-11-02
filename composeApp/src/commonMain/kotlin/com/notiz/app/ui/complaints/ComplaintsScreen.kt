@@ -2,6 +2,7 @@
 
 package com.notiz.app.ui.complaints
 
+import com.notiz.app.ui.components.NotizTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +43,6 @@ import com.notiz.app.ui.theme.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -324,6 +324,7 @@ private fun RaiseComplaintSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = Color.White,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = { Box(Modifier.padding(top = 10.dp, bottom = 8.dp).size(width = 40.dp, height = 4.dp).background(Color(0xFFD5DDD9), RoundedCornerShape(2.dp))) },
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp).imePadding(),
@@ -355,7 +356,7 @@ private fun RaiseComplaintSheet(
                     repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
-            OutlinedTextField(
+            NotizTextField(
                 value = description,
                 onValueChange = { description = it.take(2000) },
                 label = { Text(stringResource(Res.string.complaints_problem_field)) },

@@ -1,6 +1,9 @@
 package com.notiz.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,12 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +49,7 @@ fun ErrorBox(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier
     ) {
         Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text(stringResource(Res.string.action_try_again)) }
+        PrimaryButton(stringResource(Res.string.action_try_again), onClick = onRetry)
     }
 }
 
@@ -112,7 +113,7 @@ private fun Banner(message: String?, onDismiss: () -> Unit, isError: Boolean, mo
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f).padding(vertical = 12.dp),
             )
-            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_dismiss)) }
+            NotizTextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_dismiss)) }
         }
     }
 }
@@ -139,20 +140,21 @@ fun LoadingButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    Button(
-        onClick = onClick,
-        enabled = enabled && !loading,
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier.fillMaxWidth().height(56.dp),
+    val shape = RoundedCornerShape(14.dp)
+    val active = enabled && !loading
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(shape)
+            .background(if (enabled || loading) com.notiz.app.ui.theme.Palette.teal else Color(0xFFB9C5C0), shape)
+            .clickable(enabled = active, onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
         if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(22.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
+            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = Color.White)
         } else {
-            Text(text)
+            Text(text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -165,7 +167,7 @@ fun LoadingButton(
 fun LanguageToggle(modifier: Modifier = Modifier) {
     val current = currentLanguage()
     val other = if (current == Language.TAMIL) Language.ENGLISH else Language.TAMIL
-    TextButton(onClick = { AppLanguage.select(other) }, modifier = modifier) {
+    NotizTextButton(onClick = { AppLanguage.select(other) }, modifier = modifier) {
         Text(other.nativeName, fontWeight = FontWeight.SemiBold)
     }
 }

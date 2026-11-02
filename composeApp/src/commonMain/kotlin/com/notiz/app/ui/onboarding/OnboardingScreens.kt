@@ -2,6 +2,8 @@
 
 package com.notiz.app.ui.onboarding
 
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,12 +44,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -190,7 +187,7 @@ fun ProfileScreen(generation: Int, onDone: () -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
 
     OnboardingFrame(NotizIcons.Users, stringResource(Res.string.profile_title), stringResource(Res.string.profile_subtitle)) {
-        OutlinedTextField(
+        NotizTextField(
             value = name,
             onValueChange = { name = it.take(80) },
             label = { Text(stringResource(Res.string.profile_full_name)) },
@@ -226,7 +223,7 @@ fun SocietySetupScreen(generation: Int, onDone: () -> Unit, onSignOut: () -> Uni
             }
         }
         ErrorBanner(state.error?.asString(), onDismiss = vm::dismissError)
-        TextButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+        NotizTextButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text(stringResource(Res.string.action_sign_out), color = Palette.muted)
         }
     }
@@ -238,7 +235,7 @@ private fun JoinForm(loading: Boolean, onJoin: (code: String, flat: String) -> U
     var flat by rememberSaveable { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(Res.string.setup_join_hint), color = Palette.muted, fontSize = 14.sp)
-        OutlinedTextField(
+        NotizTextField(
             value = code,
             onValueChange = { code = it.uppercase().filter(Char::isLetterOrDigit).take(6) },
             label = { Text(stringResource(Res.string.setup_invite_code)) },
@@ -265,27 +262,27 @@ private fun RegisterForm(
     var payee by rememberSaveable { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(Res.string.setup_register_hint), color = Palette.muted, fontSize = 14.sp)
-        OutlinedTextField(
+        NotizTextField(
             value = name, onValueChange = { name = it.take(120) },
             label = { Text(stringResource(Res.string.setup_society_name)) }, singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
+        NotizTextField(
             value = city, onValueChange = { city = it.take(60) },
             label = { Text(stringResource(Res.string.setup_city)) }, singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
             modifier = Modifier.fillMaxWidth(),
         )
         FlatField(flat) { flat = it }
-        OutlinedTextField(
+        NotizTextField(
             value = vpa, onValueChange = { vpa = it.trim().take(100) },
             label = { Text(stringResource(Res.string.setup_upi_id)) }, singleLine = true,
             placeholder = { Text("greenpark@okaxis") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
+        NotizTextField(
             value = payee, onValueChange = { payee = it.take(60) },
             label = { Text(stringResource(Res.string.setup_upi_name)) }, singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -298,7 +295,7 @@ private fun RegisterForm(
 
 @Composable
 private fun FlatField(value: String, onChange: (String) -> Unit) {
-    OutlinedTextField(
+    NotizTextField(
         value = value,
         onValueChange = { onChange(it.uppercase().take(20)) },
         label = { Text(stringResource(Res.string.setup_flat_number)) },
@@ -327,7 +324,7 @@ fun PendingApprovalScreen(membership: Membership, onRefresh: () -> Unit, onSignO
             Text(stringResource(Res.string.pending_notify_hint), color = Palette.inkSoft, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.weight(1f))
         }
         LoadingButton(stringResource(Res.string.pending_check_again), loading = false, onClick = onRefresh)
-        TextButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+        NotizTextButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text(stringResource(Res.string.action_sign_out), color = Palette.muted)
         }
     }

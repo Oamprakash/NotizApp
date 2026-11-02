@@ -2,6 +2,9 @@
 
 package com.notiz.app.ui.settings
 
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
+import com.notiz.app.ui.components.NotizDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,23 +14,12 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -211,7 +203,7 @@ fun SettingsScreen(
                         )
                     }
                 }
-                OutlinedTextField(
+                NotizTextField(
                     value = state.name,
                     onValueChange = { v -> vm.edit { copy(name = v.take(60)) } },
                     label = { Text(stringResource(Res.string.profile_full_name)) },
@@ -261,7 +253,7 @@ fun SettingsScreen(
                     Field(state.societyName, Res.string.setup_society_name) { v -> vm.edit { copy(societyName = v.take(80)) } }
                     Field(state.city, Res.string.setup_city) { v -> vm.edit { copy(city = v.take(60)) } }
                     val vpaOk = state.upiVpa.isBlank() || Upi.isValidVpa(state.upiVpa)
-                    OutlinedTextField(
+                    NotizTextField(
                         value = state.upiVpa,
                         onValueChange = { v -> vm.edit { copy(upiVpa = v.trim().take(100)) } },
                         label = { Text(stringResource(Res.string.setup_upi_id)) },
@@ -321,13 +313,13 @@ fun SettingsScreen(
     }
     if (confirmDelete) {
         var typed by remember { mutableStateOf("") }
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(Res.string.settings_delete)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(stringResource(Res.string.settings_delete_confirm))
-                    OutlinedTextField(
+                    NotizTextField(
                         value = typed,
                         onValueChange = { typed = it.take(10) },
                         label = { Text(stringResource(Res.string.settings_delete_type)) },
@@ -337,12 +329,12 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                NotizTextButton(
                     onClick = { confirmDelete = false; vm.deleteAccount() },
                     enabled = typed.trim().equals("DELETE", ignoreCase = true),
                 ) { Text(stringResource(Res.string.action_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_keep)) } },
+            dismissButton = { NotizTextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_keep)) } },
         )
     }
 }
@@ -364,7 +356,7 @@ private fun Hint(text: String) {
 
 @Composable
 private fun Field(value: String, label: org.jetbrains.compose.resources.StringResource, onChange: (String) -> Unit) {
-    OutlinedTextField(
+    NotizTextField(
         value = value,
         onValueChange = onChange,
         label = { Text(stringResource(label)) },
@@ -375,10 +367,10 @@ private fun Field(value: String, label: org.jetbrains.compose.resources.StringRe
 
 @Composable
 internal fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(
+    NotizDialog(
         onDismissRequest = onDismiss,
         text = { Text(text) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(confirm) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_keep)) } },
+        confirmButton = { NotizTextButton(onClick = onConfirm) { Text(confirm) } },
+        dismissButton = { NotizTextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_keep)) } },
     )
 }

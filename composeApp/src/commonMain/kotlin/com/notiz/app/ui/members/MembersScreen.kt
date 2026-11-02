@@ -2,10 +2,13 @@
 
 package com.notiz.app.ui.members
 
+import com.notiz.app.ui.components.NotizMenu
+import com.notiz.app.ui.components.NotizMenuItem
+import com.notiz.app.ui.components.NotizTextButton
+import com.notiz.app.ui.components.NotizTextField
+import com.notiz.app.ui.components.NotizDialog
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -21,20 +24,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,8 +57,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -236,11 +229,11 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
 
     editingFlat?.let { m ->
         var flat by remember(m.id) { mutableStateOf(m.flatNo) }
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { editingFlat = null },
             title = { Text(stringResource(Res.string.members_flat_title)) },
             text = {
-                OutlinedTextField(
+                NotizTextField(
                     value = flat,
                     onValueChange = { flat = it.take(20) },
                     label = { Text(stringResource(Res.string.setup_flat_number)) },
@@ -249,7 +242,7 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                 )
             },
             confirmButton = {
-                TextButton(
+                NotizTextButton(
                     onClick = {
                         editingFlat = null
                         vm.changeFlat(m, flat, onOwnFlatChanged = onSessionChanged)
@@ -257,11 +250,11 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                     enabled = flat.isNotBlank() && flat.trim() != m.flatNo,
                 ) { Text(stringResource(Res.string.action_save_changes)) }
             },
-            dismissButton = { TextButton(onClick = { editingFlat = null }) { Text(stringResource(Res.string.action_cancel)) } },
+            dismissButton = { NotizTextButton(onClick = { editingFlat = null }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
     removing?.let { m ->
-        AlertDialog(
+        NotizDialog(
             onDismissRequest = { removing = null },
             text = {
                 Text(
@@ -273,11 +266,11 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                 )
             },
             confirmButton = {
-                TextButton(onClick = { removing = null; vm.remove(m) }) {
+                NotizTextButton(onClick = { removing = null; vm.remove(m) }) {
                     Text(stringResource(Res.string.members_remove), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(Res.string.action_keep)) } },
+            dismissButton = { NotizTextButton(onClick = { removing = null }) { Text(stringResource(Res.string.action_keep)) } },
         )
     }
 }
@@ -341,20 +334,20 @@ private fun MemberMenu(
         IconButton(onClick = { open = true }, enabled = !busy) {
             Icon(NotizIcons.More, contentDescription = stringResource(Res.string.members_actions), tint = Palette.muted)
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        NotizMenu(expanded = open, onDismissRequest = { open = false }) {
             if (!isMe) {
-                DropdownMenuItem(
+                NotizMenuItem(
                     text = { Text(stringResource(if (m.isAdmin) Res.string.members_remove_admin else Res.string.members_make_admin)) },
                     onClick = { open = false; onToggleAdmin() },
                 )
             }
-            DropdownMenuItem(text = { Text(stringResource(Res.string.members_change_flat)) }, onClick = { open = false; onChangeFlat() })
+            NotizMenuItem(text = { Text(stringResource(Res.string.members_change_flat)) }, onClick = { open = false; onChangeFlat() })
             if (!isMe) {
-                DropdownMenuItem(
+                NotizMenuItem(
                     text = { Text(stringResource(if (m.chatMuted) Res.string.chat_unmute else Res.string.chat_mute)) },
                     onClick = { open = false; onToggleMute() },
                 )
-                DropdownMenuItem(
+                NotizMenuItem(
                     text = { Text(stringResource(Res.string.members_remove), color = Palette.red) },
                     onClick = { open = false; onRemove() },
                 )
