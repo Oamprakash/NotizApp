@@ -383,4 +383,13 @@
     <string name="home_collected">%1$s · வசூல்</string>
     <string name="home_stat_paid">செலுத்தின</string>
     <string name="home_already_paid_q">ஏற்கனவே செலுத்தினீர்களா?</string>
+
+    <!-- Redesign: remaining screens -->
+    <string name="setup_subtitle">அழைப்புக் குறியீட்டுடன் உங்கள் சங்கத்தில் சேருங்கள், அல்லது நீங்கள் குழுவில் இருந்தால் சங்கத்தைப் பதிவு செய்யுங்கள்.</string>
+    <string name="pending_notify_hint">குழு ஏற்றவுடன் உங்களுக்கு அறிவிப்பு வரும்.</string>
+    <string name="members_actions">உறுப்பினர் செயல்கள்</string>
+    <string name="pay_hero_on">ஆன்லைன் கட்டணம் இயக்கத்தில் உள்ளது</string>
+    <string name="pay_hero_on_sub">குடியிருப்பாளர்கள் Razorpay மூலம் செலுத்தலாம்; உடனே உறுதியாகும்.</string>
+    <string name="pay_hero_off">ஆன்லைன் கட்டணம் நிறுத்தத்தில் உள்ளது</string>
+    <string name="pay_hero_off_sub">இயக்க கீழே உள்ள 3 படிகளைப் பின்பற்றவும்.</string>
 </resources>

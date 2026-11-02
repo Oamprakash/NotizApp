@@ -81,7 +81,7 @@ private val LightColors = lightColorScheme(
 )
 
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
+    extraSmall = RoundedCornerShape(12.dp), // text fields
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(20.dp),

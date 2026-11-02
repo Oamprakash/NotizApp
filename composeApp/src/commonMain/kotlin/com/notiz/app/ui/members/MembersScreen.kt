@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -57,6 +58,25 @@ import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.util.urlEncode
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import com.notiz.app.ui.components.Avatar
+import com.notiz.app.ui.components.Chip
+import com.notiz.app.ui.components.DetailTopBar
+import com.notiz.app.ui.components.GroupCard
+import com.notiz.app.ui.components.NotizCard
+import com.notiz.app.ui.components.PrimaryButton
+import com.notiz.app.ui.components.SecondaryButton
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -144,13 +164,9 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
     var removing by remember { mutableStateOf<Membership?>(null) }
 
     Scaffold(
+        containerColor = Palette.ground,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(if (session.isAdmin) Res.string.members_title else Res.string.members_neighbours)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back)) }
-                },
-            )
+            DetailTopBar(stringResource(if (session.isAdmin) Res.string.members_title else Res.string.members_neighbours), onBack)
         },
     ) { padding ->
         when {
@@ -158,7 +174,7 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
             state.loadError != null && state.members.isEmpty() ->
                 ErrorBox(state.loadError!!.asString(), onRetry = vm::load, modifier = Modifier.padding(padding))
             else -> LazyColumn(
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(padding).fillMaxSize(),
             ) {
@@ -177,38 +193,39 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                     if (state.pending.isNotEmpty()) {
                         item { SectionTitle(stringResource(Res.string.members_waiting, state.pending.size)) }
                         items(state.pending, key = { it.id }) { m ->
-                            MemberRow(m) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Button(onClick = { vm.approve(m) }, enabled = !state.busy) { Text(stringResource(Res.string.members_approve)) }
-                                    OutlinedButton(onClick = { vm.reject(m) }, enabled = !state.busy) { Text(stringResource(Res.string.members_reject)) }
+                            NotizCard {
+                                MemberLine(m)
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    PrimaryButton(stringResource(Res.string.members_approve), onClick = { vm.approve(m) }, enabled = !state.busy, height = 44.dp, modifier = Modifier.weight(1f))
+                                    SecondaryButton(stringResource(Res.string.members_reject), onClick = { vm.reject(m) }, enabled = !state.busy, height = 44.dp, modifier = Modifier.weight(1f))
                                 }
                             }
                         }
                     }
                 }
                 item { SectionTitle(stringResource(Res.string.members_count, state.approved.size)) }
-                items(state.approved, key = { it.id }) { m ->
-                    MemberRow(m) {
-                        if (session.isAdmin) {
-                            Row(Modifier.horizontalScroll(rememberScrollState())) {
-                                if (m.userId != session.userId) {
-                                    TextButton(onClick = { vm.toggleAdmin(m) }, enabled = !state.busy) {
-                                        Text(stringResource(if (m.isAdmin) Res.string.members_remove_admin else Res.string.members_make_admin))
+                item {
+                    GroupCard {
+                        state.approved.forEachIndexed { i, m ->
+                            Column {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    MemberLine(m, Modifier.weight(1f))
+                                    if (session.isAdmin) {
+                                        MemberMenu(
+                                            m = m,
+                                            isMe = m.userId == session.userId,
+                                            busy = state.busy,
+                                            onToggleAdmin = { vm.toggleAdmin(m) },
+                                            onChangeFlat = { editingFlat = m },
+                                            onToggleMute = { vm.toggleMute(m) },
+                                            onRemove = { removing = m },
+                                        )
                                     }
                                 }
-                                TextButton(onClick = { editingFlat = m }, enabled = !state.busy) {
-                                    Text(stringResource(Res.string.members_change_flat))
-                                }
-                                if (m.userId != session.userId) {
-                                    TextButton(onClick = { vm.toggleMute(m) }, enabled = !state.busy) {
-                                        Text(stringResource(if (m.chatMuted) Res.string.chat_unmute else Res.string.chat_mute))
-                                    }
-                                }
-                                if (m.userId != session.userId) {
-                                    TextButton(onClick = { removing = m }, enabled = !state.busy) {
-                                        Text(stringResource(Res.string.members_remove), color = MaterialTheme.colorScheme.error)
-                                    }
-                                }
+                                if (i < state.approved.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 66.dp).height(1.dp).background(Palette.lineSoft))
                             }
                         }
                     }
@@ -267,49 +284,81 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 8.dp),
-    )
+    Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
 }
 
+/** Teal card with the invite code and a WhatsApp share button (matches the Home band). */
 @Composable
 private fun InviteCard(code: String, societyName: String, onShare: (String) -> Unit) {
     val message = stringResource(Res.string.members_invite_message, societyName, code)
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text(stringResource(Res.string.setup_invite_code), style = MaterialTheme.typography.labelLarge)
-            Text(code, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(Res.string.members_invite_hint),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = { onShare(message) }) { Text(stringResource(Res.string.members_share_whatsapp)) }
+    Column(
+        Modifier.fillMaxWidth().background(Palette.teal, RoundedCornerShape(22.dp)).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(stringResource(Res.string.setup_invite_code), color = Palette.tealOnDark, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Text(code, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 6.sp)
+        Text(stringResource(Res.string.members_invite_hint), color = Palette.tealOnDark, fontSize = 14.sp, lineHeight = 20.sp)
+        Box(
+            Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color.White).clickable { onShare(message) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(NotizIcons.Share, contentDescription = null, tint = Palette.teal, modifier = Modifier.size(18.dp))
+                Text(stringResource(Res.string.members_share_whatsapp), color = Palette.teal, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            }
         }
     }
 }
 
+/** Avatar, name, flat and role/muted chips. */
 @Composable
-private fun MemberRow(m: Membership, actions: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(m.profiles?.fullName ?: stringResource(Res.string.members_resident), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        stringResource(Res.string.home_flat, m.flatNo),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (m.chatMuted) StatusPill(stringResource(Res.string.chat_muted_pill), MaterialTheme.colorScheme.error)
-                if (m.isAdmin) StatusPill(stringResource(Res.string.members_admin), MaterialTheme.colorScheme.primary)
+private fun MemberLine(m: Membership, modifier: Modifier = Modifier) {
+    val name = m.profiles?.fullName ?: stringResource(Res.string.members_resident)
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Avatar(name, size = 40.dp)
+        Column(Modifier.weight(1f)) {
+            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(Res.string.home_flat, m.flatNo), color = Palette.muted, fontSize = 13.sp)
+        }
+        if (m.chatMuted) Chip(stringResource(Res.string.chat_muted_pill), Palette.red)
+        if (m.isAdmin) Chip(stringResource(Res.string.members_admin), Palette.teal)
+    }
+}
+
+/** Admin actions for a member, tucked into a ⋯ menu so the list stays clean. */
+@Composable
+private fun MemberMenu(
+    m: Membership,
+    isMe: Boolean,
+    busy: Boolean,
+    onToggleAdmin: () -> Unit,
+    onChangeFlat: () -> Unit,
+    onToggleMute: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }, enabled = !busy) {
+            Icon(NotizIcons.More, contentDescription = stringResource(Res.string.members_actions), tint = Palette.muted)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            if (!isMe) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (m.isAdmin) Res.string.members_remove_admin else Res.string.members_make_admin)) },
+                    onClick = { open = false; onToggleAdmin() },
+                )
             }
-            actions()
+            DropdownMenuItem(text = { Text(stringResource(Res.string.members_change_flat)) }, onClick = { open = false; onChangeFlat() })
+            if (!isMe) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (m.chatMuted) Res.string.chat_unmute else Res.string.chat_mute)) },
+                    onClick = { open = false; onToggleMute() },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.members_remove), color = Palette.red) },
+                    onClick = { open = false; onRemove() },
+                )
+            }
         }
     }
 }

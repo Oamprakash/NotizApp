@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -349,4 +350,20 @@ fun NotizFab(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, i
         contentColor = Color.White,
         modifier = modifier,
     )
+}
+
+/** Back arrow + title for pushed screens (Members, Payments, Notice, Settings). */
+@Composable
+fun DetailTopBar(title: String, onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
+    Row(
+        Modifier.fillMaxWidth().background(Palette.ground).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBars)
+            .padding(start = 4.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.material3.IconButton(onClick = onBack) {
+            Icon(com.notiz.app.ui.theme.NotizIcons.ChevronLeft, contentDescription = org.jetbrains.compose.resources.stringResource(com.notiz.app.resources.Res.string.action_back))
+        }
+        Text(title, style = MaterialTheme.typography.headlineSmall, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        actions()
+    }
 }

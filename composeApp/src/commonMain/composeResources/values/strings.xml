@@ -383,4 +383,13 @@ all in one place.</string>
     <string name="home_collected">%1$s · collected</string>
     <string name="home_stat_paid">paid</string>
     <string name="home_already_paid_q">Already paid?</string>
+
+    <!-- Redesign: remaining screens -->
+    <string name="setup_subtitle">Join your society with the invite code, or register it if you're on the committee.</string>
+    <string name="pending_notify_hint">You'll get a notification as soon as the committee approves you.</string>
+    <string name="members_actions">Member actions</string>
+    <string name="pay_hero_on">Online payments are on</string>
+    <string name="pay_hero_on_sub">Residents can pay with Razorpay; payments confirm instantly.</string>
+    <string name="pay_hero_off">Online payments are off</string>
+    <string name="pay_hero_off_sub">Follow the 3 steps below to turn them on.</string>
 </resources>

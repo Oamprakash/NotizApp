@@ -3,6 +3,30 @@
 package com.notiz.app.ui.onboarding
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
+import com.notiz.app.i18n.AppLanguage
+import com.notiz.app.i18n.Language
+import com.notiz.app.i18n.currentLanguage
+import com.notiz.app.ui.components.SegmentedTabs
+import com.notiz.app.ui.components.softShadow
+import com.notiz.app.ui.theme.LightStatusBarIcons
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -87,18 +111,75 @@ class OnboardingViewModel(private val container: AppContainer) : BaseViewModel()
     }
 }
 
+/** Moves the next element up by [by] so the white card overlaps the teal band. */
+private fun Modifier.pullUp(by: Dp) = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val px = by.roundToPx()
+    layout(placeable.width, (placeable.height - px).coerceAtLeast(0)) { placeable.place(0, -px) }
+}
+
+/**
+ * Onboarding frame matching Login and Home: teal band with the logo, language switch, an icon and
+ * the step's title, then a white card with the form overlapping it.
+ */
 @Composable
-private fun OnboardingColumn(content: @Composable ColumnScope.() -> Unit) {
+private fun OnboardingFrame(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    LightStatusBarIcons()
     Column(
-        Modifier
-            .fillMaxSize()
-            .background(com.notiz.app.ui.theme.Palette.ground)
-            .safeDrawingPadding()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) { content() }
+        Modifier.fillMaxSize().background(Palette.ground).imePadding().verticalScroll(rememberScrollState()),
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(Palette.teal, RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                .statusBarsPadding()
+                .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 64.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.size(34.dp).background(Color.White, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                    Text("N", color = Palette.teal, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp)
+                }
+                Text(stringResource(Res.string.app_name), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp, modifier = Modifier.weight(1f))
+                BandLanguageToggle()
+            }
+            Box(Modifier.size(52.dp).background(Palette.tealMid, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(title, color = Color.White, fontSize = 26.sp, lineHeight = 32.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp)
+                Text(subtitle, color = Palette.tealOnDark, fontSize = 15.sp, lineHeight = 22.sp)
+            }
+        }
+        Column(
+            Modifier
+                .pullUp(40.dp)
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .softShadow(RoundedCornerShape(24.dp), elevation = 8.dp)
+                .background(Color.White, RoundedCornerShape(24.dp))
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            content = content,
+        )
+        Spacer(Modifier.navigationBarsPadding().height(16.dp))
+    }
+}
+
+@Composable
+private fun BandLanguageToggle() {
+    val current = currentLanguage()
+    val other = if (current == Language.TAMIL) Language.ENGLISH else Language.TAMIL
+    Box(
+        Modifier.height(34.dp).clip(RoundedCornerShape(17.dp)).border(1.dp, Color(0xFF5FA18F), RoundedCornerShape(17.dp))
+            .clickable { AppLanguage.select(other) }.padding(horizontal = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(other.nativeName, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp) }
 }
 
 @Composable
@@ -108,14 +189,7 @@ fun ProfileScreen(generation: Int, onDone: () -> Unit) {
     val state by vm.state.collectAsState()
     var name by rememberSaveable { mutableStateOf("") }
 
-    OnboardingColumn {
-        LanguageToggle(Modifier.align(Alignment.End))
-        Spacer(Modifier.height(24.dp))
-        Text(stringResource(Res.string.profile_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(
-            stringResource(Res.string.profile_subtitle),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    OnboardingFrame(NotizIcons.Users, stringResource(Res.string.profile_title), stringResource(Res.string.profile_subtitle)) {
         OutlinedTextField(
             value = name,
             onValueChange = { name = it.take(80) },
@@ -138,13 +212,12 @@ fun SocietySetupScreen(generation: Int, onDone: () -> Unit, onSignOut: () -> Uni
     val state by vm.state.collectAsState()
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
-    OnboardingColumn {
-        LanguageToggle(Modifier.align(Alignment.End))
-        Text(stringResource(Res.string.setup_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        PrimaryTabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(Res.string.setup_tab_join)) })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(Res.string.setup_tab_register)) })
-        }
+    OnboardingFrame(NotizIcons.Home, stringResource(Res.string.setup_title), stringResource(Res.string.setup_subtitle)) {
+        SegmentedTabs(
+            options = listOf(stringResource(Res.string.setup_tab_join), stringResource(Res.string.setup_tab_register)),
+            selected = tab,
+            onSelect = { tab = it },
+        )
         if (tab == 0) {
             JoinForm(loading = state.loading) { code, flat -> vm.join(code, flat, onDone) }
         } else {
@@ -153,7 +226,9 @@ fun SocietySetupScreen(generation: Int, onDone: () -> Unit, onSignOut: () -> Uni
             }
         }
         ErrorBanner(state.error?.asString(), onDismiss = vm::dismissError)
-        TextButton(onClick = onSignOut) { Text(stringResource(Res.string.action_sign_out)) }
+        TextButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Text(stringResource(Res.string.action_sign_out), color = Palette.muted)
+        }
     }
 }
 
@@ -162,15 +237,13 @@ private fun JoinForm(loading: Boolean, onJoin: (code: String, flat: String) -> U
     var code by rememberSaveable { mutableStateOf("") }
     var flat by rememberSaveable { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            stringResource(Res.string.setup_join_hint),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(stringResource(Res.string.setup_join_hint), color = Palette.muted, fontSize = 14.sp)
         OutlinedTextField(
             value = code,
             onValueChange = { code = it.uppercase().filter(Char::isLetterOrDigit).take(6) },
             label = { Text(stringResource(Res.string.setup_invite_code)) },
             singleLine = true,
+            textStyle = MaterialTheme.typography.titleLarge.copy(letterSpacing = 6.sp),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -180,7 +253,6 @@ private fun JoinForm(loading: Boolean, onJoin: (code: String, flat: String) -> U
         }
     }
 }
-
 @Composable
 private fun RegisterForm(
     loading: Boolean,
@@ -192,10 +264,7 @@ private fun RegisterForm(
     var vpa by rememberSaveable { mutableStateOf("") }
     var payee by rememberSaveable { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            stringResource(Res.string.setup_register_hint),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(stringResource(Res.string.setup_register_hint), color = Palette.muted, fontSize = 14.sp)
         OutlinedTextField(
             value = name, onValueChange = { name = it.take(120) },
             label = { Text(stringResource(Res.string.setup_society_name)) }, singleLine = true,
@@ -242,19 +311,24 @@ private fun FlatField(value: String, onChange: (String) -> Unit) {
 
 @Composable
 fun PendingApprovalScreen(membership: Membership, onRefresh: () -> Unit, onSignOut: () -> Unit) {
-    OnboardingColumn {
-        Spacer(Modifier.height(64.dp))
-        Text(stringResource(Res.string.pending_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(
-            stringResource(
-                Res.string.pending_body,
-                membership.societies?.name ?: stringResource(Res.string.pending_the_society),
-                membership.flatNo,
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(8.dp))
+    OnboardingFrame(
+        NotizIcons.Clock,
+        stringResource(Res.string.pending_title),
+        stringResource(
+            Res.string.pending_body,
+            membership.societies?.name ?: stringResource(Res.string.pending_the_society),
+            membership.flatNo,
+        ),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(40.dp).background(Palette.amberSoft, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(NotizIcons.Bell, contentDescription = null, tint = Palette.amberText, modifier = Modifier.size(20.dp))
+            }
+            Text(stringResource(Res.string.pending_notify_hint), color = Palette.inkSoft, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.weight(1f))
+        }
         LoadingButton(stringResource(Res.string.pending_check_again), loading = false, onClick = onRefresh)
-        OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) { Text(stringResource(Res.string.action_sign_out)) }
+        TextButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Text(stringResource(Res.string.action_sign_out), color = Palette.muted)
+        }
     }
 }

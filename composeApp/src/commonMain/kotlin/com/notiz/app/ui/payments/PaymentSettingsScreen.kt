@@ -63,6 +63,18 @@ import com.notiz.app.ui.components.LoadingButton
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.theme.StatusColors
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import com.notiz.app.ui.components.DetailTopBar
+import com.notiz.app.ui.components.NotizCard
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
 import kotlinx.coroutines.flow.update
 import org.jetbrains.compose.resources.stringResource
 
@@ -136,16 +148,8 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Res.string.pay_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back))
-                    }
-                },
-            )
-        },
+        containerColor = Palette.ground,
+        topBar = { DetailTopBar(stringResource(Res.string.pay_title), onBack) },
     ) { padding ->
         when {
             state.loading -> LoadingBox(Modifier.padding(padding))
@@ -157,10 +161,11 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
                     .fillMaxSize()
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Text(stringResource(Res.string.pay_intro), style = MaterialTheme.typography.bodyMedium)
+                StatusHero(state.status)
+                Text(stringResource(Res.string.pay_intro), color = Palette.inkSoft, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(horizontal = 4.dp))
                 ErrorBanner(state.error?.asString(), onDismiss = vm::dismiss)
                 InfoBanner(state.info?.asString(), onDismiss = vm::dismiss)
 
@@ -173,8 +178,8 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
                         onCopy = ::copy,
                     )
                     TurnOnStep(state.status, state.busy, onToggle = vm::setOnline)
-                    TextButton(onClick = { confirmRemove = true }, enabled = !state.busy) {
-                        Text(stringResource(Res.string.pay_remove), color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = { confirmRemove = true }, enabled = !state.busy, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text(stringResource(Res.string.pay_remove), color = Palette.red, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -194,17 +199,54 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
     }
 }
 
+/** Big status card at the top: are residents able to pay online right now? */
 @Composable
-private fun StepCard(number: Int, title: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                stringResource(Res.string.pay_step, number, title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            content()
+private fun StatusHero(status: GatewayStatus) {
+    val on = status.configured && status.onlineEnabled
+    Row(
+        Modifier.fillMaxWidth().background(if (on) Palette.teal else Color.White, RoundedCornerShape(22.dp)).padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(
+            Modifier.size(48.dp).background(if (on) Palette.tealMid else Palette.amberSoft, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(if (on) NotizIcons.Check else NotizIcons.Rupee, contentDescription = null, tint = if (on) Color.White else Palette.amberText, modifier = Modifier.size(24.dp))
         }
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(if (on) Res.string.pay_hero_on else Res.string.pay_hero_off),
+                color = if (on) Color.White else Palette.ink,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Text(
+                stringResource(if (on) Res.string.pay_hero_on_sub else Res.string.pay_hero_off_sub),
+                color = if (on) Palette.tealOnDark else Palette.muted,
+                fontSize = 13.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StepCard(number: Int, title: String, done: Boolean = false, content: @Composable () -> Unit) {
+    NotizCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                Modifier.size(28.dp).background(if (done) Palette.teal else Palette.tealSoft, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (done) {
+                    Icon(NotizIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                } else {
+                    Text(number.toString(), color = Palette.teal, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                }
+            }
+            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
     }
 }
 
@@ -212,7 +254,7 @@ private fun StepCard(number: Int, title: String, content: @Composable () -> Unit
 private fun KeysStep(status: GatewayStatus, busy: Boolean, onSave: (keyId: String, secret: String, onSaved: () -> Unit) -> Unit) {
     var keyId by remember(status.keyId) { mutableStateOf(status.keyId.orEmpty()) }
     var secret by remember { mutableStateOf("") }
-    StepCard(1, stringResource(Res.string.pay_step_keys)) {
+    StepCard(1, stringResource(Res.string.pay_step_keys), done = status.configured) {
         Text(stringResource(Res.string.pay_keys_help), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedTextField(
@@ -256,20 +298,23 @@ private fun WebhookStep(url: String, secret: String, onCopy: (String) -> Unit) {
 
 @Composable
 private fun CopyField(label: String, value: String, onCopy: (String) -> Unit) {
-    Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SelectionContainer(Modifier.weight(1f)) {
-                Text(value, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, color = Palette.muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Row(
+            Modifier.fillMaxWidth().background(Palette.chip, RoundedCornerShape(12.dp)).padding(start = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SelectionContainer(Modifier.weight(1f).padding(vertical = 10.dp)) {
+                Text(value, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Palette.ink)
             }
-            TextButton(onClick = { onCopy(value) }) { Text(stringResource(Res.string.pay_copy)) }
+            TextButton(onClick = { onCopy(value) }) { Text(stringResource(Res.string.pay_copy), color = Palette.teal, fontWeight = FontWeight.Bold) }
         }
     }
 }
 
 @Composable
 private fun TurnOnStep(status: GatewayStatus, busy: Boolean, onToggle: (Boolean) -> Unit) {
-    StepCard(3, stringResource(Res.string.pay_step_turn_on)) {
+    StepCard(3, stringResource(Res.string.pay_step_turn_on), done = status.onlineEnabled) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(Res.string.pay_accept_online), style = MaterialTheme.typography.bodyLarge)
@@ -279,10 +324,15 @@ private fun TurnOnStep(status: GatewayStatus, busy: Boolean, onToggle: (Boolean)
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(checked = status.onlineEnabled, onCheckedChange = onToggle, enabled = !busy)
+            Switch(
+                checked = status.onlineEnabled,
+                onCheckedChange = onToggle,
+                enabled = !busy,
+                colors = SwitchDefaults.colors(checkedTrackColor = Palette.teal),
+            )
         }
         if (status.testMode) {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+            Column(Modifier.fillMaxWidth().background(Palette.amberSoft, RoundedCornerShape(14.dp))) {
                 Column(Modifier.padding(12.dp)) {
                     StatusPill(stringResource(Res.string.pay_test_mode), StatusColors.warning)
                     Spacer(Modifier.height(6.dp))

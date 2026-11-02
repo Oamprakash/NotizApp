@@ -80,6 +80,10 @@ import com.notiz.app.ui.theme.Palette
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.notiz.app.ui.components.DetailTopBar
+import com.notiz.app.ui.components.IconTile
+import com.notiz.app.ui.components.SecondaryButton
+import com.notiz.app.ui.theme.NotizIcons
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -381,55 +385,43 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
     var confirmDelete by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Res.string.notice_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back))
-                    }
-                },
-            )
-        },
+        containerColor = Palette.ground,
+        topBar = { DetailTopBar(stringResource(Res.string.notice_title), onBack) },
     ) { padding ->
         val notice = state.notice
         when {
             state.loading -> LoadingBox(Modifier.padding(padding))
             notice == null -> ErrorBox(state.error?.asString() ?: stringResource(Res.string.notice_not_found), onRetry = vm::load, modifier = Modifier.padding(padding))
             else -> Column(
-                Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+                Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                if (notice.pinned) {
-                    StatusPill(stringResource(Res.string.notice_pinned), MaterialTheme.colorScheme.secondary)
-                    Spacer(Modifier.height(8.dp))
-                }
-                Text(notice.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    localTimestamp(notice.createdAt),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(16.dp))
-                Text(notice.body, style = MaterialTheme.typography.bodyLarge)
-                if (notice.photoPaths.isNotEmpty()) {
-                    Spacer(Modifier.height(16.dp))
-                    RemotePhotoStrip(notice.photoPaths, size = 140.dp)
+                NotizCard(radius = 22.dp, padding = PaddingValues(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        IconTile(NotizIcons.Notice, Palette.teal, Palette.tealSoft, size = 36.dp, iconSize = 18.dp, radius = 12.dp)
+                        Text(localTimestamp(notice.createdAt), color = Palette.muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        if (notice.pinned) Tag(stringResource(Res.string.notice_pinned))
+                    }
+                    Text(notice.title, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.3).sp)
+                    if (notice.body.isNotBlank()) {
+                        Text(notice.body, color = Palette.inkSoft, fontSize = 16.sp, lineHeight = 25.sp)
+                    }
+                    if (notice.photoPaths.isNotEmpty()) RemotePhotoStrip(notice.photoPaths, size = 140.dp)
                 }
 
                 if (session.isAdmin) {
-                    Spacer(Modifier.height(32.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(onClick = { vm.togglePin {} }) {
-                            Text(stringResource(if (notice.pinned) Res.string.notice_unpin else Res.string.notice_pin))
-                        }
-                        OutlinedButton(onClick = { confirmDelete = true }) { Text(stringResource(Res.string.action_delete)) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SecondaryButton(
+                            stringResource(if (notice.pinned) Res.string.notice_unpin else Res.string.notice_pin),
+                            onClick = { vm.togglePin {} },
+                            icon = NotizIcons.Pin,
+                            accent = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        SecondaryButton(stringResource(Res.string.action_delete), onClick = { confirmDelete = true }, icon = NotizIcons.Trash, modifier = Modifier.weight(1f))
                     }
                 }
-                state.error?.let {
-                    Spacer(Modifier.height(12.dp))
-                    Text(it.asString(), color = MaterialTheme.colorScheme.error)
-                }
+                state.error?.let { Text(it.asString(), color = Palette.red) }
             }
         }
     }
