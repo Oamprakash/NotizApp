@@ -37,9 +37,9 @@ class ChatRepository(private val supabase: SupabaseClient) {
             .reversed()
 
     /** Sends and returns the stored message (with server-filled name, flat and time). */
-    suspend fun sendMessage(societyId: String, body: String): Message =
+    suspend fun sendMessage(societyId: String, body: String, replyToId: String? = null): Message =
         supabase.from("messages")
-            .insert(NewMessage(societyId = societyId, senderId = uid(), body = body.trim())) { select() }
+            .insert(NewMessage(societyId = societyId, senderId = uid(), body = body.trim(), replyToId = replyToId)) { select() }
             .decodeSingle()
 
     /**

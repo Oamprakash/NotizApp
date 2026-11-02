@@ -22,6 +22,7 @@ Notiz sends push notifications for:
 | Removed by an admin | That member |
 | Member left the society or deleted their account | Admins |
 | Society renamed, new UPI ID, online payments turned on / paused | All members except the admin who changed it |
+| Reply to your chat message ("Bala replied to you") | The person replied to |
 | Chat message reported | Admins |
 | Muted / unmuted in chat | That member |
 

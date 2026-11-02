@@ -293,4 +293,10 @@
     <string name="error_cant_mute_self">You can't mute yourself.</string>
     <string name="error_cant_report_own">You can't report your own message.</string>
     <string name="settings_privacy">Privacy policy</string>
+
+    <!-- Chat replies -->
+    <string name="chat_reply">Reply</string>
+    <string name="chat_you">You</string>
+    <string name="chat_replying_to">Replying to %1$s</string>
+    <string name="chat_cancel_reply">Cancel reply</string>
 </resources>

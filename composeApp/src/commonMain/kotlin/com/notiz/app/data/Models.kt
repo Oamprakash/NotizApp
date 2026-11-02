@@ -170,6 +170,10 @@ data class Message(
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("deleted_at") val deletedAt: String? = null,
     @SerialName("deleted_by") val deletedBy: String? = null,
+    // Reply: the message this answers, with a server-filled preview ("" if that message was deleted)
+    @SerialName("reply_to_id") val replyToId: String? = null,
+    @SerialName("reply_sender_name") val replySenderName: String? = null,
+    @SerialName("reply_body") val replyBody: String? = null,
 ) {
     val isDeleted get() = deletedAt != null
 }
@@ -179,6 +183,7 @@ data class NewMessage(
     @SerialName("society_id") val societyId: String,
     @SerialName("sender_id") val senderId: String,
     val body: String,
+    @SerialName("reply_to_id") val replyToId: String? = null,
 )
 
 object PaymentMode {

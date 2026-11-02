@@ -293,4 +293,10 @@
     <string name="error_cant_mute_self">உங்களை நீங்களே முடக்க முடியாது.</string>
     <string name="error_cant_report_own">உங்கள் சொந்தச் செய்தி மீது புகார் செய்ய முடியாது.</string>
     <string name="settings_privacy">தனியுரிமைக் கொள்கை</string>
+
+    <!-- Chat replies -->
+    <string name="chat_reply">பதில்</string>
+    <string name="chat_you">நீங்கள்</string>
+    <string name="chat_replying_to">%1$s-க்குப் பதில்</string>
+    <string name="chat_cancel_reply">பதிலை ரத்து செய்</string>
 </resources>

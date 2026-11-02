@@ -10,6 +10,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontStyle
 import com.notiz.app.ui.components.InfoBanner
 import com.notiz.app.i18n.uiText
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,6 +100,8 @@ data class ChatUiState(
     val sendError: UiText? = null,
     val info: UiText? = null,
     val sending: Boolean = false,
+    /** The message being answered (set by swiping it right or "Reply" in its menu). */
+    val replyingTo: Message? = null,
 )
 
 class ChatViewModel(
@@ -127,7 +157,16 @@ class ChatViewModel(
         container.chat.deleteMessage(message.id)
         // Show the stub now even if realtime is slow
         state.update { s ->
-            s.copy(messages = s.messages.map { if (it.id == message.id) it.copy(body = "", deletedAt = "now", deletedBy = session.userId) else it })
+            s.copy(
+                messages = s.messages.map {
+                    when {
+                        it.id == message.id -> it.copy(body = "", deletedAt = "now", deletedBy = session.userId)
+                        it.replyToId == message.id -> it.copy(replyBody = "")
+                        else -> it
+                    }
+                },
+                replyingTo = s.replyingTo?.takeIf { it.id != message.id },
+            )
         }
         null
     }
@@ -142,13 +181,16 @@ class ChatViewModel(
         uiText(Res.string.chat_muted_member, message.senderName.ifBlank { message.flatNo })
     }
 
+    fun replyTo(message: Message?) = state.update { it.copy(replyingTo = message) }
+
     fun send(text: String, onSent: () -> Unit) {
         if (text.isBlank()) return
+        val replyTo = state.value.replyingTo
         state.update { it.copy(sending = true, sendError = null) }
         launchSafe(onError = { msg -> state.update { it.copy(sending = false, sendError = msg) } }) {
-            val sent = container.chat.sendMessage(session.societyId, text)
+            val sent = container.chat.sendMessage(session.societyId, text, replyTo?.id)
             addMessage(sent) // shows instantly even if realtime is slow
-            state.update { it.copy(sending = false) }
+            state.update { it.copy(sending = false, replyingTo = null) }
             onSent()
         }
     }
@@ -164,6 +206,8 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
     var draft by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
     var confirmDelete by remember { mutableStateOf<Message?>(null) }
+    val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
     var confirmMute by remember { mutableStateOf<Message?>(null) }
 
     confirmDelete?.let { message ->
@@ -208,9 +252,19 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                 ) {
                     items(state.messages, key = { it.id }) { message ->
                         val mine = message.senderId == session.userId
+                        val canReply = !message.isDeleted && !session.membership.chatMuted
                         MessageBubble(
                             message = message,
                             mine = mine,
+                            canReply = canReply,
+                            onReply = {
+                                vm.replyTo(message)
+                                focusRequester.requestFocusSafely()
+                            },
+                            onOpenQuote = { id ->
+                                val index = state.messages.indexOfFirst { it.id == id }
+                                if (index >= 0) scope.launch { listState.animateScrollToItem(index) }
+                            },
                             canDelete = !message.isDeleted && (mine || session.isAdmin),
                             canReport = !message.isDeleted && !mine,
                             canMute = !message.isDeleted && !mine && session.isAdmin,
@@ -233,6 +287,13 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
             )
         } else {
+            state.replyingTo?.let { quoted ->
+                ReplyBar(
+                    senderName = if (quoted.senderId == session.userId) stringResource(Res.string.chat_you) else quoted.senderName,
+                    body = quoted.body,
+                    onClose = { vm.replyTo(null) },
+                )
+            }
             Row(
                 Modifier.fillMaxWidth().padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -243,7 +304,7 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                     onValueChange = { draft = it.take(4000) },
                     placeholder = { Text(stringResource(Res.string.chat_message_hint)) },
                     maxLines = 4,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(focusRequester),
                 )
                 FilledIconButton(
                     onClick = { vm.send(draft) { draft = "" } },
@@ -261,6 +322,9 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
 private fun MessageBubble(
     message: Message,
     mine: Boolean,
+    canReply: Boolean,
+    onReply: () -> Unit,
+    onOpenQuote: (String) -> Unit,
     canDelete: Boolean,
     canReport: Boolean,
     canMute: Boolean,
@@ -269,63 +333,208 @@ private fun MessageBubble(
     onMute: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
-    val hasActions = canDelete || canReport || canMute
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
-        Box {
-            Surface(
-                color = if (mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(
-                    topStart = 16.dp, topEnd = 16.dp,
-                    bottomStart = if (mine) 16.dp else 4.dp,
-                    bottomEnd = if (mine) 4.dp else 16.dp,
-                ),
-                modifier = Modifier.widthIn(max = 300.dp)
-                    .combinedClickable(enabled = hasActions, onClick = {}, onLongClick = { menu = true }),
-            ) {
-                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    if (!mine) {
+    val hasActions = canReply || canDelete || canReport || canMute
+    val swipe = rememberSwipeToReply(enabled = canReply, onReply = onReply)
+    Box(Modifier.fillMaxWidth()) {
+        // Reply arrow revealed behind the message while it's dragged right
+        Icon(
+            ReplyIcon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.align(Alignment.CenterStart).padding(start = 8.dp)
+                .graphicsLayer { alpha = swipe.progress; scaleX = 0.6f + 0.4f * swipe.progress; scaleY = scaleX },
+        )
+        Row(
+            Modifier.fillMaxWidth().then(swipe.modifier),
+            horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
+        ) {
+            Box {
+                Surface(
+                    color = if (mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp, topEnd = 16.dp,
+                        bottomStart = if (mine) 16.dp else 4.dp,
+                        bottomEnd = if (mine) 4.dp else 16.dp,
+                    ),
+                    modifier = Modifier.widthIn(max = 300.dp)
+                        .combinedClickable(enabled = hasActions, onClick = {}, onLongClick = { menu = true }),
+                ) {
+                    Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        if (!mine) {
+                            Text(
+                                "${message.senderName} · ${message.flatNo}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        if (message.replyToId != null && !message.isDeleted) {
+                            QuotedMessage(
+                                senderName = message.replySenderName.orEmpty(),
+                                body = message.replyBody.orEmpty(),
+                                mine = mine,
+                                onClick = { onOpenQuote(message.replyToId) },
+                            )
+                        }
+                        if (message.isDeleted) {
+                            Text(
+                                stringResource(
+                                    if (message.deletedBy != null && message.deletedBy != message.senderId) {
+                                        Res.string.chat_deleted_by_admin
+                                    } else {
+                                        Res.string.chat_deleted
+                                    },
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontStyle = FontStyle.Italic,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            Text(message.body, style = MaterialTheme.typography.bodyLarge)
+                        }
                         Text(
-                            "${message.senderName} · ${message.flatNo}",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    if (message.isDeleted) {
-                        Text(
-                            stringResource(
-                                if (message.deletedBy != null && message.deletedBy != message.senderId) {
-                                    Res.string.chat_deleted_by_admin
-                                } else {
-                                    Res.string.chat_deleted
-                                },
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontStyle = FontStyle.Italic,
+                            formatTime(message.createdAt),
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.align(Alignment.End),
                         )
-                    } else {
-                        Text(message.body, style = MaterialTheme.typography.bodyLarge)
                     }
-                    Text(
-                        formatTime(message.createdAt),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.End),
-                    )
                 }
-            }
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                if (canDelete) {
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = { menu = false; onDelete() })
-                }
-                if (canReport) {
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.chat_report)) }, onClick = { menu = false; onReport() })
-                }
-                if (canMute) {
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.chat_mute)) }, onClick = { menu = false; onMute() })
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    if (canReply) {
+                        DropdownMenuItem(text = { Text(stringResource(Res.string.chat_reply)) }, onClick = { menu = false; onReply() })
+                    }
+                    if (canDelete) {
+                        DropdownMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = { menu = false; onDelete() })
+                    }
+                    if (canReport) {
+                        DropdownMenuItem(text = { Text(stringResource(Res.string.chat_report)) }, onClick = { menu = false; onReport() })
+                    }
+                    if (canMute) {
+                        DropdownMenuItem(text = { Text(stringResource(Res.string.chat_mute)) }, onClick = { menu = false; onMute() })
+                    }
                 }
             }
         }
     }
+}
+
+/** "Replying to …" strip above the message box. */
+@Composable
+private fun ReplyBar(senderName: String, body: String, onClose: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(start = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.width(3.dp).height(36.dp).background(MaterialTheme.colorScheme.primary))
+        Column(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 6.dp)) {
+            Text(
+                stringResource(Res.string.chat_replying_to, senderName),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(body, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        IconButton(onClick = onClose) {
+            Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.chat_cancel_reply))
+        }
+    }
+}
+
+/** The quoted message at the top of a reply. Tap to jump to it. */
+@Composable
+private fun QuotedMessage(senderName: String, body: String, mine: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.padding(bottom = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (mine) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
+            )
+            .clickable(onClick = onClick)
+            .height(IntrinsicSize.Min),
+    ) {
+        Box(Modifier.width(3.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
+        Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+            Text(
+                senderName,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+            )
+            Text(
+                body.ifEmpty { stringResource(Res.string.chat_deleted) },
+                style = MaterialTheme.typography.bodySmall,
+                fontStyle = if (body.isEmpty()) FontStyle.Italic else FontStyle.Normal,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+private class SwipeToReply(val modifier: Modifier, private val offsetPx: () -> Float, private val triggerPx: Float) {
+    /** 0 → 1 as the drag approaches the reply point. */
+    val progress: Float get() = (offsetPx() / triggerPx).coerceIn(0f, 1f)
+}
+
+/**
+ * Drag a message to the right to reply, like WhatsApp: a light vibration when it's far enough,
+ * reply on release, and the message springs back.
+ */
+@Composable
+private fun rememberSwipeToReply(enabled: Boolean, onReply: () -> Unit): SwipeToReply {
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val triggerPx = with(density) { 64.dp.toPx() }
+    val maxPx = with(density) { 96.dp.toPx() }
+    val offset = remember { Animatable(0f) }
+    val reply by rememberUpdatedState(onReply)
+    var armed by remember { mutableStateOf(false) }
+
+    val modifier = Modifier
+        .offset { IntOffset(offset.value.roundToInt(), 0) }
+        .pointerInput(enabled) {
+            if (!enabled) return@pointerInput
+            detectHorizontalDragGestures(
+                onDragStart = { armed = false },
+                onDragEnd = {
+                    if (armed) reply()
+                    armed = false
+                    scope.launch { offset.animateTo(0f) }
+                },
+                onDragCancel = {
+                    armed = false
+                    scope.launch { offset.animateTo(0f) }
+                },
+            ) { change, dragAmount ->
+                // Resist the further it goes, and only to the right
+                val next = (offset.value + dragAmount * if (offset.value > triggerPx) 0.4f else 1f).coerceIn(0f, maxPx)
+                if (next != offset.value) change.consume()
+                scope.launch { offset.snapTo(next) }
+                if (!armed && next >= triggerPx) {
+                    armed = true
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                } else if (armed && next < triggerPx * 0.8f) {
+                    armed = false // dragged back: cancel
+                }
+            }
+        }
+    return SwipeToReply(modifier, { offset.value }, triggerPx)
+}
+
+private fun FocusRequester.requestFocusSafely() {
+    runCatching { requestFocus() }
+}
+
+/** Material "reply" arrow (not in the core icon set). */
+private val ReplyIcon: ImageVector by lazy {
+    ImageVector.Builder(name = "Reply", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
+        .addPath(
+            pathData = PathParser().parsePathString("M10,9V5l-7,7 7,7v-4.1c5,0 8.5,1.6 11,5.1 -1,-5 -4,-10 -11,-11z").toNodes(),
+            fill = SolidColor(Color.Black),
+        )
+        .build()
 }
