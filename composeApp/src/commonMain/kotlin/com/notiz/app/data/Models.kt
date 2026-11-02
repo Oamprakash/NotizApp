@@ -208,3 +208,12 @@ data class PayLinkResult(val status: String, val url: String? = null)
 
 @Serializable
 data class OnlineFlag(@SerialName("online_payments_enabled") val onlinePaymentsEnabled: Boolean = false)
+
+@Serializable
+data class ReportRow(
+    @SerialName("message_id") val messageId: String,
+    val messages: ReportedMessage? = null,
+)
+
+@Serializable
+data class ReportedMessage(@SerialName("deleted_at") val deletedAt: String? = null)

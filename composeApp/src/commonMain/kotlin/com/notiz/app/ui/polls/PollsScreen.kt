@@ -56,6 +56,12 @@ import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.notiz.app.ui.components.NotizCard
+import com.notiz.app.ui.components.NotizFab
+import com.notiz.app.ui.components.Tag
+import com.notiz.app.ui.theme.Palette
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -141,7 +147,7 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
                     )
                 } else {
                     LazyColumn(
-                        contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
+                        contentPadding = PaddingValues(20.dp, 4.dp, 20.dp, 96.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
@@ -160,12 +166,7 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
         }
 
         if (session.isAdmin) {
-            ExtendedFloatingActionButton(
-                onClick = { creating = true },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text(stringResource(Res.string.polls_new)) },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            )
+            NotizFab(stringResource(Res.string.polls_new), onClick = { creating = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
     }
@@ -188,9 +189,10 @@ private fun PollCard(
     onVote: (PollOption) -> Unit,
 ) {
     val total = poll.options.sumOf { results[it.id] ?: 0L }
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(poll.question, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+    NotizCard {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Tag(stringResource(Res.string.home_open_poll), color = Palette.teal, background = Palette.tealSoft)
+            Text(poll.question, style = MaterialTheme.typography.titleMedium, fontSize = 17.sp)
             Text(
                 pluralStringResource(Res.plurals.polls_flats_voted, total.toInt(), total) + " · " + localTimestamp(poll.createdAt, withTime = false),
                 style = MaterialTheme.typography.labelSmall,
@@ -221,8 +223,8 @@ private fun OptionRow(option: PollOption, votes: Long, total: Long, selected: Bo
     val fraction = if (total == 0L) 0f else votes.toFloat() / total
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     Surface(
-        shape = MaterialTheme.shapes.small,
-        border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(if (selected) 1.5.dp else 1.dp, borderColor),
         modifier = Modifier.fillMaxWidth().height(48.dp).clickable(enabled = enabled, onClick = onClick),
     ) {
         Box {

@@ -97,6 +97,8 @@ fun MainNavigation(
                 onBack = { navController.popBackStack() },
                 onSessionChanged = onSessionChanged,
                 onSignOut = onSignOut,
+                onOpenMembers = { navController.navigate(MembersRoute) },
+                onOpenPayments = { navController.navigate(PaymentSettingsRoute) },
             )
         }
     }

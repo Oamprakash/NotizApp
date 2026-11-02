@@ -70,6 +70,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import com.notiz.app.data.AttachmentRepository
 import com.notiz.app.photos.PhotoPickerRow
 import com.notiz.app.photos.RemotePhotoStrip
+import com.notiz.app.ui.components.NotizCard
+import com.notiz.app.ui.components.NotizFab
+import com.notiz.app.ui.components.ScreenTitle
+import com.notiz.app.ui.components.SegmentedTabs
+import com.notiz.app.ui.components.Tag
+import com.notiz.app.ui.polls.PollsTab
+import com.notiz.app.ui.theme.Palette
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -129,6 +139,36 @@ class NoticesViewModel(
     fun dismissError() = state.update { it.copy(actionError = null) }
 }
 
+/** The Notices tab: notices and polls behind one segmented control. */
+@Composable
+fun NoticesHub(
+    session: SessionContext,
+    showPolls: Boolean,
+    onShowPolls: (Boolean) -> Unit,
+    unreadNotices: Int,
+    onOpenNotice: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            ScreenTitle(stringResource(Res.string.tab_notices))
+            SegmentedTabs(
+                options = listOf(
+                    stringResource(Res.string.tab_notices) + if (unreadNotices > 0) " · " + stringResource(Res.string.notices_new_count, unreadNotices) else "",
+                    stringResource(Res.string.tab_polls),
+                ),
+                selected = if (showPolls) 1 else 0,
+                onSelect = { onShowPolls(it == 1) },
+            )
+        }
+        if (showPolls) {
+            PollsTab(session, Modifier.weight(1f))
+        } else {
+            NoticesTab(session, onOpenNotice, Modifier.weight(1f))
+        }
+    }
+}
+
 @Composable
 fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier: Modifier = Modifier) {
     val container = LocalAppContainer.current
@@ -156,7 +196,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
                     )
                 } else {
                     LazyColumn(
-                        contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
+                        contentPadding = PaddingValues(20.dp, 4.dp, 20.dp, 96.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
@@ -174,12 +214,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
         }
 
         if (session.isAdmin) {
-            ExtendedFloatingActionButton(
-                onClick = { composing = true },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text(stringResource(Res.string.notice_new)) },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            )
+            NotizFab(stringResource(Res.string.notice_new), onClick = { composing = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
     }
@@ -195,60 +230,49 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
 
 @Composable
 private fun NoticeCard(notice: Notice, unread: Boolean, readCount: NoticeReadCount?, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (unread) {
-                    UnreadDot()
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text(
-                    notice.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = if (unread) FontWeight.Bold else FontWeight.Medium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                if (notice.pinned) StatusPill(stringResource(Res.string.notice_pinned), MaterialTheme.colorScheme.secondary)
-            }
-            if (notice.body.isNotBlank()) {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    notice.body,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (notice.photoPaths.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                RemotePhotoStrip(notice.photoPaths, size = 64.dp)
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                localTimestamp(notice.createdAt),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (readCount != null) ReadProgress(readCount)
+    NotizCard(onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (unread) UnreadDot()
+            if (notice.pinned) Tag(stringResource(Res.string.notice_pinned))
+            Text(localTimestamp(notice.createdAt), color = Palette.muted, fontSize = 12.sp)
         }
+        Text(
+            notice.title,
+            fontSize = 17.sp,
+            fontWeight = if (unread) FontWeight.ExtraBold else FontWeight.Bold,
+            lineHeight = 22.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (notice.body.isNotBlank()) {
+            Text(
+                notice.body,
+                color = Palette.inkSoft,
+                fontSize = 14.sp,
+                lineHeight = 21.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (notice.photoPaths.isNotEmpty()) {
+            RemotePhotoStrip(notice.photoPaths, size = 84.dp)
+        }
+        if (readCount != null) ReadProgress(readCount)
     }
 }
 
 @Composable
 private fun ReadProgress(count: NoticeReadCount) {
-    Spacer(Modifier.height(8.dp))
     Text(
         stringResource(Res.string.notice_read_by, count.reads, count.members),
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.primary,
+        color = Palette.teal,
     )
-    Spacer(Modifier.height(4.dp))
     LinearProgressIndicator(
         progress = { if (count.members == 0L) 0f else count.reads.toFloat() / count.members },
-        modifier = Modifier.fillMaxWidth(),
+        color = Palette.teal,
+        trackColor = Palette.track,
+        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
     )
 }
 

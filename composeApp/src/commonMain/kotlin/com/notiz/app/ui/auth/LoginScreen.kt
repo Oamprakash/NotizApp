@@ -31,6 +31,26 @@ import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.LoadingButton
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import com.notiz.app.i18n.AppLanguage
+import com.notiz.app.i18n.Language
+import com.notiz.app.i18n.currentLanguage
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -90,52 +110,99 @@ fun LoginScreen(generation: Int) {
     Column(
         Modifier
             .fillMaxSize()
-            .safeDrawingPadding()
+            .background(Palette.ground)
             .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+            .verticalScroll(rememberScrollState()),
     ) {
-        LanguageToggle(Modifier.align(Alignment.End))
-        Text(stringResource(Res.string.app_name), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(Res.string.login_tagline),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(32.dp))
+        BrandPanel()
+        Column(Modifier.padding(24.dp)) {
+            Text(stringResource(Res.string.login_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Text(stringResource(Res.string.login_subtitle), color = Palette.muted, fontSize = 14.sp)
+            Spacer(Modifier.height(16.dp))
 
-        if (!state.otpSent) {
-            OutlinedTextField(
-                value = state.phoneDigits,
-                onValueChange = vm::onPhoneChange,
-                label = { Text(stringResource(Res.string.login_mobile_number)) },
-                prefix = { Text("${AppConfig.DEFAULT_COUNTRY_CODE} ") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (!state.otpSent) {
+                OutlinedTextField(
+                    value = state.phoneDigits,
+                    onValueChange = vm::onPhoneChange,
+                    label = { Text(stringResource(Res.string.login_mobile_number)) },
+                    prefix = { Text("${AppConfig.DEFAULT_COUNTRY_CODE} ", fontWeight = FontWeight.Bold) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(16.dp))
+                LoadingButton(text = stringResource(Res.string.login_send_otp), loading = state.loading, enabled = state.canSend, onClick = vm::sendOtp)
+            } else {
+                Text(stringResource(Res.string.login_enter_code, state.fullPhone), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = state.otp,
+                    onValueChange = vm::onOtpChange,
+                    label = { Text(stringResource(Res.string.login_otp)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(16.dp))
+                LoadingButton(text = stringResource(Res.string.login_verify), loading = state.loading, enabled = state.canVerify, onClick = vm::verifyOtp)
+                TextButton(onClick = vm::changeNumber) { Text(stringResource(Res.string.login_change_number)) }
+                TextButton(onClick = vm::sendOtp, enabled = !state.loading) { Text(stringResource(Res.string.login_resend)) }
+            }
+
+            ErrorBanner(state.error?.asString(), onDismiss = vm::dismissError, modifier = Modifier.padding(top = 8.dp))
             Spacer(Modifier.height(16.dp))
-            LoadingButton(text = stringResource(Res.string.login_send_otp), loading = state.loading, enabled = state.canSend, onClick = vm::sendOtp)
-        } else {
-            Text(stringResource(Res.string.login_enter_code, state.fullPhone), style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = state.otp,
-                onValueChange = vm::onOtpChange,
-                label = { Text(stringResource(Res.string.login_otp)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(16.dp))
-            LoadingButton(text = stringResource(Res.string.login_verify), loading = state.loading, enabled = state.canVerify, onClick = vm::verifyOtp)
-            TextButton(onClick = vm::changeNumber) { Text(stringResource(Res.string.login_change_number)) }
-            TextButton(onClick = vm::sendOtp, enabled = !state.loading) { Text(stringResource(Res.string.login_resend)) }
+            Text(stringResource(Res.string.login_new_here), color = Palette.muted, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         }
+    }
+}
 
-        ErrorBanner(state.error?.asString(), onDismiss = vm::dismissError, modifier = Modifier.padding(top = 8.dp))
+/** Teal header with the logo, tagline and what Notiz does (design: Login). */
+@Composable
+private fun BrandPanel() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(Palette.teal, RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+            .safeDrawingPadding()
+            .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(40.dp).background(Color.White, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                Text("N", color = Palette.teal, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+            }
+            Text(stringResource(Res.string.app_name), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.weight(1f))
+            val current = currentLanguage()
+            val other = if (current == Language.TAMIL) Language.ENGLISH else Language.TAMIL
+            Box(
+                Modifier.height(36.dp).clip(RoundedCornerShape(18.dp)).border(1.dp, Color(0xFF5FA18F), RoundedCornerShape(18.dp))
+                    .clickable { AppLanguage.select(other) }.padding(horizontal = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text(other.nativeName, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp) }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(Res.string.login_hero), color = Color.White, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.6).sp)
+            Text(stringResource(Res.string.login_tagline), color = Palette.tealOnDark, fontSize = 15.sp, lineHeight = 22.sp)
+        }
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FeatureChip(NotizIcons.Notice, stringResource(Res.string.tab_notices))
+            FeatureChip(NotizIcons.Rupee, stringResource(Res.string.tab_dues))
+            FeatureChip(NotizIcons.Wrench, stringResource(Res.string.tab_help))
+            FeatureChip(NotizIcons.Poll, stringResource(Res.string.tab_polls))
+        }
+    }
+}
+
+@Composable
+private fun FeatureChip(icon: ImageVector, label: String) {
+    Row(
+        Modifier.background(Palette.tealMid, RoundedCornerShape(50)).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
     }
 }

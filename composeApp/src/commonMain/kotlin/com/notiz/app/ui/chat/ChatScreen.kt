@@ -53,7 +53,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -86,6 +85,15 @@ import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.util.formatTime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.ui.unit.sp
+import com.notiz.app.ui.components.Avatar
+import com.notiz.app.ui.components.IconTile
+import com.notiz.app.ui.components.personColors
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.notiz.app.resources.*
@@ -239,7 +247,19 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.fillMaxSize().imePadding()) {
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            IconTile(NotizIcons.Home, Color.White, Palette.teal)
+            Column(Modifier.weight(1f)) {
+                Text(session.society.name, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(Res.string.chat_header_sub), color = Palette.muted, fontSize = 13.sp)
+            }
+        }
+        HorizontalDivider(color = Palette.line)
+        Box(Modifier.weight(1f).fillMaxWidth().background(Color(0xFFEEF2F0))) {
             when {
                 state.loading && state.messages.isEmpty() -> LoadingBox()
                 state.loadError != null && state.messages.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = vm::load)
@@ -304,13 +324,16 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                     onValueChange = { draft = it.take(4000) },
                     placeholder = { Text(stringResource(Res.string.chat_message_hint)) },
                     maxLines = 4,
+                    shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.weight(1f).focusRequester(focusRequester),
                 )
                 FilledIconButton(
                     onClick = { vm.send(draft) { draft = "" } },
                     enabled = draft.isNotBlank() && !state.sending,
+                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = Palette.teal, contentColor = Color.White),
+                    modifier = Modifier.size(48.dp),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(Res.string.chat_send))
+                    Icon(NotizIcons.Send, contentDescription = stringResource(Res.string.chat_send), modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -349,25 +372,31 @@ private fun MessageBubble(
         Row(
             Modifier.fillMaxWidth().then(swipe.modifier),
             horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
+            verticalAlignment = Alignment.Bottom,
         ) {
+            if (!mine) {
+                Avatar(message.senderName.ifBlank { message.flatNo }, size = 30.dp)
+                Spacer(Modifier.width(8.dp))
+            }
             Box {
                 Surface(
-                    color = if (mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    color = if (mine) Palette.teal else Color.White,
+                    contentColor = if (mine) Color.White else Palette.ink,
                     shape = RoundedCornerShape(
-                        topStart = 16.dp, topEnd = 16.dp,
-                        bottomStart = if (mine) 16.dp else 4.dp,
-                        bottomEnd = if (mine) 4.dp else 16.dp,
+                        topStart = 18.dp, topEnd = 18.dp,
+                        bottomStart = if (mine) 18.dp else 6.dp,
+                        bottomEnd = if (mine) 6.dp else 18.dp,
                     ),
-                    modifier = Modifier.widthIn(max = 300.dp)
+                    modifier = Modifier.widthIn(max = 280.dp)
                         .combinedClickable(enabled = hasActions, onClick = {}, onLongClick = { menu = true }),
                 ) {
                     Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                         if (!mine) {
                             Text(
                                 "${message.senderName} · ${message.flatNo}",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = personColors(message.senderName).first,
                             )
                         }
                         if (message.replyToId != null && !message.isDeleted) {
@@ -389,15 +418,15 @@ private fun MessageBubble(
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontStyle = FontStyle.Italic,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (mine) Palette.tealOnDark else Palette.muted,
                             )
                         } else {
-                            Text(message.body, style = MaterialTheme.typography.bodyLarge)
+                            Text(message.body, fontSize = 15.sp, lineHeight = 21.sp)
                         }
                         Text(
                             formatTime(message.createdAt),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp,
+                            color = if (mine) Palette.tealOnDark else Palette.muted,
                             modifier = Modifier.align(Alignment.End),
                         )
                     }
@@ -450,24 +479,23 @@ private fun QuotedMessage(senderName: String, body: String, mine: Boolean, onCli
     Row(
         Modifier.padding(bottom = 4.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(
-                if (mine) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-            )
+            .background(if (mine) Palette.tealMid else Palette.ground)
             .clickable(onClick = onClick)
             .height(IntrinsicSize.Min),
     ) {
-        Box(Modifier.width(3.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
+        Box(Modifier.width(3.dp).fillMaxHeight().background(if (mine) Palette.marigold else Palette.teal))
         Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
             Text(
                 senderName,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                color = if (mine) Color(0xFFFFD58A) else Palette.teal,
                 maxLines = 1,
             )
             Text(
                 body.ifEmpty { stringResource(Res.string.chat_deleted) },
                 style = MaterialTheme.typography.bodySmall,
+                color = if (mine) Palette.tealOnDark else Palette.inkSoft,
                 fontStyle = if (body.isEmpty()) FontStyle.Italic else FontStyle.Normal,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

@@ -54,6 +54,22 @@ import com.notiz.app.ui.components.InfoBanner
 import com.notiz.app.ui.components.LanguageToggle
 import com.notiz.app.util.Upi
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.unit.sp
+import com.notiz.app.i18n.AppLanguage
+import com.notiz.app.i18n.Language
+import com.notiz.app.i18n.currentLanguage
+import com.notiz.app.ui.components.Avatar
+import com.notiz.app.ui.components.GroupCard
+import com.notiz.app.ui.components.GroupLabel
+import com.notiz.app.ui.components.IconTile
+import com.notiz.app.ui.components.ListRow
+import com.notiz.app.ui.components.NotizCard
+import com.notiz.app.ui.components.PrimaryButton
+import com.notiz.app.ui.components.SecondaryButton
+import com.notiz.app.ui.components.SegmentedTabs
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
 import kotlinx.coroutines.flow.update
 import org.jetbrains.compose.resources.stringResource
 
@@ -150,6 +166,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onSessionChanged: () -> Unit,
     onSignOut: () -> Unit,
+    onOpenMembers: () -> Unit = {},
+    onOpenPayments: () -> Unit = {},
 ) {
     val container = LocalAppContainer.current
     val vm = viewModel { SettingsViewModel(container, session) }
@@ -160,25 +178,39 @@ fun SettingsScreen(
     val uriHandler = LocalUriHandler.current
 
     Scaffold(
+        containerColor = Palette.ground,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Res.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back))
-                    }
-                },
-            )
+            Row(
+                Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp, end = 20.dp, top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(NotizIcons.ChevronLeft, contentDescription = stringResource(Res.string.action_back))
+                }
+                Text(stringResource(Res.string.settings_title), style = MaterialTheme.typography.headlineSmall)
+            }
         },
     ) { padding ->
         Column(
-            Modifier.padding(padding).fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier.padding(padding).fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             ErrorBanner(state.error?.asString(), onDismiss = vm::dismiss)
             InfoBanner(state.info?.asString(), onDismiss = vm::dismiss)
 
-            Section(stringResource(Res.string.settings_profile)) {
+            NotizCard(radius = 24.dp) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Avatar(state.name.ifBlank { session.flatNo }, size = 60.dp, solid = true)
+                    Column(Modifier.weight(1f)) {
+                        Text(state.name.ifBlank { stringResource(Res.string.members_resident) }, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(
+                            stringResource(Res.string.home_flat, session.flatNo) +
+                                if (session.isAdmin) " · " + stringResource(Res.string.members_admin) else "",
+                            color = Palette.muted,
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
                 OutlinedTextField(
                     value = state.name,
                     onValueChange = { v -> vm.edit { copy(name = v.take(60)) } },
@@ -186,13 +218,40 @@ fun SettingsScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Button(onClick = vm::saveName, enabled = state.name.isNotBlank() && !state.busy) {
-                    Text(stringResource(Res.string.settings_save))
-                }
-                HorizontalDivider()
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(Res.string.settings_language), modifier = Modifier.weight(1f))
-                    LanguageToggle()
+                SecondaryButton(stringResource(Res.string.settings_save), onClick = vm::saveName, enabled = state.name.isNotBlank() && !state.busy, accent = true)
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                GroupLabel(stringResource(Res.string.settings_language))
+                val language = currentLanguage()
+                SegmentedTabs(
+                    options = Language.entries.map { it.nativeName },
+                    selected = Language.entries.indexOf(language),
+                    onSelect = { AppLanguage.select(Language.entries[it]) },
+                    height = 44.dp,
+                )
+                Text(stringResource(Res.string.settings_language_hint), color = Palette.muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
+            }
+
+            if (session.isAdmin) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GroupLabel(stringResource(Res.string.settings_admin_group))
+                    GroupCard {
+                        ListRow(
+                            title = stringResource(Res.string.members_title),
+                            leading = { IconTile(NotizIcons.Users, Palette.blue, Palette.blueSoft, size = 40.dp, iconSize = 20.dp, radius = 12.dp) },
+                            showChevron = true,
+                            onClick = onOpenMembers,
+                        )
+                        ListRow(
+                            title = stringResource(Res.string.settings_payments),
+                            subtitle = state.upiVpa.ifBlank { null },
+                            leading = { IconTile(NotizIcons.Rupee, Palette.amberText, Palette.amberSoft, size = 40.dp, iconSize = 20.dp, radius = 12.dp) },
+                            showChevron = true,
+                            divider = false,
+                            onClick = onOpenPayments,
+                        )
+                    }
                 }
             }
 
@@ -212,38 +271,33 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Field(state.upiPayeeName, Res.string.setup_upi_name) { v -> vm.edit { copy(upiPayeeName = v.take(60)) } }
-                    Button(
+                    PrimaryButton(
+                        stringResource(Res.string.action_save_changes),
                         onClick = { vm.saveSociety(onSaved = onSessionChanged) },
                         enabled = state.societyName.trim().length >= 2 && vpaOk && !state.busy,
-                    ) { Text(stringResource(Res.string.action_save_changes)) }
+                    )
                 }
 
                 Section(stringResource(Res.string.settings_invite_title)) {
-                    Text(state.inviteCode, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    Text(state.inviteCode, color = Palette.teal, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 4.sp)
                     Hint(stringResource(Res.string.settings_invite_hint))
-                    OutlinedButton(onClick = { confirmNewCode = true }, enabled = !state.busy) {
-                        Text(stringResource(Res.string.settings_new_code))
-                    }
+                    SecondaryButton(stringResource(Res.string.settings_new_code), onClick = { confirmNewCode = true }, enabled = !state.busy)
                 }
             }
 
-            Section(stringResource(Res.string.settings_account)) {
-                OutlinedButton(onClick = onSignOut, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(Res.string.action_sign_out))
-                }
-                OutlinedButton(onClick = { confirmLeave = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(Res.string.settings_leave))
-                }
-                HorizontalDivider()
-                Hint(stringResource(Res.string.settings_delete_hint))
-                Button(
-                    onClick = { confirmDelete = true },
-                    enabled = !state.busy,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(Res.string.settings_delete)) }
-                TextButton(onClick = { runCatching { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) } }) {
-                    Text(stringResource(Res.string.settings_privacy))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                GroupLabel(stringResource(Res.string.settings_account))
+                GroupCard {
+                    ListRow(stringResource(Res.string.settings_privacy), showChevron = true, onClick = { runCatching { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) } })
+                    ListRow(stringResource(Res.string.action_sign_out), onClick = { if (!state.busy) onSignOut() })
+                    ListRow(stringResource(Res.string.settings_leave), onClick = { if (!state.busy) confirmLeave = true })
+                    ListRow(
+                        stringResource(Res.string.settings_delete),
+                        subtitle = stringResource(Res.string.settings_delete_hint),
+                        titleColor = Palette.red,
+                        divider = false,
+                        onClick = { if (!state.busy) confirmDelete = true },
+                    )
                 }
             }
         }
@@ -295,10 +349,10 @@ fun SettingsScreen(
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            content()
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GroupLabel(title)
+        NotizCard {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
         }
     }
 }

@@ -66,6 +66,20 @@ import com.notiz.app.util.formatRupees
 import com.notiz.app.util.isValidIsoDate
 import com.notiz.app.util.parseRupeesToPaise
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.notiz.app.ui.components.FilterPill
+import com.notiz.app.ui.components.GroupCard
+import com.notiz.app.ui.components.IconTile
+import com.notiz.app.ui.components.ListRow
+import com.notiz.app.ui.components.NotizCard
+import com.notiz.app.ui.components.NotizFab
+import com.notiz.app.ui.components.PrimaryButton
+import com.notiz.app.ui.components.ScreenTitle
+import com.notiz.app.ui.components.SecondaryButton
+import com.notiz.app.ui.components.SectionHeader
+import com.notiz.app.ui.components.Tag
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -334,10 +348,11 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
             state.loadError != null && state.dues.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
+                    contentPadding = PaddingValues(20.dp, 16.dp, 20.dp, 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
+                    item { ScreenTitle(stringResource(Res.string.tab_dues), subtitle = stringResource(Res.string.home_flat, session.flatNo)) }
                     if (session.isAdmin) {
                         item {
                             AdminSummary(
@@ -353,11 +368,7 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 DuesFilter.entries.forEach { f ->
-                                    FilterChip(
-                                        selected = state.filter == f,
-                                        onClick = { vm.setFilter(f) },
-                                        label = { Text(stringResource(f.label)) },
-                                    )
+                                    FilterPill(stringResource(f.label), selected = state.filter == f, onClick = { vm.setFilter(f) })
                                 }
                             }
                         }
@@ -377,7 +388,35 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                             }
                         }
                     }
-                    items(list, key = { it.id }) { due ->
+                    // Residents: what's due now as a big card, then paid ones as a compact history
+                    val open = if (session.isAdmin) emptyList() else list.filter { it.status != DueStatus.PAID }.sortedBy { it.dueDate }
+                    val history = if (session.isAdmin) emptyList() else list.filter { it.status == DueStatus.PAID }
+                    open.firstOrNull()?.let { due ->
+                        item(key = "hero") {
+                            DueHeroCard(
+                                due = due,
+                                busy = state.busy,
+                                onlineEnabled = state.onlineEnabled,
+                                onPayOnline = { vm.payOnline(due) { url -> runCatching { uriHandler.openUri(url) } } },
+                                onPay = { openUpi(due) },
+                                onReport = { reporting = due },
+                            )
+                        }
+                    }
+                    if (history.isNotEmpty()) {
+                        item(key = "history") {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 6.dp)) {
+                                SectionHeader(stringResource(Res.string.dues_history))
+                                GroupCard {
+                                    history.forEachIndexed { i, due ->
+                                        HistoryRow(due, divider = i < history.lastIndex, onReceipt = { shareReceipt(due) })
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    val cards = if (session.isAdmin) list else open.drop(1)
+                    items(cards, key = { it.id }) { due ->
                         DueCard(
                             due = due,
                             isAdmin = session.isAdmin,
@@ -398,12 +437,7 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
         }
 
         if (session.isAdmin) {
-            ExtendedFloatingActionButton(
-                onClick = { raising = true },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text(stringResource(Res.string.dues_raise_bill)) },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            )
+            NotizFab(stringResource(Res.string.dues_raise_bill), onClick = { raising = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         Column(Modifier.align(Alignment.TopCenter)) {
             ErrorBanner(state.actionError?.asString() ?: payError?.asString(), onDismiss = { vm.dismissMessages(); payError = null })
@@ -498,8 +532,8 @@ private fun AdminSummary(
     onManageBills: () -> Unit,
     onOpenPaymentSettings: () -> Unit,
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+    NotizCard(radius = 24.dp) {
+        Column(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 SummaryFigure(stringResource(Res.string.dues_collected), formatRupees(state.collectedPaise))
                 SummaryFigure(stringResource(Res.string.dues_outstanding), formatRupees(state.outstandingPaise))
@@ -508,8 +542,8 @@ private fun AdminSummary(
             Spacer(Modifier.height(12.dp))
             if (state.dues.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onExport) { Text(stringResource(Res.string.dues_export_excel)) }
-                    OutlinedButton(onClick = onManageBills) { Text(stringResource(Res.string.dues_manage_bills)) }
+                    SecondaryButton(stringResource(Res.string.dues_export_excel), onClick = onExport, icon = NotizIcons.Download, modifier = Modifier.weight(1f))
+                    SecondaryButton(stringResource(Res.string.dues_manage_bills), onClick = onManageBills, modifier = Modifier.weight(1f))
                 }
             }
             TextButton(onClick = onOpenPaymentSettings) {
@@ -526,9 +560,8 @@ private fun AdminSummary(
 @Composable
 private fun SummaryFigure(label: String, value: String) {
     Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = Palette.muted)
+        Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Palette.ink)
     }
 }
 
@@ -547,8 +580,8 @@ private fun DueCard(
     onCancel: () -> Unit,
     onReceipt: () -> Unit,
 ) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
+    NotizCard {
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -596,8 +629,8 @@ private fun DueCard(
             if (isAdmin && due.status == DueStatus.SUBMITTED) {
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onVerify(true) }, enabled = !busy) { Text(stringResource(Res.string.dues_mark_paid)) }
-                    OutlinedButton(onClick = { onVerify(false) }, enabled = !busy) { Text(stringResource(Res.string.dues_not_received)) }
+                    PrimaryButton(stringResource(Res.string.dues_mark_paid), onClick = { onVerify(true) }, enabled = !busy, modifier = Modifier.weight(1f).height(48.dp))
+                    SecondaryButton(stringResource(Res.string.dues_not_received), onClick = { onVerify(false) }, enabled = !busy, modifier = Modifier.weight(1f))
                 }
             }
             // Admin: record a cash / cheque payment for an unpaid flat
@@ -623,6 +656,63 @@ private fun DueCard(
                     OutlinedButton(onClick = onReceipt) { Text(stringResource(Res.string.dues_receipt)) }
                 }
             }
+        }
+    }
+}
+
+/** The resident's next unpaid due, front and centre (design: Dues screen). */
+@Composable
+private fun DueHeroCard(
+    due: Due,
+    busy: Boolean,
+    onlineEnabled: Boolean,
+    onPayOnline: () -> Unit,
+    onPay: () -> Unit,
+    onReport: () -> Unit,
+) {
+    NotizCard(radius = 24.dp, padding = PaddingValues(18.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (due.status == DueStatus.SUBMITTED) {
+                Tag(stringResource(Res.string.dues_verifying), color = Palette.blueText, background = Palette.blueSoft)
+            } else {
+                Tag(stringResource(Res.string.dues_unpaid))
+            }
+            Spacer(Modifier.weight(1f))
+            Text(localDate(due.dueDate), color = Palette.muted, fontSize = 13.sp)
+        }
+        Column {
+            Text(due.title, color = Palette.inkSoft, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(formatRupees(due.amountPaise), fontSize = 38.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp)
+        }
+        if (due.status == DueStatus.SUBMITTED) {
+            if (!due.utr.isNullOrBlank()) Text(stringResource(Res.string.dues_utr, due.utr.orEmpty()), color = Palette.muted, fontSize = 13.sp)
+            return@NotizCard
+        }
+        if (onlineEnabled) {
+            PrimaryButton(stringResource(Res.string.dues_pay_online), onClick = onPayOnline, enabled = !busy, modifier = Modifier.fillMaxWidth())
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (onlineEnabled) {
+                SecondaryButton(stringResource(Res.string.dues_pay_upi), onClick = onPay, enabled = !busy, modifier = Modifier.weight(1f))
+            } else {
+                PrimaryButton(stringResource(Res.string.dues_pay_upi), onClick = onPay, enabled = !busy, modifier = Modifier.weight(1f))
+            }
+            SecondaryButton(stringResource(Res.string.dues_already_paid), onClick = onReport, enabled = !busy, modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+/** A paid due in the resident's history, with its receipt. */
+@Composable
+private fun HistoryRow(due: Due, divider: Boolean, onReceipt: () -> Unit) {
+    ListRow(
+        title = due.title,
+        subtitle = formatRupees(due.amountPaise) + " · " + localDate(due.paidAt ?: due.dueDate),
+        leading = { IconTile(NotizIcons.Check, Palette.teal, Palette.tealSoft, size = 40.dp, iconSize = 20.dp, radius = 20.dp) },
+        divider = divider,
+    ) {
+        if (due.receiptNo != null) {
+            SecondaryButton(stringResource(Res.string.dues_receipt), onClick = onReceipt, accent = true, icon = NotizIcons.Download, height = 36.dp)
         }
     }
 }

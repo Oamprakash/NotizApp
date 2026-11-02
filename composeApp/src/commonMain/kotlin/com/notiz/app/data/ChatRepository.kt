@@ -4,6 +4,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -74,6 +75,21 @@ class ChatRepository(private val supabase: SupabaseClient) {
     }
 
     // ───────────── Moderation ─────────────
+
+    /** Admin: messages reported since [sinceIso] that are still visible (not deleted). */
+    suspend fun openReportCount(societyId: String, sinceIso: String): Int =
+        supabase.from("message_reports")
+            .select(Columns.raw("message_id, messages(deleted_at)")) {
+                filter {
+                    eq("society_id", societyId)
+                    gte("created_at", sinceIso)
+                }
+            }
+            .decodeList<ReportRow>()
+            .filter { it.messages?.deletedAt == null }
+            .map { it.messageId }
+            .distinct()
+            .size
 
     /** Sender or admin. Wipes the text; a "message deleted" stub stays in the chat. */
     suspend fun deleteMessage(messageId: String) {

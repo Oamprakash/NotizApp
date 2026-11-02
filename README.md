@@ -140,6 +140,15 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
   - If AGP complains about the KMP + `com.android.application` combination, stay on AGP 8.13.x (AGP 9 needs the new `androidApp` + `com.android.kotlin.multiplatform.library` structure).
   - Keep `ktor` in `libs.versions.toml` equal to the Ktor version supabase-kt uses.
 
+## Design
+
+The "Neighbourly" look (design canvas in claude.ai): deep teal for actions, marigold for "due soon", white cards on a soft grey-green ground, large text and touch targets.
+
+- **Tabs**: Home, Notices (with Polls), Dues, Help desk, Chat — with badges for unread notices, unpaid dues / payments to verify and open requests. Settings and Members open from your avatar on Home.
+- **Home** is different for residents (this month's due with *Pay now*, shortcuts, latest notice, open poll) and the committee (collection progress, a *Needs your attention* list, quick actions).
+- Theme and components live in `ui/theme/` (`Palette`, `NotizIcons`) and `ui/components/Design.kt`.
+- Font: **Inter** in `composeResources/font` (SIL Open Font License, see `docs/licenses/Inter-OFL.txt`). To use another font, drop its `.ttf`/`.otf` files there and change `appFontFamily()` in `ui/theme/Theme.kt`. Tamil uses the phone's Tamil font.
+
 ## Admin tools
 
 - **Settings** (gear icon on the home screen): your name, language, society details and UPI ID (admins), a new invite code, leave society, delete account, sign out.

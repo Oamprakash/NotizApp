@@ -119,24 +119,14 @@ private fun Banner(message: String?, onDismiss: () -> Unit, isError: Boolean, mo
 
 /** Small rounded label, e.g. "Paid", "Pinned". */
 @Composable
-fun StatusPill(text: String, color: Color, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        color = color,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.SemiBold,
-        modifier = modifier
-            .background(color.copy(alpha = 0.12f), RoundedCornerShape(50))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    )
-}
+fun StatusPill(text: String, color: Color, modifier: Modifier = Modifier) = Chip(text, color, modifier = modifier)
 
 @Composable
 fun UnreadDot(modifier: Modifier = Modifier) {
     Box(
         modifier
-            .size(10.dp)
-            .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(50))
+            .size(8.dp)
+            .background(com.notiz.app.ui.theme.Palette.orange, RoundedCornerShape(50))
     )
 }
 
@@ -152,7 +142,8 @@ fun LoadingButton(
     Button(
         onClick = onClick,
         enabled = enabled && !loading,
-        modifier = modifier.fillMaxWidth().height(52.dp),
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.fillMaxWidth().height(56.dp),
     ) {
         if (loading) {
             CircularProgressIndicator(

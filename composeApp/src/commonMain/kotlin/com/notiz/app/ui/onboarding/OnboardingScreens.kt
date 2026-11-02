@@ -2,6 +2,7 @@
 
 package com.notiz.app.ui.onboarding
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -91,6 +92,7 @@ private fun OnboardingColumn(content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
+            .background(com.notiz.app.ui.theme.Palette.ground)
             .safeDrawingPadding()
             .imePadding()
             .verticalScroll(rememberScrollState())
