@@ -87,3 +87,10 @@ Use **G** (guard) and **R** (resident, ideally Tamil) on two phones.
 - [ ] G: Guest code → wrong code / tomorrow's code refused with a clear message → today's code → "✓ … let them in"; R gets "Your guest has arrived". Using it again fails.
 - [ ] R cancels a code → it disappears for G too.
 - [ ] A (president): Home → Gate → **Gate desk** tab shows the whole society's log.
+
+## 12. Gate photos
+- [ ] G: New visitor → camera tile → camera opens → photo shows in the sheet; Retake and Remove work. Ask the flat.
+- [ ] R: push says "Photo attached"; the Allow / Deny card shows the photo; tap it → full screen.
+- [ ] G: the photo shows on the desk card, under Inside now and in Earlier today.
+- [ ] Another resident (other flat) can't see the visitor or the photo.
+- [ ] iPhone: first time asks for camera access; saying "Don't Allow" shows "Couldn't open the camera" and the visitor can still be logged.

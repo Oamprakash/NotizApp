@@ -51,6 +51,7 @@ class GateRepository(private val supabase: SupabaseClient) {
         company: String,
         vehicleNo: String,
         letIn: Boolean,
+        photoPath: String = "",
     ): GateEntry =
         supabase.postgrest.rpc(
             "log_visitor",
@@ -63,6 +64,7 @@ class GateRepository(private val supabase: SupabaseClient) {
                 put("p_company", company.trim())
                 put("p_vehicle_no", vehicleNo.trim())
                 put("p_let_in", letIn)
+                put("p_photo_path", photoPath)
             },
         ).decodeAs()
 

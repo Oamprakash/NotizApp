@@ -61,6 +61,9 @@ import com.notiz.app.data.GateRepository
 import com.notiz.app.data.GateStatus
 import com.notiz.app.i18n.asString
 import com.notiz.app.i18n.localDate
+import com.notiz.app.photos.LocalPhoto
+import com.notiz.app.photos.RemotePhotoStrip
+import com.notiz.app.photos.rememberCameraCapture
 import com.notiz.app.push.OnPushUpdate
 import com.notiz.app.push.PushTypes
 import com.notiz.app.resources.*
@@ -248,8 +251,8 @@ private fun GateDesk(session: SessionContext, modifier: Modifier = Modifier) {
             busy = state.sheetBusy,
             error = state.error?.asString(),
             onDismiss = { logging = false },
-            onLog = { flat, cat, name, phone, company, vehicle, letIn ->
-                vm.logVisitor(flat, cat, name, phone, company, vehicle, letIn, onDone = { logging = false })
+            onLog = { flat, cat, name, phone, company, vehicle, letIn, photo ->
+                vm.logVisitor(flat, cat, name, phone, company, vehicle, letIn, photo, onDone = { logging = false })
             },
         )
     }
@@ -289,6 +292,7 @@ private fun VisitorHeader(e: GateEntry, showFlat: Boolean) {
         } else {
             IconTile(gateCategoryIcon(e.category), Palette.teal, Palette.tealSoft, size = 44.dp, iconSize = 20.dp, radius = 12.dp)
         }
+        if (e.photoPath.isNotBlank()) RemotePhotoStrip(listOf(e.photoPath), size = 44.dp)
         Column(Modifier.weight(1f)) {
             Text(visitorTitle(e), fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             val extra = listOf(e.vehicleNo, visitorTimes(e)).filter { it.isNotBlank() }.joinToString(" · ")
@@ -354,6 +358,7 @@ private fun InsideRow(e: GateEntry, busy: Boolean, onOut: () -> Unit) {
             ) {
                 Text(e.flatNo, color = Palette.blueText, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, maxLines = 1)
             }
+            if (e.photoPath.isNotBlank()) RemotePhotoStrip(listOf(e.photoPath), size = 40.dp)
             Column(Modifier.weight(1f)) {
                 Text(visitorTitle(e), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
@@ -389,7 +394,11 @@ private fun LogRow(e: GateEntry, showFlat: Boolean) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(gateCategoryIcon(e.category), contentDescription = null, tint = Palette.muted, modifier = Modifier.size(18.dp))
+        if (e.photoPath.isNotBlank()) {
+            RemotePhotoStrip(listOf(e.photoPath), size = 36.dp)
+        } else {
+            Icon(gateCategoryIcon(e.category), contentDescription = null, tint = Palette.muted, modifier = Modifier.size(18.dp))
+        }
         Column(Modifier.weight(1f)) {
             Text(
                 (if (showFlat) "${e.flatNo} · " else "") + visitorTitle(e),
@@ -415,8 +424,23 @@ private fun NewVisitorSheet(
     busy: Boolean,
     error: String?,
     onDismiss: () -> Unit,
-    onLog: (flat: String, category: String, name: String, phone: String, company: String, vehicle: String, letIn: Boolean) -> Unit,
+    onLog: (
+        flat: String,
+        category: String,
+        name: String,
+        phone: String,
+        company: String,
+        vehicle: String,
+        letIn: Boolean,
+        photo: ByteArray?,
+    ) -> Unit,
 ) {
+    var photo by remember { mutableStateOf<ByteArray?>(null) }
+    var cameraFailed by remember { mutableStateOf(false) }
+    val takePhoto = rememberCameraCapture(
+        onCaptured = { photo = it; cameraFailed = false },
+        onError = { cameraFailed = true },
+    )
     var category by rememberSaveable { mutableStateOf(GateCategory.DELIVERY) }
     var flat by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
@@ -462,6 +486,14 @@ private fun NewVisitorSheet(
                 }
             }
         }
+
+        VisitorPhotoRow(
+            photo = photo,
+            enabled = !busy,
+            failed = cameraFailed,
+            onTake = { cameraFailed = false; takePhoto() },
+            onRemove = { photo = null },
+        )
 
         NotizTextField(
             value = flat,
@@ -526,7 +558,7 @@ private fun NewVisitorSheet(
         if (error != null) Text(error, color = Palette.red, fontSize = 13.sp)
         PrimaryButton(
             if (flatKey.isEmpty()) stringResource(Res.string.gate_ask_flat_empty) else stringResource(Res.string.gate_ask_flat, flatKey),
-            onClick = { onLog(flatKey, category, name, phone, company, vehicle, false) },
+            onClick = { onLog(flatKey, category, name, phone, company, vehicle, false, photo) },
             enabled = ready,
             icon = NotizIcons.Bell,
             height = 52.dp,
@@ -534,11 +566,50 @@ private fun NewVisitorSheet(
         )
         SecondaryButton(
             stringResource(Res.string.gate_let_in_now),
-            onClick = { onLog(flatKey, category, name, phone, company, vehicle, true) },
+            onClick = { onLog(flatKey, category, name, phone, company, vehicle, true, photo) },
             enabled = ready,
             modifier = Modifier.fillMaxWidth(),
         )
         Text(stringResource(Res.string.gate_let_in_now_hint), color = Palette.muted, fontSize = 12.sp)
+    }
+}
+
+/** Optional photo of the visitor: a camera tile, or the photo with Retake / Remove. */
+@Composable
+private fun VisitorPhotoRow(photo: ByteArray?, enabled: Boolean, failed: Boolean, onTake: () -> Unit, onRemove: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        val shape = RoundedCornerShape(16.dp)
+        if (photo != null) {
+            LocalPhoto(photo, Modifier.size(84.dp).clip(shape))
+        } else {
+            Box(
+                Modifier.size(84.dp).clip(shape).background(Palette.chip)
+                    .border(1.5.dp, Palette.line, shape)
+                    .clickable(enabled = enabled, onClick = onTake),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(NotizIcons.Camera, contentDescription = stringResource(Res.string.gate_take_photo), tint = Palette.teal, modifier = Modifier.size(28.dp))
+            }
+        }
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(Res.string.gate_photo_title), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(
+                stringResource(if (failed) Res.string.gate_camera_failed else Res.string.gate_photo_hint),
+                color = if (failed) Palette.red else Palette.muted,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+            )
+            Row {
+                NotizTextButton(onClick = onTake, enabled = enabled) {
+                    Text(stringResource(if (photo == null) Res.string.gate_take_photo else Res.string.gate_retake_photo), color = Palette.teal)
+                }
+                if (photo != null) {
+                    NotizTextButton(onClick = onRemove, enabled = enabled) {
+                        Text(stringResource(Res.string.photos_remove), color = Palette.red)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -704,7 +775,12 @@ fun VisitorRequestCard(e: GateEntry, busy: Boolean, onAnswer: (allow: Boolean) -
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconTile(gateCategoryIcon(e.category), Palette.onMarigold, Palette.marigold, size = 46.dp, iconSize = 22.dp, radius = 14.dp)
+            if (e.photoPath.isNotBlank()) {
+                // Tap to see the visitor full screen
+                RemotePhotoStrip(listOf(e.photoPath), size = 72.dp)
+            } else {
+                IconTile(gateCategoryIcon(e.category), Palette.onMarigold, Palette.marigold, size = 46.dp, iconSize = 22.dp, radius = 14.dp)
+            }
             Column(Modifier.weight(1f)) {
                 Text(stringResource(Res.string.gate_request_title), color = Palette.amberText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Text(visitorTitle(e), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)

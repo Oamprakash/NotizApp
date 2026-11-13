@@ -1,6 +1,7 @@
 package com.notiz.app.ui.gate
 
 import com.notiz.app.AppContainer
+import com.notiz.app.data.AttachmentRepository
 import com.notiz.app.data.GateEntry
 import com.notiz.app.data.GatePass
 import com.notiz.app.data.GateStatus
@@ -116,11 +117,22 @@ class GateViewModel(
         company: String,
         vehicle: String,
         letIn: Boolean,
+        photo: ByteArray?,
         onDone: () -> Unit,
     ) {
         state.update { it.copy(sheetBusy = true, error = null, info = null) }
-        launchSafe(onError = { msg -> state.update { it.copy(sheetBusy = false, error = msg) } }) {
-            val e = container.gate.logVisitor(session.societyId, flat, category, name, phone, company, vehicle, letIn)
+        var uploaded: String? = null
+        launchSafe(
+            onError = { msg ->
+                // Don't leave an orphan photo behind if logging failed
+                uploaded?.let { path -> launchSafe(onError = {}) { container.attachments.delete(listOf(path)) } }
+                state.update { it.copy(sheetBusy = false, error = msg) }
+            },
+        ) {
+            uploaded = photo?.let { container.attachments.upload(session.societyId, AttachmentRepository.Kind.GATE, it) }
+            val e = container.gate.logVisitor(
+                session.societyId, flat, category, name, phone, company, vehicle, letIn, uploaded.orEmpty(),
+            )
             state.update {
                 it.copy(
                     sheetBusy = false,

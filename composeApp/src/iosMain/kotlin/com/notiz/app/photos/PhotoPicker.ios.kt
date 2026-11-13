@@ -63,9 +63,10 @@ private class PickerDelegate : NSObject(), PHPickerViewControllerDelegateProtoco
 }
 
 /** Redraws at most [PHOTO_MAX_SIDE] px (this also applies the photo's orientation) and encodes JPEG. */
+private fun shrinkToJpeg(data: NSData): ByteArray? = shrinkToJpeg(UIImage(data = data))
+
 @OptIn(ExperimentalForeignApi::class)
-private fun shrinkToJpeg(data: NSData): ByteArray? {
-    val image = UIImage(data = data)
+internal fun shrinkToJpeg(image: UIImage): ByteArray? {
     val (width, height) = image.size.useContents { width to height }
     if (width <= 0.0 || height <= 0.0) return null
     val scale = min(1.0, PHOTO_MAX_SIDE / max(width, height))
@@ -87,7 +88,7 @@ private fun NSData.toByteArray(): ByteArray {
 }
 
 @Suppress("DEPRECATION") // keyWindow is fine for a single-window app
-private fun topViewController(): UIViewController? {
+internal fun topViewController(): UIViewController? {
     var vc = UIApplication.sharedApplication.keyWindow?.rootViewController
     while (vc?.presentedViewController != null) vc = vc.presentedViewController
     return vc

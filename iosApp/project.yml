@@ -39,6 +39,7 @@ targets:
         UIViewControllerBasedStatusBarAppearance: false
         UIStatusBarStyle: UIStatusBarStyleDarkContent
         CADisableMinimumFrameDurationOnPhone: true
+        NSCameraUsageDescription: "Security staff take a photo of visitors at the gate so the flat can see who is waiting."
         LSApplicationQueriesSchemes:
           - upi
           - phonepe

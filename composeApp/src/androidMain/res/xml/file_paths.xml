@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Receipts and Excel exports are written to cache/exports and shared through FileProvider -->
+<!-- Receipts and Excel exports (cache/exports) are shared through FileProvider; the camera saves visitor photos to cache/camera -->
 <paths>
     <cache-path name="exports" path="exports/" />
+    <cache-path name="camera" path="camera/" />
 </paths>

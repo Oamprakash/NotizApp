@@ -41,7 +41,7 @@ actual fun rememberPhotoPicker(onPicked: (ByteArray) -> Unit, onError: () -> Uni
 }
 
 /** Decodes at a reduced size (saves memory on big camera photos), fixes rotation, re-encodes. */
-private fun shrinkToJpeg(context: Context, uri: Uri): ByteArray {
+internal fun shrinkToJpeg(context: Context, uri: Uri): ByteArray {
     val resolver = context.contentResolver
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     resolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it, null, bounds) }

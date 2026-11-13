@@ -15,3 +15,11 @@ const val PHOTO_JPEG_QUALITY = 80
  */
 @Composable
 expect fun rememberPhotoPicker(onPicked: (ByteArray) -> Unit, onError: () -> Unit): () -> Unit
+
+/**
+ * Remembers a launcher for the camera. The photo is shrunk like [rememberPhotoPicker] and passed to
+ * [onCaptured]; [onError] runs if there is no camera or the photo can't be read. Nothing happens if
+ * the user cancels.
+ */
+@Composable
+expect fun rememberCameraCapture(onCaptured: (ByteArray) -> Unit, onError: () -> Unit): () -> Unit

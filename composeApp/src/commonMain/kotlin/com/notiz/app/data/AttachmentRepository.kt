@@ -7,10 +7,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
 
-/** Photos on notices and complaints, in the private "attachments" bucket (see the photos migration). */
+/** Photos on notices, complaints and gate visitors, in the private "attachments" bucket (see the photos migration). */
 class AttachmentRepository(private val supabase: SupabaseClient) {
 
-    enum class Kind(val folder: String) { NOTICE("notices"), COMPLAINT("complaints") }
+    enum class Kind(val folder: String) { NOTICE("notices"), COMPLAINT("complaints"), GATE("gate") }
 
     private val bucket get() = supabase.storage.from(BUCKET)
 

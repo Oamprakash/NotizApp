@@ -115,8 +115,9 @@ fun PhotoPickerRow(
     }
 }
 
+/** A photo still on the phone (not uploaded yet). */
 @Composable
-private fun LocalPhoto(bytes: ByteArray, modifier: Modifier) {
+fun LocalPhoto(bytes: ByteArray, modifier: Modifier) {
     val bitmap by produceState<ImageBitmap?>(null, bytes) { value = decode(bytes) }
     Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
         bitmap?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }

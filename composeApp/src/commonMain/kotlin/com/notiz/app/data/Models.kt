@@ -282,6 +282,7 @@ data class GateEntry(
     @SerialName("visitor_phone") val visitorPhone: String = "",
     val company: String = "",
     @SerialName("vehicle_no") val vehicleNo: String = "",
+    @SerialName("photo_path") val photoPath: String = "",
     val status: String,
     @SerialName("pass_id") val passId: String? = null,
     @SerialName("decided_by_name") val decidedByName: String = "",

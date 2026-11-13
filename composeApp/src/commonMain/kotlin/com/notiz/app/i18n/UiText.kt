@@ -47,6 +47,7 @@ private fun serverError(message: String): UiText? {
         "invalid option" in m -> uiText(Res.string.error_invalid_option)
         // Gate log (20261114000000_gate_log.sql)
         "no one lives in flat" in m -> uiText(Res.string.error_gate_flat)
+        "photo upload failed" in m -> uiText(Res.string.error_photo_upload)
         "already answered for this visitor" in m -> uiText(Res.string.error_gate_answered)
         "code not found or already used" in m -> uiText(Res.string.error_gate_code)
         "this code is for" in m -> uiText(Res.string.error_gate_code_day)

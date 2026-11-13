@@ -563,4 +563,10 @@ all in one place.</string>
     <string name="gate_confirm_allow_body">The guard will let them in.</string>
     <string name="gate_confirm_deny_body">The guard will tell them you said no.</string>
     <string name="gate_confirm_back">Go back</string>
+    <string name="gate_photo_title">Visitor photo</string>
+    <string name="gate_photo_hint">Optional. Only the flat and the gate desk can see it.</string>
+    <string name="gate_take_photo">Take photo</string>
+    <string name="gate_retake_photo">Retake</string>
+    <string name="gate_camera_failed">Couldn't open the camera. You can log the visitor without a photo.</string>
+    <string name="error_photo_upload">Photo upload failed, please try again.</string>
 </resources>
