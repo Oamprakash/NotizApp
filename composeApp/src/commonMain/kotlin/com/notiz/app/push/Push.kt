@@ -20,6 +20,7 @@ object PushTypes {
     const val CHAT = "chat"
     const val MEMBER = "member"
     const val APPROVED = "approved"
+    const val GATE = "gate"
 
     /** Your membership or the society changed (flat, admin role, removed, rejected, UPI ID…). */
     const val SOCIETY = "society"

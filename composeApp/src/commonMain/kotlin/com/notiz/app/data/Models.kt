@@ -246,8 +246,69 @@ object Perms {
     const val HELPDESK = "helpdesk"
     const val MODERATION = "moderation"
     const val SOCIETY = "society"
+    const val GATE = "gate"
 
-    val all = listOf(NOTICES, POLLS, BILLS, PAYMENTS, PAYMENT_SETTINGS, MEMBERS, HELPDESK, MODERATION, SOCIETY)
+    val all = listOf(NOTICES, POLLS, BILLS, PAYMENTS, PAYMENT_SETTINGS, MEMBERS, HELPDESK, MODERATION, SOCIETY, GATE)
+}
+
+/** Kinds of visitor at the gate (stored in English, shown translated). */
+object GateCategory {
+    const val GUEST = "guest"
+    const val DELIVERY = "delivery"
+    const val CAB = "cab"
+    const val SERVICE = "service"
+    const val OTHER = "other"
+
+    val all = listOf(GUEST, DELIVERY, CAB, SERVICE, OTHER)
+}
+
+object GateStatus {
+    /** Logged by the guard, waiting for the flat to answer. */
+    const val WAITING = "waiting"
+    const val ALLOWED = "allowed"
+    const val DENIED = "denied"
+    const val INSIDE = "inside"
+    const val LEFT = "left"
+    const val CANCELLED = "cancelled"
+}
+
+@Serializable
+data class GateEntry(
+    val id: String,
+    @SerialName("society_id") val societyId: String,
+    @SerialName("flat_no") val flatNo: String,
+    val category: String,
+    @SerialName("visitor_name") val visitorName: String = "",
+    @SerialName("visitor_phone") val visitorPhone: String = "",
+    val company: String = "",
+    @SerialName("vehicle_no") val vehicleNo: String = "",
+    val status: String,
+    @SerialName("pass_id") val passId: String? = null,
+    @SerialName("decided_by_name") val decidedByName: String = "",
+    @SerialName("decided_at") val decidedAt: String? = null,
+    @SerialName("entered_at") val enteredAt: String? = null,
+    @SerialName("exited_at") val exitedAt: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+) {
+    /** Still at the gate: the guard has something to do. */
+    val isOpen: Boolean get() = status == GateStatus.WAITING || status == GateStatus.ALLOWED || status == GateStatus.DENIED
+}
+
+@Serializable
+data class GatePass(
+    val id: String,
+    @SerialName("society_id") val societyId: String,
+    @SerialName("flat_no") val flatNo: String,
+    @SerialName("created_by_name") val createdByName: String = "",
+    @SerialName("guest_name") val guestName: String,
+    val category: String = GateCategory.GUEST,
+    val code: String,
+    @SerialName("valid_on") val validOn: String,
+    @SerialName("used_at") val usedAt: String? = null,
+    @SerialName("cancelled_at") val cancelledAt: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+) {
+    val isOpen: Boolean get() = usedAt == null && cancelledAt == null
 }
 
 @Serializable

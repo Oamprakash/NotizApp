@@ -24,9 +24,12 @@ Notiz sends push notifications for:
 | Society renamed, new UPI ID, online payments turned on / paused | All residents and committee except the person who changed it |
 | Reply to your chat message ("Bala replied to you") | The person replied to |
 | Chat message reported | Roles with *Moderate chat* (secretary by default) |
+| Visitor at the gate ("Swiggy delivery · Ravi is waiting") | Everyone in that flat |
+| Flat allowed / said no to a visitor | Security staff (roles with *Run the gate*, not the president) |
+| Visitor let in by the guard, or a guest came in with a gate code | Everyone in that flat |
 | Muted / unmuted in chat | That member |
 
-Tapping a notification opens the matching tab (join requests open Members). Membership and society changes also refresh the app in place (new flat number, a new role's tools appearing, or back to the join screen after removal). The president always gets everything a permission would send. Roles and permissions come from `20261113000000_roles.sql`.
+Tapping a notification opens the matching tab (join requests open Members). Membership and society changes also refresh the app in place (new flat number, a new role's tools appearing, or back to the join screen after removal). The president always gets everything a permission would send. Roles and permissions come from `20261113000000_roles.sql`, gate notifications from `20261114000000_gate_log.sql`.
 
 Notifications are sent in each person's language (English or Tamil — whatever they picked in the app), from `20261102300000_push_tamil.sql`. Names, bill titles and messages stay as typed.
 

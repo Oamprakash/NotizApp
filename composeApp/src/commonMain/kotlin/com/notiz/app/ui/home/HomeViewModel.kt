@@ -5,6 +5,8 @@ import com.notiz.app.data.Complaint
 import com.notiz.app.data.ComplaintStatus
 import com.notiz.app.data.Due
 import com.notiz.app.data.DueStatus
+import com.notiz.app.data.GateEntry
+import com.notiz.app.data.GateStatus
 import com.notiz.app.data.Notice
 import com.notiz.app.data.Perms
 import com.notiz.app.data.Poll
@@ -23,6 +25,7 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
 
 /** The latest bill (same title + due date) and how much of it is collected. */
@@ -59,6 +62,9 @@ data class HomeUiState(
     val oldestOpenRequest: Complaint? = null,
     val reportedMessages: Int = 0,
     val votingBusy: Boolean = false,
+    // Gate: visitors waiting for this flat's answer
+    val visitors: List<GateEntry> = emptyList(),
+    val visitorBusyId: String? = null,
 ) {
     /** Bottom-bar badges. */
     val duesBadge: Int get() = myDue?.takeIf { it.status == DueStatus.PENDING }?.let { 1 } ?: 0
@@ -92,6 +98,14 @@ class HomeViewModel(
                 val results = async { soft { container.polls.results(sid) } ?: emptyMap() }
                 val members = async { if (session.can(Perms.MEMBERS)) soft { container.societies.members(sid) } ?: emptyList() else emptyList() }
                 val complaints = async { if (session.can(Perms.HELPDESK)) soft { container.complaints.complaints(sid) } ?: emptyList() else emptyList() }
+                val visitors = async {
+                    if (session.isSecurity || session.flatNo.isBlank()) {
+                        emptyList()
+                    } else {
+                        soft { container.gate.entries(sid, (Clock.System.now() - 6.hours).toString(), session.flatNo) }
+                            ?.filter { e -> e.status == GateStatus.WAITING } ?: emptyList()
+                    }
+                }
                 val reports = async {
                     if (session.can(Perms.MODERATION)) soft { container.chat.openReportCount(sid, today.minus(7, DateTimeUnit.DAY).toString()) } ?: 0 else 0
                 }
@@ -131,6 +145,7 @@ class HomeViewModel(
                         openRequests = open.size,
                         oldestOpenRequest = open.minByOrNull { c -> c.createdAt },
                         reportedMessages = reports.await(),
+                        visitors = visitors.await(),
                     )
                 }
             }
@@ -145,6 +160,15 @@ class HomeViewModel(
             container.polls.vote(poll.id, optionId)
             state.update { it.copy(votingBusy = false) }
             load()
+        }
+    }
+
+    /** Allow or deny a visitor from the Home card. */
+    fun answerVisitor(entry: GateEntry, allow: Boolean) {
+        state.update { it.copy(visitorBusyId = entry.id) }
+        launchSafe(onError = { msg -> state.update { it.copy(visitorBusyId = null, error = msg) }; load() }) {
+            container.gate.respond(entry.id, allow)
+            state.update { s -> s.copy(visitorBusyId = null, visitors = s.visitors.filterNot { it.id == entry.id }) }
         }
     }
 

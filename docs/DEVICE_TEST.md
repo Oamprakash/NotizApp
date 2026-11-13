@@ -69,7 +69,21 @@ Add three more test accounts: **S** (secretary), **T** (treasurer) and **G** (se
 - [ ] S: Home tray has Notice, Poll, Invite (no Raise bill); attention tiles for requests, join requests, reported messages. Can post a notice and a poll; no Raise bill button on Dues; sees only own flat's dues.
 - [ ] T: Home shows the collection band; tray has Notice and Raise bill; Dues shows every flat, Mark paid and Paid in cash work. No poll button. Settings shows UPI fields but not society name.
 - [ ] R: no committee tools anywhere; Members screen is "Neighbours" without the ⋯ menu.
-- [ ] G: three tabs only — **Residents**, Notices (no Polls), Help desk. Residents list: search by flat or name, call button opens the dialler. Raise a request from Help desk → S gets the push.
+- [ ] G: four tabs — **Gate**, **Residents**, Notices (no Polls), Help desk. Residents list: search by flat or name, call button opens the dialler. Raise a request from Help desk → S gets the push.
 - [ ] A: Settings → **Roles & permissions**: give Treasurer *Create polls* → T reopens the app → Poll button appears. *Reset to defaults* takes it away again.
 - [ ] S tries Members → ⋯ on T: no Change role, no Remove (only the president can).
 - [ ] A makes S president, then changes own role to Resident (warning shown). A's committee tools disappear; S now sees Roles & permissions.
+
+## 11. Gate log
+Use **G** (guard) and **R** (resident, ideally Tamil) on two phones.
+- [ ] G: Gate → New visitor → Delivery, type R's flat (suggestions appear), tap Swiggy, name → **Ask R's flat**. Card shows "Asked flat".
+- [ ] R: push "Visitor at the gate" (Tamil) → tap → Gate screen with Allow / Deny. Also on Home at the top.
+- [ ] R taps Allow → G gets "B-202 allowed ✅"; card says "Allowed by …" → **Let in** → moves to Inside now → **Out** → Earlier today.
+- [ ] Repeat with Deny → "said no" → **Send away**.
+- [ ] Unknown flat shows "No one lives in this flat on Notiz"; Ask button stays off.
+- [ ] Let in now (cab) → R gets "has come in", no Allow / Deny.
+- [ ] Ask flat and don't answer → G's screen still refreshes by itself when R answers later (within ~15 s even without the push).
+- [ ] R: Gate → Invite a guest → name, Tomorrow → code → Share on WhatsApp. Today's pass appears under Expected today for G (no code shown).
+- [ ] G: Guest code → wrong code / tomorrow's code refused with a clear message → today's code → "✓ … let them in"; R gets "Your guest has arrived". Using it again fails.
+- [ ] R cancels a code → it disappears for G too.
+- [ ] A (president): Home → Gate → **Gate desk** tab shows the whole society's log.

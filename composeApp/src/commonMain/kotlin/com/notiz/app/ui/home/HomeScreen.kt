@@ -50,6 +50,7 @@ import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.chat.ChatTab
 import com.notiz.app.ui.complaints.ComplaintsTab
 import com.notiz.app.ui.directory.DirectoryTab
+import com.notiz.app.ui.gate.GateDeskTab
 import com.notiz.app.ui.dues.DuesTab
 import com.notiz.app.ui.notices.NoticesHub
 import com.notiz.app.ui.theme.NotizIcons
@@ -64,12 +65,16 @@ enum class HomeTab(val label: StringResource, val icon: () -> ImageVector) {
     HelpDesk(Res.string.tab_help, { NotizIcons.Wrench }),
     Chat(Res.string.tab_chat, { NotizIcons.Chat }),
     Directory(Res.string.tab_directory, { NotizIcons.Users }),
+    Gate(Res.string.tab_gate, { NotizIcons.Door }),
     ;
 
     companion object {
-        /** Security staff get the flat directory, notices and the help desk; everyone else the usual five. */
-        fun visibleFor(session: SessionContext): List<HomeTab> =
-            if (session.isSecurity) listOf(Directory, Notices, HelpDesk) else listOf(Home, Notices, Dues, HelpDesk, Chat)
+        /** Security staff get the gate desk, flat directory, notices and the help desk; everyone else the usual five. */
+        fun visibleFor(session: SessionContext): List<HomeTab> = when {
+            session.isSecurity && session.can(Perms.GATE) -> listOf(Gate, Directory, Notices, HelpDesk)
+            session.isSecurity -> listOf(Directory, Notices, HelpDesk)
+            else -> listOf(Home, Notices, Dues, HelpDesk, Chat)
+        }
     }
 }
 
@@ -81,6 +86,7 @@ fun HomeScreen(
     onOpenMembers: () -> Unit,
     onOpenPaymentSettings: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenGate: () -> Unit = {},
 ) {
     val tabs = HomeTab.visibleFor(session)
     var tabName by rememberSaveable { mutableStateOf(tabs.first().name) }
@@ -96,7 +102,7 @@ fun HomeScreen(
     val homeVm = viewModel { HomeViewModel(container, session) }
     val home by homeVm.state.collectAsState()
     // Badges and the Home tab stay fresh as things happen
-    OnPushUpdate(PushTypes.NOTICE, PushTypes.DUES, PushTypes.COMPLAINT, PushTypes.POLL, PushTypes.MEMBER, PushTypes.CHAT) { homeVm.load() }
+    OnPushUpdate(PushTypes.NOTICE, PushTypes.DUES, PushTypes.COMPLAINT, PushTypes.POLL, PushTypes.MEMBER, PushTypes.CHAT, PushTypes.GATE) { homeVm.load() }
     LaunchedEffect(tab) { if (tab == HomeTab.Home || tab == HomeTab.Notices) homeVm.load() }
 
     // Tapped a notification → jump to its tab
@@ -110,6 +116,14 @@ fun HomeScreen(
             PushTypes.POLL -> {
                 showPolls = true
                 HomeTab.Notices
+            }
+            // Security: the desk tab. Residents: their Gate screen with Allow / Deny.
+            PushTypes.GATE -> if (HomeTab.Gate in tabs) {
+                HomeTab.Gate
+            } else {
+                PushEvents.consumeOpened()
+                onOpenGate()
+                null
             }
             else -> null
         } ?: return@LaunchedEffect
@@ -126,6 +140,8 @@ fun HomeScreen(
         openNotice = onOpenNotice,
         openMembers = onOpenMembers,
         openSettings = onOpenSettings,
+        openGate = onOpenGate,
+        answerVisitor = homeVm::answerVisitor,
     )
 
     Scaffold(
@@ -171,6 +187,7 @@ fun HomeScreen(
             HomeTab.HelpDesk -> ComplaintsTab(session, modifier)
             HomeTab.Chat -> ChatTab(session, modifier)
             HomeTab.Directory -> DirectoryTab(session, onOpenSettings, modifier)
+            HomeTab.Gate -> GateDeskTab(session, onOpenSettings, modifier)
         }
     }
 }

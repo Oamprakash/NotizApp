@@ -44,6 +44,7 @@ fun permissionTitle(permission: String): String = stringResource(
         Perms.MEMBERS -> Res.string.perm_members
         Perms.HELPDESK -> Res.string.perm_helpdesk
         Perms.MODERATION -> Res.string.perm_moderation
+        Perms.GATE -> Res.string.perm_gate
         else -> Res.string.perm_society
     },
 )
@@ -59,6 +60,7 @@ fun permissionDescription(permission: String): String = stringResource(
         Perms.MEMBERS -> Res.string.perm_members_desc
         Perms.HELPDESK -> Res.string.perm_helpdesk_desc
         Perms.MODERATION -> Res.string.perm_moderation_desc
+        Perms.GATE -> Res.string.perm_gate_desc
         else -> Res.string.perm_society_desc
     },
 )

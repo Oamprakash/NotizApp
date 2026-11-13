@@ -5,6 +5,7 @@ import com.notiz.app.data.AttachmentRepository
 import com.notiz.app.data.AuthRepository
 import com.notiz.app.data.ChatRepository
 import com.notiz.app.data.ComplaintRepository
+import com.notiz.app.data.GateRepository
 import com.notiz.app.data.DuesRepository
 import com.notiz.app.data.NoticeRepository
 import com.notiz.app.data.PaymentsRepository
@@ -23,6 +24,7 @@ class AppContainer {
     val notices = NoticeRepository(supabase)
     val dues = DuesRepository(supabase)
     val complaints = ComplaintRepository(supabase)
+    val gate = GateRepository(supabase)
     val polls = PollRepository(supabase)
     val chat = ChatRepository(supabase)
     val payments = PaymentsRepository(supabase)

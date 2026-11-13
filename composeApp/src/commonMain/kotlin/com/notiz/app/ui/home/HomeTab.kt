@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.sp
 import com.notiz.app.data.DueStatus
 import com.notiz.app.data.Notice
 import com.notiz.app.data.Perms
+import com.notiz.app.ui.components.IconTile
+import com.notiz.app.ui.gate.VisitorRequestCard
+import com.notiz.app.data.GateEntry
 import com.notiz.app.i18n.asString
 import com.notiz.app.i18n.localDate
 import com.notiz.app.i18n.localizedMonths
@@ -67,7 +70,17 @@ class HomeActions(
     val openNotice: (String) -> Unit,
     val openMembers: () -> Unit,
     val openSettings: () -> Unit,
+    val openGate: () -> Unit,
+    val answerVisitor: (GateEntry, Boolean) -> Unit,
 )
+
+/** Visitors at the gate for this flat, at the top of Home so nobody waits long. */
+@Composable
+private fun WaitingVisitors(state: HomeUiState, actions: HomeActions) {
+    state.visitors.forEach { e ->
+        VisitorRequestCard(e, busy = state.visitorBusyId == e.id, onAnswer = { allow -> actions.answerVisitor(e, allow) })
+    }
+}
 
 private val Shadowed = RoundedCornerShape(18.dp)
 
@@ -262,6 +275,7 @@ private fun CommitteeHome(session: SessionContext, state: HomeUiState, actions: 
     }
 
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        WaitingVisitors(state, actions)
         state.myDue?.takeIf { it.status == DueStatus.PENDING }?.let { due ->
             Row(
                 Modifier.fillMaxWidth().softShadow(Shadowed).clip(Shadowed).background(Palette.amberSoft)
@@ -294,7 +308,26 @@ private fun CommitteeHome(session: SessionContext, state: HomeUiState, actions: 
             }
         }
 
+        GateLink(actions.openGate)
         LatestNotice(state, actions)
+    }
+}
+
+/** Committee Home has no shortcut row, so the gate gets a slim card. */
+@Composable
+private fun GateLink(onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().softShadow(Shadowed).clip(Shadowed).background(Color.White)
+            .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        IconTile(NotizIcons.Door, Palette.teal, Palette.tealSoft, size = 40.dp, iconSize = 20.dp, radius = 12.dp)
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(Res.string.gate_resident_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(Res.string.home_gate_link_sub), color = Palette.muted, fontSize = 12.sp)
+        }
+        Icon(NotizIcons.ChevronRight, contentDescription = null, tint = Palette.muted, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -393,15 +426,14 @@ private fun ResidentHome(session: SessionContext, state: HomeUiState, onVote: (S
     DueCard(state, Modifier.overlapUp(76.dp).padding(horizontal = 16.dp), onPay = { actions.openTab(HomeTab.Dues) })
 
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        WaitingVisitors(state, actions)
         Row(Modifier.fillMaxWidth()) {
             RoundAction(NotizIcons.Wrench, Palette.amberText, Palette.amberSoft, stringResource(Res.string.home_tray_request), Modifier.weight(1f)) {
                 actions.openTab(HomeTab.HelpDesk)
             }
             RoundAction(NotizIcons.Poll, Palette.purple, Palette.purpleSoft, stringResource(Res.string.home_action_polls), Modifier.weight(1f), onClick = actions.openPolls)
             RoundAction(NotizIcons.Users, Palette.blue, Palette.blueSoft, stringResource(Res.string.home_action_neighbours), Modifier.weight(1f), onClick = actions.openMembers)
-            RoundAction(NotizIcons.Download, Palette.teal, Palette.tealSoft, stringResource(Res.string.home_action_receipts), Modifier.weight(1f)) {
-                actions.openTab(HomeTab.Dues)
-            }
+            RoundAction(NotizIcons.Door, Palette.teal, Palette.tealSoft, stringResource(Res.string.home_action_gate), Modifier.weight(1f), onClick = actions.openGate)
         }
         LatestNotice(state, actions)
         PollCard(state, onVote, actions.openPolls)
