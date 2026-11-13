@@ -31,7 +31,7 @@ Goal: one housing society using Notiz for real notices, dues and complaints for 
 - [ ] Create the upload keystore and `keystore.properties` ([RELEASE.md](RELEASE.md) §1); bump `notiz.versionCode` in `gradle.properties` for every upload.
 - [ ] Enable Crashlytics in the Firebase console and check a test crash arrives ([RELEASE.md](RELEASE.md) §2).
 - [ ] Build: `./gradlew :composeApp:bundleRelease` → `composeApp/build/outputs/bundle/release/*.aab`.
-- [ ] Play Console: create the app (`com.notiz.app`), fill in the store listing basics, **Data safety**, **privacy policy URL** and **data deletion URL** (answers in [RELEASE.md](RELEASE.md) §3).
+- [ ] Play Console and the 14-day closed test: follow [CLOSED_TESTING.md](CLOSED_TESTING.md) (store listing text in English and Tamil, every App content answer, reviewer demo account, tester plan, production application).
 - [ ] Upload to **Internal testing**, add the pilot residents' Google account emails (up to 100), and share the opt-in link.
 - [ ] Before a public launch: a personal developer account needs **closed testing with 12+ testers for 14 days** first. Start that during the pilot.
 - [ ] Turn on R8 (`isMinifyEnabled = true`) only after testing; add keep rules for kotlinx.serialization if needed.

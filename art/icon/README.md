@@ -4,6 +4,6 @@
 
 - Android: `res/drawable/ic_launcher_{background,foreground,monochrome}.xml` (adaptive icon, Android 8+, themed icon on Android 13+) and PNGs in `res/mipmap-*` for Android 7.
 - iOS: `iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` (Xcode makes the other sizes).
-- Play Store listing: `play-store-512.png`.
+- Play Store listing: `art/store/app-icon-512.png` (render.py writes `play-store-512.png` here; move it there).
 
 To change it, edit the SVG (and the matching paths in the three drawables), then run `python3 render.py notiz-icon.svg` (needs Playwright) and copy the PNGs into place.

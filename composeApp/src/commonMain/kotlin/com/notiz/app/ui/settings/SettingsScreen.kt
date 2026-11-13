@@ -39,6 +39,7 @@ import com.notiz.app.i18n.UiText
 import com.notiz.app.i18n.asString
 import com.notiz.app.i18n.uiText
 import com.notiz.app.resources.*
+import com.notiz.app.util.urlEncode
 import com.notiz.app.ui.components.roleLabel
 import com.notiz.app.data.Roles
 import com.notiz.app.data.Perms
@@ -317,6 +318,15 @@ fun SettingsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GroupLabel(stringResource(Res.string.settings_account))
                 GroupCard {
+                    if (AppConfig.SUPPORT_EMAIL.isNotBlank()) {
+                        val subject = stringResource(Res.string.settings_feedback_subject, session.society.name)
+                        ListRow(
+                            stringResource(Res.string.settings_feedback),
+                            subtitle = stringResource(Res.string.settings_feedback_hint),
+                            showChevron = true,
+                            onClick = { runCatching { uriHandler.openUri("mailto:${AppConfig.SUPPORT_EMAIL}?subject=${urlEncode(subject)}") } },
+                        )
+                    }
                     ListRow(stringResource(Res.string.settings_privacy), showChevron = true, onClick = { runCatching { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) } })
                     ListRow(stringResource(Res.string.action_sign_out), onClick = { if (!state.busy) onSignOut() })
                     ListRow(stringResource(Res.string.settings_leave), onClick = { if (!state.busy) confirmLeave = true })

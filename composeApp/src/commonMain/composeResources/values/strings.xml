@@ -569,4 +569,7 @@ all in one place.</string>
     <string name="gate_retake_photo">Retake</string>
     <string name="gate_camera_failed">Couldn't open the camera. You can log the visitor without a photo.</string>
     <string name="error_photo_upload">Photo upload failed, please try again.</string>
+    <string name="settings_feedback">Send feedback</string>
+    <string name="settings_feedback_hint">Found a bug or have an idea? Tell us.</string>
+    <string name="settings_feedback_subject">Notiz feedback (%1$s)</string>
 </resources>

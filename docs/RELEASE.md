@@ -46,13 +46,13 @@ The policy is `docs/privacy.html`. It includes a **Delete your account** section
 3. Play Console:
    - **App content → Privacy policy:** the URL above.
    - **App content → Data deletion:** the same URL with `#delete`.
-   - **Data safety** (matches the policy):
+   - **Data safety** (matches the policy; the full form walk-through is in [CLOSED_TESTING.md](CLOSED_TESTING.md) §4):
 
 | Data type | Collected | Shared | Purpose | Optional |
 | --- | --- | --- | --- | --- |
 | Phone number | Yes | No | Account management | No |
 | Name | Yes | No | App functionality, account management | No |
-| Photos | Yes | No | App functionality | Yes |
+| Photos (notice, complaint and visitor photos) | Yes | No | App functionality | Yes |
 | Other user-generated content (notices, complaints, chat) | Yes | No | App functionality | Yes |
 | Purchase history (dues payments) | Yes | No | App functionality | No |
 | Crash logs, diagnostics | Yes | No | Analytics (crash reporting) | No |

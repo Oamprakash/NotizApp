@@ -13,4 +13,10 @@ object AppConfig {
 
     /** docs/privacy.html published with GitHub Pages (see docs/RELEASE.md). Also used in Play Console. */
     const val PRIVACY_POLICY_URL = "https://oamprakash.github.io/NotizApp/privacy.html"
+
+    /**
+     * Where Settings → "Send feedback" emails go (testers' bug reports). Use the same support
+     * address as the privacy policy and Play Console. Leave empty to hide the row.
+     */
+    const val SUPPORT_EMAIL = ""
 }

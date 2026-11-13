@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Inter;src:url('../../composeApp/src/commonMain/composeResources/font/inter_extrabold.otf');font-weight:800}
+@font-face{font-family:Inter;src:url('../../composeApp/src/commonMain/composeResources/font/inter_semibold.otf');font-weight:600}
+@font-face{font-family:Inter;src:url('../../composeApp/src/commonMain/composeResources/font/inter_regular.otf');font-weight:400}
+html,body{margin:0}
+.g{width:1024px;height:500px;box-sizing:border-box;padding:0 72px;display:flex;align-items:center;gap:56px;
+ background:radial-gradient(circle at 85% 20%,rgba(244,166,42,.18),transparent 40%),linear-gradient(135deg,#138067,#0A5444);font-family:Inter,sans-serif;color:#fff;overflow:hidden;position:relative}
+.icon{width:200px;height:200px;border-radius:46px;box-shadow:0 24px 60px rgba(0,0,0,.28);flex:none;overflow:hidden}
+h1{font-size:84px;font-weight:800;margin:0;letter-spacing:-2px}
+p{font-size:30px;font-weight:600;margin:10px 0 0;line-height:1.25;max-width:620px}
+.chips{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap}
+.chips span{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:8px 16px;border-radius:999px;font-size:20px;font-weight:600}
+.ta{font-size:20px;font-weight:400;opacity:.85;margin-top:14px}
+</style></head><body><div class="g">
+<div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="200" height="200">
+  <!-- Notiz app icon. 108×108 is the Android adaptive-icon canvas; the visible icon is the middle 72×72 (18–90). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#138067"/>
+      <stop offset="1" stop-color="#0A5444"/>
+    </linearGradient>
+  </defs>
+  <rect id="background" width="108" height="108" fill="url(#bg)"/>
+  <g id="foreground">
+    <!-- House: white, rounded corners -->
+    <path d="M54 35.6 L73.5 51.75 L73.5 73.6 L34.5 73.6 L34.5 51.75 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="4.9" stroke-linejoin="round"/>
+    <!-- Notice lines -->
+    <path d="M41.9 59.5 H66.1 M41.9 65.8 H58.8" stroke="#0E6B57" stroke-width="3.1" stroke-linecap="round" fill="none"/>
+    <!-- Marigold notification dot with a teal ring so it separates from the roof -->
+    <circle cx="72.1" cy="39.1" r="6.5" fill="#F4A62A" stroke="#0E6B57" stroke-width="2.5"/>
+  </g>
+</svg>
+</div>
+<div><h1>Notiz</h1><p>One simple app for your apartment society.</p>
+<div class="chips"><span>Notices</span><span>Dues &amp; UPI</span><span>Help desk</span><span>Gate</span><span>Polls</span></div>
+</div></div></body></html>
