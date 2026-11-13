@@ -73,6 +73,7 @@ import com.notiz.app.ui.components.IconTile
 import com.notiz.app.ui.components.InfoBanner
 import com.notiz.app.ui.components.LoadingBox
 import com.notiz.app.ui.components.NotizCard
+import com.notiz.app.ui.components.NotizDialog
 import com.notiz.app.ui.components.NotizSheet
 import com.notiz.app.ui.components.NotizTextButton
 import com.notiz.app.ui.components.NotizTextField
@@ -678,6 +679,26 @@ private fun passShareText(session: SessionContext): (GatePass) -> String {
 @Composable
 fun VisitorRequestCard(e: GateEntry, busy: Boolean, onAnswer: (allow: Boolean) -> Unit, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(20.dp)
+    // Ask once more before answering: a mis-tap would let a stranger in or turn a guest away
+    var confirming by remember(e.id) { mutableStateOf<Boolean?>(null) }
+    confirming?.let { allow ->
+        val who = visitorTitle(e)
+        NotizDialog(
+            onDismissRequest = { confirming = null },
+            title = { Text(stringResource(if (allow) Res.string.gate_confirm_allow_title else Res.string.gate_confirm_deny_title, who)) },
+            text = { Text(stringResource(if (allow) Res.string.gate_confirm_allow_body else Res.string.gate_confirm_deny_body)) },
+            confirmButton = {
+                NotizTextButton(onClick = { confirming = null; onAnswer(allow) }) {
+                    Text(
+                        stringResource(if (allow) Res.string.gate_allow else Res.string.gate_deny),
+                        color = if (allow) Palette.teal else Palette.red,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = { NotizTextButton(onClick = { confirming = null }) { Text(stringResource(Res.string.gate_confirm_back)) } },
+        )
+    }
     Column(
         modifier.fillMaxWidth().background(Palette.amberSoft, shape).border(1.5.dp, Palette.marigold, shape).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -699,14 +720,14 @@ fun VisitorRequestCard(e: GateEntry, busy: Boolean, onAnswer: (allow: Boolean) -
             Box(
                 Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(14.dp)).background(Color.White)
                     .border(1.dp, Palette.red.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
-                    .clickable(enabled = !busy) { onAnswer(false) },
+                    .clickable(enabled = !busy) { confirming = false },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(stringResource(Res.string.gate_deny), color = Palette.red, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
             PrimaryButton(
                 stringResource(Res.string.gate_allow),
-                onClick = { onAnswer(true) },
+                onClick = { confirming = true },
                 enabled = !busy,
                 icon = NotizIcons.Check,
                 modifier = Modifier.weight(1f),

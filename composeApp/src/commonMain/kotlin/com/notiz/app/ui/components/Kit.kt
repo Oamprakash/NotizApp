@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -128,7 +129,11 @@ fun NotizTextField(
                         CompositionLocalProvider(LocalContentColor provides Palette.ink, LocalTextStyle provides style) { prefix() }
                         Spacer(Modifier.width(4.dp))
                     }
-                    Box(Modifier.weight(1f)) {
+                    // Centred fields (e.g. the gate code) keep the text and cursor in the middle while typing
+                    Box(
+                        Modifier.weight(1f),
+                        contentAlignment = if (style.textAlign == TextAlign.Center) Alignment.Center else Alignment.TopStart,
+                    ) {
                         if (value.isEmpty() && placeholder != null) {
                             CompositionLocalProvider(LocalContentColor provides Color(0xFF8A968F), LocalTextStyle provides style) { placeholder() }
                         }

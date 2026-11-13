@@ -558,4 +558,9 @@ all in one place.</string>
     <string name="error_gate_not_waiting">This visitor isn't waiting any more. Pull down to refresh.</string>
     <string name="error_gate_pass_day">Pick a day in the next 30 days.</string>
     <string name="error_gate_too_many">Too many open guest codes. Cancel some first.</string>
+    <string name="gate_confirm_allow_title">Let %1$s in?</string>
+    <string name="gate_confirm_deny_title">Turn away %1$s?</string>
+    <string name="gate_confirm_allow_body">The guard will let them in.</string>
+    <string name="gate_confirm_deny_body">The guard will tell them you said no.</string>
+    <string name="gate_confirm_back">Go back</string>
 </resources>

@@ -558,4 +558,9 @@
     <string name="error_gate_not_waiting">இந்தப் பார்வையாளர் இப்போது காத்திருக்கவில்லை. புதுப்பிக்க கீழே இழுக்கவும்.</string>
     <string name="error_gate_pass_day">அடுத்த 30 நாட்களில் ஒரு நாளைத் தேர்ந்தெடுங்கள்.</string>
     <string name="error_gate_too_many">திறந்த விருந்தினர் குறியீடுகள் அதிகம். சிலவற்றை முதலில் ரத்து செய்யுங்கள்.</string>
+    <string name="gate_confirm_allow_title">%1$s உள்ளே வரலாமா?</string>
+    <string name="gate_confirm_deny_title">%1$s-ஐத் திருப்பி அனுப்பவா?</string>
+    <string name="gate_confirm_allow_body">காவலர் அவர்களை உள்ளே விடுவார்.</string>
+    <string name="gate_confirm_deny_body">நீங்கள் மறுத்ததைக் காவலர் அவர்களிடம் சொல்வார்.</string>
+    <string name="gate_confirm_back">பின்செல்</string>
 </resources>
