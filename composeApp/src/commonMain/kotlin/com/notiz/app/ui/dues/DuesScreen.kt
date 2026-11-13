@@ -42,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.notiz.app.AppContainer
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.Due
+import com.notiz.app.data.Perms
 import com.notiz.app.data.DueStatus
 import com.notiz.app.push.OnPushUpdate
 import com.notiz.app.push.PushTypes
@@ -282,6 +283,10 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
     var cashFor by remember { mutableStateOf<Due?>(null) }
     var cancelling by remember { mutableStateOf<Due?>(null) }
     var managingBills by remember { mutableStateOf(false) }
+    // Treasurer-type roles see every flat; residents only their own
+    val allDues = session.seesAllDues
+    val canBills = session.can(Perms.BILLS)
+    val canPayments = session.can(Perms.PAYMENTS)
     var editingBill by remember { mutableStateOf<Bill?>(null) }
     var cancellingBill by remember { mutableStateOf<Bill?>(null) }
     val sharer = rememberFileSharer()
@@ -350,13 +355,13 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     item { ScreenTitle(stringResource(Res.string.tab_dues), subtitle = stringResource(Res.string.home_flat, session.flatNo)) }
-                    if (session.isAdmin) {
+                    if (allDues) {
                         item {
                             AdminSummary(
                                 state,
                                 onExport = ::exportExcel,
-                                onManageBills = { managingBills = true },
-                                onOpenPaymentSettings = onOpenPaymentSettings,
+                                onManageBills = { managingBills = true }.takeIf { canBills },
+                                onOpenPaymentSettings = onOpenPaymentSettings.takeIf { session.can(Perms.PAYMENT_SETTINGS) },
                             )
                         }
                         item {
@@ -370,13 +375,13 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                             }
                         }
                     }
-                    val list = if (session.isAdmin) state.visible else state.dues
+                    val list = if (allDues) state.visible else state.dues
                     if (list.isEmpty()) {
                         item {
                             Box(Modifier.fillMaxWidth().padding(top = 48.dp)) {
                                 EmptyState(
                                     stringResource(Res.string.dues_empty_title),
-                                    if (session.isAdmin) {
+                                    if (canBills) {
                                         stringResource(Res.string.dues_empty_admin)
                                     } else {
                                         stringResource(Res.string.dues_empty_resident)
@@ -386,8 +391,8 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                         }
                     }
                     // Residents: what's due now as a big card, then paid ones as a compact history
-                    val open = if (session.isAdmin) emptyList() else list.filter { it.status != DueStatus.PAID }.sortedBy { it.dueDate }
-                    val history = if (session.isAdmin) emptyList() else list.filter { it.status == DueStatus.PAID }
+                    val open = if (allDues) emptyList() else list.filter { it.status != DueStatus.PAID }.sortedBy { it.dueDate }
+                    val history = if (allDues) emptyList() else list.filter { it.status == DueStatus.PAID }
                     open.firstOrNull()?.let { due ->
                         item(key = "hero") {
                             DueHeroCard(
@@ -412,11 +417,13 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                             }
                         }
                     }
-                    val cards = if (session.isAdmin) list else open.drop(1)
+                    val cards = if (allDues) list else open.drop(1)
                     items(cards, key = { it.id }) { due ->
                         DueCard(
                             due = due,
-                            isAdmin = session.isAdmin,
+                            allFlats = allDues,
+                            canVerify = canPayments,
+                            canCancel = canBills,
                             isMyFlat = due.flatNo == session.flatNo,
                             busy = state.busy,
                             onlineEnabled = state.onlineEnabled,
@@ -433,7 +440,7 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
             }
         }
 
-        if (session.isAdmin) {
+        if (canBills) {
             NotizFab(stringResource(Res.string.dues_raise_bill), onClick = { raising = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         Column(Modifier.align(Alignment.TopCenter)) {
@@ -526,8 +533,8 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
 private fun AdminSummary(
     state: DuesUiState,
     onExport: () -> Unit,
-    onManageBills: () -> Unit,
-    onOpenPaymentSettings: () -> Unit,
+    onManageBills: (() -> Unit)?,
+    onOpenPaymentSettings: (() -> Unit)?,
 ) {
     NotizCard(radius = 24.dp) {
         Column(Modifier.fillMaxWidth()) {
@@ -540,15 +547,19 @@ private fun AdminSummary(
             if (state.dues.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SecondaryButton(stringResource(Res.string.dues_export_excel), onClick = onExport, icon = NotizIcons.Download, modifier = Modifier.weight(1f))
-                    SecondaryButton(stringResource(Res.string.dues_manage_bills), onClick = onManageBills, modifier = Modifier.weight(1f))
+                    if (onManageBills != null) {
+                        SecondaryButton(stringResource(Res.string.dues_manage_bills), onClick = onManageBills, modifier = Modifier.weight(1f))
+                    }
                 }
             }
-            NotizTextButton(onClick = onOpenPaymentSettings) {
-                Text(
-                    stringResource(
-                        if (state.onlineEnabled) Res.string.dues_online_on else Res.string.dues_online_setup,
-                    ),
-                )
+            if (onOpenPaymentSettings != null) {
+                NotizTextButton(onClick = onOpenPaymentSettings) {
+                    Text(
+                        stringResource(
+                            if (state.onlineEnabled) Res.string.dues_online_on else Res.string.dues_online_setup,
+                        ),
+                    )
+                }
             }
         }
     }
@@ -565,7 +576,9 @@ private fun SummaryFigure(label: String, value: String) {
 @Composable
 private fun DueCard(
     due: Due,
-    isAdmin: Boolean,
+    allFlats: Boolean,
+    canVerify: Boolean,
+    canCancel: Boolean,
     isMyFlat: Boolean,
     busy: Boolean,
     onlineEnabled: Boolean,
@@ -582,12 +595,12 @@ private fun DueCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (isAdmin) stringResource(Res.string.home_flat, due.flatNo) else due.title,
+                        if (allFlats) stringResource(Res.string.home_flat, due.flatNo) else due.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        (if (isAdmin) "${due.title} · " else "") +
+                        (if (allFlats) "${due.title} · " else "") +
                             stringResource(Res.string.dues_due_on, localDate(due.dueDate)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -603,8 +616,8 @@ private fun DueCard(
                 Text(stringResource(Res.string.dues_utr, due.utr.orEmpty()), style = MaterialTheme.typography.bodySmall)
             }
 
-            // Resident (or admin for their own flat): pay
-            if (due.status == DueStatus.PENDING && (isMyFlat || !isAdmin)) {
+            // Resident (or committee for their own flat): pay
+            if (due.status == DueStatus.PENDING && (isMyFlat || !allFlats)) {
                 Spacer(Modifier.height(12.dp))
                 if (onlineEnabled) {
                     // Online first: confirmed automatically, no UTR to type
@@ -620,21 +633,23 @@ private fun DueCard(
                     }
                 }
             }
-            // Admin: confirm payments residents reported
-            if (isAdmin && due.status == DueStatus.SUBMITTED) {
+            // Payments permission: confirm payments residents reported
+            if (canVerify && due.status == DueStatus.SUBMITTED) {
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PrimaryButton(stringResource(Res.string.dues_mark_paid), onClick = { onVerify(true) }, enabled = !busy, modifier = Modifier.weight(1f).height(48.dp))
                     SecondaryButton(stringResource(Res.string.dues_not_received), onClick = { onVerify(false) }, enabled = !busy, modifier = Modifier.weight(1f))
                 }
             }
-            // Admin: record a cash / cheque payment for an unpaid flat
-            if (isAdmin && due.status == DueStatus.PENDING) {
+            // Record a cash / cheque payment (payments) or cancel the due (bills)
+            if ((canVerify || canCancel) && due.status == DueStatus.PENDING) {
                 Spacer(Modifier.height(if (isMyFlat) 4.dp else 12.dp))
                 Row {
-                    NotizTextButton(onClick = onPaidInCash, enabled = !busy) { Text(stringResource(Res.string.dues_paid_cash)) }
-                    NotizTextButton(onClick = onCancel, enabled = !busy) {
-                        Text(stringResource(Res.string.dues_cancel_due), color = Palette.red)
+                    if (canVerify) NotizTextButton(onClick = onPaidInCash, enabled = !busy) { Text(stringResource(Res.string.dues_paid_cash)) }
+                    if (canCancel) {
+                        NotizTextButton(onClick = onCancel, enabled = !busy) {
+                            Text(stringResource(Res.string.dues_cancel_due), color = Palette.red)
+                        }
                     }
                 }
             }

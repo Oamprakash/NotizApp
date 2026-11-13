@@ -39,6 +39,9 @@ import com.notiz.app.i18n.UiText
 import com.notiz.app.i18n.asString
 import com.notiz.app.i18n.uiText
 import com.notiz.app.resources.*
+import com.notiz.app.ui.components.roleLabel
+import com.notiz.app.data.Roles
+import com.notiz.app.data.Perms
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
@@ -160,6 +163,7 @@ fun SettingsScreen(
     onSignOut: () -> Unit,
     onOpenMembers: () -> Unit = {},
     onOpenPayments: () -> Unit = {},
+    onOpenRoles: () -> Unit = {},
 ) {
     val container = LocalAppContainer.current
     val vm = viewModel { SettingsViewModel(container, session) }
@@ -196,8 +200,10 @@ fun SettingsScreen(
                     Column(Modifier.weight(1f)) {
                         Text(state.name.ifBlank { stringResource(Res.string.members_resident) }, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                         Text(
-                            stringResource(Res.string.home_flat, session.flatNo) +
-                                if (session.isAdmin) " · " + stringResource(Res.string.members_admin) else "",
+                            listOfNotNull(
+                                session.flatNo.takeIf { it.isNotBlank() }?.let { stringResource(Res.string.home_flat, it) },
+                                roleLabel(session.role).takeIf { session.role != Roles.RESIDENT },
+                            ).joinToString(" · "),
                             color = Palette.muted,
                             fontSize = 13.sp,
                         )
@@ -225,51 +231,82 @@ fun SettingsScreen(
                 Text(stringResource(Res.string.settings_language_hint), color = Palette.muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
             }
 
-            if (session.isAdmin) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GroupLabel(stringResource(Res.string.settings_admin_group))
-                    GroupCard {
+            // Committee tools, each shown only to roles that have the permission
+            val adminRows = buildList<@Composable (Boolean) -> Unit> {
+                if (session.can(Perms.MEMBERS)) {
+                    add { last ->
                         ListRow(
                             title = stringResource(Res.string.members_title),
                             leading = { IconTile(NotizIcons.Users, Palette.blue, Palette.blueSoft, size = 40.dp, iconSize = 20.dp, radius = 12.dp) },
                             showChevron = true,
+                            divider = !last,
                             onClick = onOpenMembers,
                         )
+                    }
+                }
+                if (session.can(Perms.PAYMENT_SETTINGS)) {
+                    add { last ->
                         ListRow(
                             title = stringResource(Res.string.settings_payments),
                             subtitle = state.upiVpa.ifBlank { null },
                             leading = { IconTile(NotizIcons.Rupee, Palette.amberText, Palette.amberSoft, size = 40.dp, iconSize = 20.dp, radius = 12.dp) },
                             showChevron = true,
-                            divider = false,
+                            divider = !last,
                             onClick = onOpenPayments,
                         )
                     }
                 }
+                if (session.isPresident) {
+                    add { last ->
+                        ListRow(
+                            title = stringResource(Res.string.roles_title),
+                            subtitle = stringResource(Res.string.roles_row_hint),
+                            leading = { IconTile(NotizIcons.Key, Palette.teal, Palette.tealSoft, size = 40.dp, iconSize = 20.dp, radius = 12.dp) },
+                            showChevron = true,
+                            divider = !last,
+                            onClick = onOpenRoles,
+                        )
+                    }
+                }
+            }
+            if (adminRows.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GroupLabel(stringResource(Res.string.settings_admin_group))
+                    GroupCard { adminRows.forEachIndexed { i, row -> row(i == adminRows.lastIndex) } }
+                }
             }
 
-            if (session.isAdmin) {
+            val canDetails = session.can(Perms.SOCIETY)
+            val canUpi = session.can(Perms.PAYMENT_SETTINGS)
+            if (canDetails || canUpi) {
                 Section(stringResource(Res.string.settings_society)) {
                     Hint(stringResource(Res.string.settings_society_hint))
-                    Field(state.societyName, Res.string.setup_society_name) { v -> vm.edit { copy(societyName = v.take(80)) } }
-                    Field(state.city, Res.string.setup_city) { v -> vm.edit { copy(city = v.take(60)) } }
+                    if (canDetails) {
+                        Field(state.societyName, Res.string.setup_society_name) { v -> vm.edit { copy(societyName = v.take(80)) } }
+                        Field(state.city, Res.string.setup_city) { v -> vm.edit { copy(city = v.take(60)) } }
+                    }
                     val vpaOk = state.upiVpa.isBlank() || Upi.isValidVpa(state.upiVpa)
-                    NotizTextField(
-                        value = state.upiVpa,
-                        onValueChange = { v -> vm.edit { copy(upiVpa = v.trim().take(100)) } },
-                        label = { Text(stringResource(Res.string.setup_upi_id)) },
-                        isError = !vpaOk,
-                        supportingText = if (vpaOk) null else { { Text(stringResource(Res.string.setup_upi_invalid)) } },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Field(state.upiPayeeName, Res.string.setup_upi_name) { v -> vm.edit { copy(upiPayeeName = v.take(60)) } }
+                    if (canUpi) {
+                        NotizTextField(
+                            value = state.upiVpa,
+                            onValueChange = { v -> vm.edit { copy(upiVpa = v.trim().take(100)) } },
+                            label = { Text(stringResource(Res.string.setup_upi_id)) },
+                            isError = !vpaOk,
+                            supportingText = if (vpaOk) null else { { Text(stringResource(Res.string.setup_upi_invalid)) } },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Field(state.upiPayeeName, Res.string.setup_upi_name) { v -> vm.edit { copy(upiPayeeName = v.take(60)) } }
+                    }
                     PrimaryButton(
                         stringResource(Res.string.action_save_changes),
                         onClick = { vm.saveSociety(onSaved = onSessionChanged) },
                         enabled = state.societyName.trim().length >= 2 && vpaOk && !state.busy,
                     )
                 }
+            }
 
+            if (session.can(Perms.MEMBERS)) {
                 Section(stringResource(Res.string.settings_invite_title)) {
                     Text(state.inviteCode, color = Palette.teal, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 4.sp)
                     Hint(stringResource(Res.string.settings_invite_hint))

@@ -1,5 +1,6 @@
 package com.notiz.app.ui.chat
 
+import com.notiz.app.data.Perms
 import com.notiz.app.ui.components.NotizMenu
 import com.notiz.app.ui.components.NotizMenuItem
 import com.notiz.app.ui.components.NotizTextButton
@@ -284,9 +285,9 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
                                 val index = state.messages.indexOfFirst { it.id == id }
                                 if (index >= 0) scope.launch { listState.animateScrollToItem(index) }
                             },
-                            canDelete = !message.isDeleted && (mine || session.isAdmin),
+                            canDelete = !message.isDeleted && (mine || session.can(Perms.MODERATION)),
                             canReport = !message.isDeleted && !mine,
-                            canMute = !message.isDeleted && !mine && session.isAdmin,
+                            canMute = !message.isDeleted && !mine && session.can(Perms.MODERATION),
                             onDelete = { confirmDelete = message },
                             onReport = { vm.report(message) },
                             onMute = { confirmMute = message },

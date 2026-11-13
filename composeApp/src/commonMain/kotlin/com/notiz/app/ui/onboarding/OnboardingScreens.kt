@@ -68,6 +68,7 @@ import com.notiz.app.util.Upi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import com.notiz.app.resources.*
+import com.notiz.app.ui.components.NotizSwitch
 import org.jetbrains.compose.resources.stringResource
 import com.notiz.app.i18n.UiText
 import com.notiz.app.i18n.asString
@@ -95,8 +96,8 @@ class OnboardingViewModel(private val container: AppContainer) : BaseViewModel()
         container.auth.saveProfile(name)
     }
 
-    fun join(code: String, flat: String, onDone: () -> Unit) = submit(onDone) {
-        container.societies.joinSociety(code, flat)
+    fun join(code: String, flat: String, asStaff: Boolean, onDone: () -> Unit) = submit(onDone) {
+        container.societies.joinSociety(code, flat, asStaff)
     }
 
     fun register(name: String, city: String, flat: String, vpa: String, payee: String, onDone: () -> Unit) {
@@ -216,7 +217,7 @@ fun SocietySetupScreen(generation: Int, onDone: () -> Unit, onSignOut: () -> Uni
             onSelect = { tab = it },
         )
         if (tab == 0) {
-            JoinForm(loading = state.loading) { code, flat -> vm.join(code, flat, onDone) }
+            JoinForm(loading = state.loading) { code, flat, staff -> vm.join(code, flat, staff, onDone) }
         } else {
             RegisterForm(loading = state.loading) { name, city, flat, vpa, payee ->
                 vm.register(name, city, flat, vpa, payee, onDone)
@@ -230,9 +231,10 @@ fun SocietySetupScreen(generation: Int, onDone: () -> Unit, onSignOut: () -> Uni
 }
 
 @Composable
-private fun JoinForm(loading: Boolean, onJoin: (code: String, flat: String) -> Unit) {
+private fun JoinForm(loading: Boolean, onJoin: (code: String, flat: String, asStaff: Boolean) -> Unit) {
     var code by rememberSaveable { mutableStateOf("") }
     var flat by rememberSaveable { mutableStateOf("") }
+    var staff by rememberSaveable { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(Res.string.setup_join_hint), color = Palette.muted, fontSize = 14.sp)
         NotizTextField(
@@ -244,9 +246,23 @@ private fun JoinForm(loading: Boolean, onJoin: (code: String, flat: String) -> U
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
             modifier = Modifier.fillMaxWidth(),
         )
-        FlatField(flat) { flat = it }
-        LoadingButton(stringResource(Res.string.setup_request_join), loading = loading, enabled = code.length == 6 && flat.isNotBlank()) {
-            onJoin(code, flat)
+        // Security staff join without a flat; the president can change their role later
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Palette.chip)
+                .clickable { staff = !staff }.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(NotizIcons.Shield, contentDescription = null, tint = Palette.blueText, modifier = Modifier.size(20.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(Res.string.setup_join_staff), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(Res.string.setup_join_staff_hint), color = Palette.muted, fontSize = 12.sp)
+            }
+            NotizSwitch(checked = staff, onCheckedChange = { staff = it })
+        }
+        if (!staff) FlatField(flat) { flat = it }
+        LoadingButton(stringResource(Res.string.setup_request_join), loading = loading, enabled = code.length == 6 && (staff || flat.isNotBlank())) {
+            onJoin(code, if (staff) "" else flat, staff)
         }
     }
 }
@@ -311,11 +327,15 @@ fun PendingApprovalScreen(membership: Membership, onRefresh: () -> Unit, onSignO
     OnboardingFrame(
         NotizIcons.Clock,
         stringResource(Res.string.pending_title),
-        stringResource(
-            Res.string.pending_body,
-            membership.societies?.name ?: stringResource(Res.string.pending_the_society),
-            membership.flatNo,
-        ),
+        if (membership.isSecurity) {
+            stringResource(Res.string.pending_body_staff, membership.societies?.name ?: stringResource(Res.string.pending_the_society))
+        } else {
+            stringResource(
+                Res.string.pending_body,
+                membership.societies?.name ?: stringResource(Res.string.pending_the_society),
+                membership.flatNo,
+            )
+        },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(40.dp).background(Palette.amberSoft, CircleShape), contentAlignment = Alignment.Center) {

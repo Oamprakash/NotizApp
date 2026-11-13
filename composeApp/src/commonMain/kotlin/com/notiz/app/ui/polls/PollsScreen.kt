@@ -2,6 +2,7 @@
 
 package com.notiz.app.ui.polls
 
+import com.notiz.app.data.Perms
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.size
@@ -141,7 +142,7 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
                 if (state.polls.isEmpty()) {
                     RefreshableEmptyState(
                         stringResource(Res.string.polls_empty_title),
-                        if (session.isAdmin) {
+                        if (session.can(Perms.POLLS)) {
                             stringResource(Res.string.polls_empty_admin)
                         } else {
                             stringResource(Res.string.polls_empty_resident)
@@ -167,7 +168,7 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
             }
         }
 
-        if (session.isAdmin) {
+        if (session.can(Perms.POLLS)) {
             NotizFab(stringResource(Res.string.polls_new), onClick = { creating = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))

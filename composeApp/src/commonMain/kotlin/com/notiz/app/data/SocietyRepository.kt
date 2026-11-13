@@ -40,12 +40,14 @@ class SocietyRepository(private val supabase: SupabaseClient) {
             },
         ).decodeAs()
 
-    suspend fun joinSociety(inviteCode: String, flatNo: String): Membership =
+    /** Join with the invite code; security staff join without a flat ([asStaff]). */
+    suspend fun joinSociety(inviteCode: String, flatNo: String, asStaff: Boolean = false): Membership =
         supabase.postgrest.rpc(
             "join_society",
             buildJsonObject {
                 put("p_invite_code", inviteCode)
                 put("p_flat_no", flatNo)
+                put("p_as_staff", asStaff)
             },
         ).decodeAs()
 
@@ -64,11 +66,54 @@ class SocietyRepository(private val supabase: SupabaseClient) {
         }
     }
 
-    suspend fun setMembershipRole(membershipId: String, role: String) {
-        supabase.from("memberships").update({ set("role", role) }) {
-            filter { eq("id", membershipId) }
-        }
+    // ───────────── Roles and permissions ─────────────
+
+    /** What the signed-in user may do in this society. */
+    suspend fun myPermissions(societyId: String): Set<String> =
+        supabase.postgrest.rpc("my_permissions", buildJsonObject { put("p_society_id", societyId) })
+            .decodeAs<List<String>>().toSet()
+
+    /** President: give a member a role. Moving someone off security needs their [flatNo]. */
+    suspend fun setMemberRole(membershipId: String, role: String, flatNo: String? = null) {
+        supabase.postgrest.rpc(
+            "set_member_role",
+            buildJsonObject {
+                put("p_membership_id", membershipId)
+                put("p_role", role)
+                if (flatNo != null) put("p_flat_no", flatNo.trim())
+            },
+        )
     }
+
+    /** Every role's permissions in this society (the president's editor). */
+    suspend fun rolePermissions(societyId: String): List<RolePermission> =
+        supabase.from("role_permissions").select { filter { eq("society_id", societyId) } }.decodeList()
+
+    suspend fun setRolePermission(societyId: String, role: String, permission: String, enabled: Boolean) {
+        supabase.postgrest.rpc(
+            "set_role_permission",
+            buildJsonObject {
+                put("p_society_id", societyId)
+                put("p_role", role)
+                put("p_permission", permission)
+                put("p_enabled", enabled)
+            },
+        )
+    }
+
+    suspend fun resetRolePermissions(societyId: String, role: String) {
+        supabase.postgrest.rpc(
+            "reset_role_permissions",
+            buildJsonObject {
+                put("p_society_id", societyId)
+                put("p_role", role)
+            },
+        )
+    }
+
+    /** Flats, names and roles; phone numbers only for security staff and the committee. */
+    suspend fun directory(societyId: String): List<DirectoryEntry> =
+        supabase.postgrest.rpc("directory", buildJsonObject { put("p_society_id", societyId) }).decodeList()
 
     // ───────────── Admin tools ─────────────
 

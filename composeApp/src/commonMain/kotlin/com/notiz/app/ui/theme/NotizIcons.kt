@@ -51,6 +51,10 @@ object NotizIcons {
     }
     val Logout by lazy { icon("M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4", "M10 16l4-4-4-4M14 12H4") }
     val Trash by lazy { icon("M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13") }
+    val Phone by lazy { icon("M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z") }
+    val Search by lazy { icon("M18 11a7 7 0 1 1-14 0a7 7 0 1 1 14 0", "m20 20-4-4") }
+    val Key by lazy { icon("M11 9a4 4 0 1 1-8 0a4 4 0 1 1 8 0", "M10.5 11 20 20.5M17 17.5l2-2M14.5 15l2-2") }
+    val Settings by lazy { icon("M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0", "M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1") }
     val Globe by lazy { icon("M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0", "M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18") }
 
     private fun icon(vararg paths: String, width: Float = 2f): ImageVector {

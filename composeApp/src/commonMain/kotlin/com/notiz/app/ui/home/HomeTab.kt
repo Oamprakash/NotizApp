@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.notiz.app.data.DueStatus
 import com.notiz.app.data.Notice
+import com.notiz.app.data.Perms
 import com.notiz.app.i18n.asString
 import com.notiz.app.i18n.localDate
 import com.notiz.app.i18n.localizedMonths
@@ -47,6 +48,7 @@ import com.notiz.app.resources.*
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.roleLabel
 import com.notiz.app.ui.components.softShadow
 import com.notiz.app.ui.theme.LightStatusBarIcons
 import com.notiz.app.ui.theme.NotizIcons
@@ -94,7 +96,7 @@ fun HomeTabContent(
     }
     PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = onRefresh, modifier = modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            if (session.isAdmin) CommitteeHome(session, state, actions) else ResidentHome(session, state, onVote, actions)
+            if (session.isCommittee) CommitteeHome(session, state, actions) else ResidentHome(session, state, onVote, actions)
             ErrorBanner(state.error?.asString(), onDismiss = onDismissError)
             Spacer(Modifier.height(20.dp))
         }
@@ -120,7 +122,7 @@ private fun Band(
     val first = myName.trim().substringBefore(' ').ifBlank { session.flatNo }
     val hour = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
     val greeting = when {
-        session.isAdmin -> stringResource(Res.string.home_hello, first)
+        session.isCommittee -> stringResource(Res.string.home_hello, first)
         hour < 12 -> stringResource(Res.string.home_greeting_morning, first)
         hour < 17 -> stringResource(Res.string.home_greeting_afternoon, first)
         else -> stringResource(Res.string.home_greeting_evening, first)
@@ -136,7 +138,7 @@ private fun Band(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "${session.society.name} · ${session.flatNo}" + if (session.isAdmin) " · " + stringResource(Res.string.home_committee) else "",
+                    "${session.society.name} · ${session.flatNo}" + if (session.isCommittee) " · " + roleLabel(session.role) else "",
                     color = Palette.tealOnDark,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
@@ -159,29 +161,104 @@ private fun Band(
 
 // ───────────────────────────── Committee ─────────────────────────────
 
+private class TrayItem(val icon: ImageVector, val fg: Color, val bg: Color, val label: String, val onClick: () -> Unit)
+
+private class Attention(
+    val count: Int,
+    val icon: ImageVector,
+    val title: String,
+    val subtitle: String,
+    val fg: Color,
+    val bg: Color,
+    val onClick: () -> Unit,
+)
+
+/** Home for the president, secretary and treasurer: only the actions and tiles their role allows. */
 @Composable
 private fun CommitteeHome(session: SessionContext, state: HomeUiState, actions: HomeActions) {
-    Band(session, state.myName, actions.openSettings, bottomPadding = 64.dp) {
-        CollectionSummary(state, onDetails = { actions.openTab(HomeTab.Dues) })
+    val tray = buildList {
+        if (session.can(Perms.NOTICES)) {
+            add(TrayItem(NotizIcons.Notice, Color.White, Palette.teal, stringResource(Res.string.home_tray_notice)) { actions.openTab(HomeTab.Notices) })
+        }
+        if (session.can(Perms.BILLS)) {
+            add(TrayItem(NotizIcons.Rupee, Palette.amberText, Palette.amberSoft, stringResource(Res.string.home_raise_bill)) { actions.openTab(HomeTab.Dues) })
+        }
+        if (session.can(Perms.POLLS)) {
+            add(TrayItem(NotizIcons.Poll, Palette.purple, Palette.purpleSoft, stringResource(Res.string.home_tray_poll), actions.openPolls))
+        }
+        if (session.can(Perms.MEMBERS)) {
+            add(TrayItem(NotizIcons.UserPlus, Palette.blue, Palette.blueSoft, stringResource(Res.string.home_tray_invite), actions.openMembers))
+        }
     }
-    // Floating tray of the four committee actions
-    Row(
-        Modifier
-            .overlapUp(44.dp)
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .softShadow(RoundedCornerShape(22.dp), elevation = 8.dp)
-            .background(Color.White, RoundedCornerShape(22.dp))
-            .padding(vertical = 14.dp, horizontal = 4.dp),
-    ) {
-        RoundAction(NotizIcons.Notice, Color.White, Palette.teal, stringResource(Res.string.home_tray_notice), Modifier.weight(1f)) {
-            actions.openTab(HomeTab.Notices)
+    val tiles = buildList {
+        if (session.can(Perms.HELPDESK)) {
+            add(
+                Attention(
+                    state.openRequests,
+                    NotizIcons.Wrench,
+                    stringResource(Res.string.home_att_requests),
+                    state.oldestOpenRequest?.let { stringResource(Res.string.home_att_requests_sub, it.category) }
+                        ?: stringResource(Res.string.home_calm_requests),
+                    Palette.red,
+                    Palette.redSoft,
+                ) { actions.openTab(HomeTab.HelpDesk) },
+            )
         }
-        RoundAction(NotizIcons.Rupee, Palette.amberText, Palette.amberSoft, stringResource(Res.string.home_raise_bill), Modifier.weight(1f)) {
-            actions.openTab(HomeTab.Dues)
+        if (session.can(Perms.PAYMENTS)) {
+            add(
+                Attention(
+                    state.toVerify,
+                    NotizIcons.Rupee,
+                    stringResource(Res.string.home_att_verify),
+                    stringResource(if (state.toVerify > 0) Res.string.home_att_verify_sub else Res.string.home_calm_verify),
+                    Palette.amberText,
+                    Palette.amberSoft,
+                ) { actions.openTab(HomeTab.Dues) },
+            )
         }
-        RoundAction(NotizIcons.Poll, Palette.purple, Palette.purpleSoft, stringResource(Res.string.home_tray_poll), Modifier.weight(1f), onClick = actions.openPolls)
-        RoundAction(NotizIcons.UserPlus, Palette.blue, Palette.blueSoft, stringResource(Res.string.home_tray_invite), Modifier.weight(1f), onClick = actions.openMembers)
+        if (session.can(Perms.MEMBERS)) {
+            add(
+                Attention(
+                    state.joinRequests,
+                    NotizIcons.UserPlus,
+                    stringResource(Res.string.home_att_join),
+                    if (state.joinRequests > 0) state.joinNames.take(2).joinToString(", ") else stringResource(Res.string.home_calm_join),
+                    Palette.blue,
+                    Palette.blueSoft,
+                    actions.openMembers,
+                ),
+            )
+        }
+        if (session.can(Perms.MODERATION)) {
+            add(
+                Attention(
+                    state.reportedMessages,
+                    NotizIcons.Flag,
+                    stringResource(Res.string.home_att_reports),
+                    stringResource(if (state.reportedMessages > 0) Res.string.home_att_reports_sub else Res.string.home_calm_chat),
+                    Palette.purple,
+                    Palette.purpleSoft,
+                ) { actions.openTab(HomeTab.Chat) },
+            )
+        }
+    }
+
+    Band(session, state.myName, actions.openSettings, bottomPadding = if (tray.isEmpty()) 24.dp else 64.dp) {
+        if (session.seesAllDues) CollectionSummary(state, onDetails = { actions.openTab(HomeTab.Dues) })
+    }
+    // Floating tray of the committee actions this role has
+    if (tray.isNotEmpty()) {
+        Row(
+            Modifier
+                .overlapUp(44.dp)
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .softShadow(RoundedCornerShape(22.dp), elevation = 8.dp)
+                .background(Color.White, RoundedCornerShape(22.dp))
+                .padding(vertical = 14.dp, horizontal = 4.dp),
+        ) {
+            tray.forEach { t -> RoundAction(t.icon, t.fg, t.bg, t.label, Modifier.weight(1f), onClick = t.onClick) }
+        }
     }
 
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -203,49 +280,17 @@ private fun CommitteeHome(session: SessionContext, state: HomeUiState, actions: 
             }
         }
 
-        SectionTitle(stringResource(Res.string.home_attention))
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AttentionTile(
-                    count = state.openRequests,
-                    icon = NotizIcons.Wrench,
-                    title = stringResource(Res.string.home_att_requests),
-                    subtitle = state.oldestOpenRequest?.let { stringResource(Res.string.home_att_requests_sub, it.category) }
-                        ?: stringResource(Res.string.home_calm_requests),
-                    fg = Palette.red,
-                    bg = Palette.redSoft,
-                    modifier = Modifier.weight(1f),
-                ) { actions.openTab(HomeTab.HelpDesk) }
-                AttentionTile(
-                    count = state.toVerify,
-                    icon = NotizIcons.Rupee,
-                    title = stringResource(Res.string.home_att_verify),
-                    subtitle = stringResource(if (state.toVerify > 0) Res.string.home_att_verify_sub else Res.string.home_calm_verify),
-                    fg = Palette.amberText,
-                    bg = Palette.amberSoft,
-                    modifier = Modifier.weight(1f),
-                ) { actions.openTab(HomeTab.Dues) }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AttentionTile(
-                    count = state.joinRequests,
-                    icon = NotizIcons.UserPlus,
-                    title = stringResource(Res.string.home_att_join),
-                    subtitle = if (state.joinRequests > 0) state.joinNames.take(2).joinToString(", ") else stringResource(Res.string.home_calm_join),
-                    fg = Palette.blue,
-                    bg = Palette.blueSoft,
-                    modifier = Modifier.weight(1f),
-                    onClick = actions.openMembers,
-                )
-                AttentionTile(
-                    count = state.reportedMessages,
-                    icon = NotizIcons.Flag,
-                    title = stringResource(Res.string.home_att_reports),
-                    subtitle = stringResource(if (state.reportedMessages > 0) Res.string.home_att_reports_sub else Res.string.home_calm_chat),
-                    fg = Palette.purple,
-                    bg = Palette.purpleSoft,
-                    modifier = Modifier.weight(1f),
-                ) { actions.openTab(HomeTab.Chat) }
+        if (tiles.isNotEmpty()) {
+            SectionTitle(stringResource(Res.string.home_attention))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                tiles.chunked(2).forEach { pair ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        pair.forEach { t ->
+                            AttentionTile(t.count, t.icon, t.title, t.subtitle, t.fg, t.bg, Modifier.weight(1f), t.onClick)
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
             }
         }
 

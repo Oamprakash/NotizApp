@@ -45,6 +45,13 @@ private fun serverError(message: String): UiText? {
         "valid utr" in m -> uiText(Res.string.error_invalid_utr)
         "at least two options" in m -> uiText(Res.string.error_two_options)
         "invalid option" in m -> uiText(Res.string.error_invalid_option)
+        // Roles (20261113000000_roles.sql); before the plain "not allowed"
+        "not allowed for your role" in m -> uiText(Res.string.error_admins_only)
+        "only the president can change roles" in m -> uiText(Res.string.error_president_roles)
+        "only the president can change permissions" in m -> uiText(Res.string.error_president_roles)
+        "only the president can remove committee" in m -> uiText(Res.string.error_president_remove)
+        "make someone else president first" in m -> uiText(Res.string.error_make_admin_first)
+        "approve the member first" in m -> uiText(Res.string.error_approve_first)
         "not allowed" in m -> uiText(Res.string.error_not_allowed)
         // Admin tools (20261101000000_admin_tools.sql, delete-account Edge Function)
         "only unpaid dues can be cancelled" in m -> uiText(Res.string.error_only_unpaid)

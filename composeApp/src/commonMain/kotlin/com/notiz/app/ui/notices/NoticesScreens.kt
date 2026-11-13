@@ -2,6 +2,7 @@
 
 package com.notiz.app.ui.notices
 
+import com.notiz.app.data.Perms
 import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.size
@@ -113,7 +114,7 @@ class NoticesViewModel(
         launchSafe(onError = { msg -> state.update { it.copy(loading = false, refreshing = false, loadError = msg) } }) {
             val notices = container.notices.notices(session.societyId)
             val readIds = container.notices.myReadNoticeIds()
-            val counts = if (session.isAdmin) container.notices.readCounts(session.societyId) else emptyMap()
+            val counts = if (session.can(Perms.NOTICES)) container.notices.readCounts(session.societyId) else emptyMap()
             state.update {
                 it.copy(loading = false, refreshing = false, notices = notices, readIds = readIds, readCounts = counts)
             }
@@ -153,7 +154,8 @@ fun NoticesHub(
     Column(modifier) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             ScreenTitle(stringResource(Res.string.tab_notices))
-            SegmentedTabs(
+            // Security staff don't vote, so they only get notices
+            if (!session.isSecurity) SegmentedTabs(
                 options = listOf(
                     stringResource(Res.string.tab_notices) + if (unreadNotices > 0) " · " + stringResource(Res.string.notices_new_count, unreadNotices) else "",
                     stringResource(Res.string.tab_polls),
@@ -162,7 +164,7 @@ fun NoticesHub(
                 onSelect = { onShowPolls(it == 1) },
             )
         }
-        if (showPolls) {
+        if (showPolls && !session.isSecurity) {
             PollsTab(session, Modifier.weight(1f))
         } else {
             NoticesTab(session, onOpenNotice, Modifier.weight(1f))
@@ -189,7 +191,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
                 if (state.notices.isEmpty()) {
                     RefreshableEmptyState(
                         stringResource(Res.string.notices_empty_title),
-                        if (session.isAdmin) {
+                        if (session.can(Perms.NOTICES)) {
                             stringResource(Res.string.notices_empty_admin)
                         } else {
                             stringResource(Res.string.notices_empty_resident)
@@ -214,7 +216,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
             }
         }
 
-        if (session.isAdmin) {
+        if (session.can(Perms.NOTICES)) {
             NotizFab(stringResource(Res.string.notice_new), onClick = { composing = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismissError, modifier = Modifier.align(Alignment.TopCenter))
@@ -370,7 +372,7 @@ class NoticeDetailViewModel(
 
     fun delete(onDone: () -> Unit) {
         val notice = state.value.notice ?: return
-        if (!session.isAdmin) return
+        if (!session.can(Perms.NOTICES)) return
         launchSafe(onError = { msg -> state.update { it.copy(error = msg) } }) {
             container.notices.delete(notice.id)
             container.attachments.delete(notice.photoPaths)
@@ -411,7 +413,7 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
                     if (notice.photoPaths.isNotEmpty()) RemotePhotoStrip(notice.photoPaths, size = 140.dp)
                 }
 
-                if (session.isAdmin) {
+                if (session.can(Perms.NOTICES)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         SecondaryButton(
                             stringResource(if (notice.pinned) Res.string.notice_unpin else Res.string.notice_pin),

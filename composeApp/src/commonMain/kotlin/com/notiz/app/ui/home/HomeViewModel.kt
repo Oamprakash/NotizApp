@@ -6,6 +6,7 @@ import com.notiz.app.data.ComplaintStatus
 import com.notiz.app.data.Due
 import com.notiz.app.data.DueStatus
 import com.notiz.app.data.Notice
+import com.notiz.app.data.Perms
 import com.notiz.app.data.Poll
 import com.notiz.app.i18n.UiText
 import com.notiz.app.ui.BaseViewModel
@@ -89,10 +90,10 @@ class HomeViewModel(
                 val polls = async { soft { container.polls.polls(sid) } ?: emptyList() }
                 val votes = async { soft { container.polls.myFlatVotes() } ?: emptyMap() }
                 val results = async { soft { container.polls.results(sid) } ?: emptyMap() }
-                val members = async { if (session.isAdmin) soft { container.societies.members(sid) } ?: emptyList() else emptyList() }
-                val complaints = async { if (session.isAdmin) soft { container.complaints.complaints(sid) } ?: emptyList() else emptyList() }
+                val members = async { if (session.can(Perms.MEMBERS)) soft { container.societies.members(sid) } ?: emptyList() else emptyList() }
+                val complaints = async { if (session.can(Perms.HELPDESK)) soft { container.complaints.complaints(sid) } ?: emptyList() else emptyList() }
                 val reports = async {
-                    if (session.isAdmin) soft { container.chat.openReportCount(sid, today.minus(7, DateTimeUnit.DAY).toString()) } ?: 0 else 0
+                    if (session.can(Perms.MODERATION)) soft { container.chat.openReportCount(sid, today.minus(7, DateTimeUnit.DAY).toString()) } ?: 0 else 0
                 }
 
                 val allDues = dues.await()
@@ -123,7 +124,7 @@ class HomeViewModel(
                         poll = poll,
                         myVote = poll?.let { p -> myVotes[p.id] },
                         pollVotes = poll?.options?.sumOf { o -> pollResults[o.id] ?: 0L } ?: 0L,
-                        bill = if (session.isAdmin) latestBill(allDues) else null,
+                        bill = if (session.seesAllDues) latestBill(allDues) else null,
                         toVerify = allDues.count { d -> d.status == DueStatus.SUBMITTED },
                         joinRequests = pending.size,
                         joinNames = pending.map { m -> "${m.flatNo} ${m.profiles?.fullName.orEmpty()}".trim() },

@@ -2,6 +2,7 @@
 
 package com.notiz.app.ui.payments
 
+import com.notiz.app.data.Perms
 import com.notiz.app.ui.components.NotizSwitch
 import com.notiz.app.ui.components.NotizTextButton
 import com.notiz.app.ui.components.NotizTextField
@@ -147,7 +148,7 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
         when {
             state.loading -> LoadingBox(Modifier.padding(padding))
             state.loadError != null -> ErrorBox(state.loadError!!.asString(), onRetry = vm::load, modifier = Modifier.padding(padding))
-            !session.isAdmin -> ErrorBox(stringResource(Res.string.error_admins_only), onRetry = onBack, modifier = Modifier.padding(padding))
+            !session.can(Perms.PAYMENT_SETTINGS) -> ErrorBox(stringResource(Res.string.error_admins_only), onRetry = onBack, modifier = Modifier.padding(padding))
             else -> Column(
                 Modifier
                     .padding(padding)

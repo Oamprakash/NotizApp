@@ -43,6 +43,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.notiz.app.AppContainer
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.Membership
+import com.notiz.app.data.Perms
+import com.notiz.app.data.Roles
+import com.notiz.app.ui.components.RoleChip
+import com.notiz.app.ui.components.roleDescription
+import com.notiz.app.ui.components.roleLabel
+import androidx.compose.foundation.border
 import com.notiz.app.push.OnPushUpdate
 import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.BaseViewModel
@@ -117,8 +123,16 @@ class MembersViewModel(
 
     fun approve(m: Membership) = act { container.societies.setMembershipStatus(m.id, "approved") }
     fun reject(m: Membership) = act { container.societies.setMembershipStatus(m.id, "rejected") }
-    fun toggleAdmin(m: Membership) = act {
-        container.societies.setMembershipRole(m.id, if (m.isAdmin) "resident" else "admin")
+
+    /** President only. Changing your own role (stepping down) reloads the signed-in session. */
+    fun changeRole(m: Membership, role: String, flatNo: String?, onOwnRoleChanged: () -> Unit) {
+        state.update { it.copy(busy = true, actionError = null, info = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(busy = false, actionError = msg) } }) {
+            container.societies.setMemberRole(m.id, role, flatNo)
+            state.update { it.copy(busy = false, info = uiText(Res.string.members_role_changed)) }
+            if (m.userId == session.userId) onOwnRoleChanged()
+            load()
+        }
     }
 
     /** Changing your own flat also updates the signed-in session via [onOwnFlatChanged]. */
@@ -156,11 +170,15 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
     val uriHandler = LocalUriHandler.current
     var editingFlat by remember { mutableStateOf<Membership?>(null) }
     var removing by remember { mutableStateOf<Membership?>(null) }
+    var changingRole by remember { mutableStateOf<Membership?>(null) }
+    val canManage = session.can(Perms.MEMBERS)
+    val canModerate = session.can(Perms.MODERATION)
+    val hasMenu = canManage || canModerate || session.isPresident
 
     Scaffold(
         containerColor = Palette.ground,
         topBar = {
-            DetailTopBar(stringResource(if (session.isAdmin) Res.string.members_title else Res.string.members_neighbours), onBack)
+            DetailTopBar(stringResource(if (canManage) Res.string.members_title else Res.string.members_neighbours), onBack)
         },
     ) { padding ->
         when {
@@ -176,7 +194,7 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                     ErrorBanner(state.actionError?.asString(), onDismiss = vm::dismiss)
                     InfoBanner(state.info?.asString(), onDismiss = vm::dismiss)
                 }
-                if (session.isAdmin) {
+                if (canManage) {
                     item {
                         InviteCard(code = session.society.inviteCode, societyName = session.society.name) { text ->
                             // wa.me opens WhatsApp with the message ready to send to the society group
@@ -207,15 +225,17 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     MemberLine(m, Modifier.weight(1f))
-                                    if (session.isAdmin) {
+                                    if (hasMenu) {
+                                        val isMe = m.userId == session.userId
                                         MemberMenu(
                                             m = m,
-                                            isMe = m.userId == session.userId,
                                             busy = state.busy,
-                                            onToggleAdmin = { vm.toggleAdmin(m) },
-                                            onChangeFlat = { editingFlat = m },
-                                            onToggleMute = { vm.toggleMute(m) },
-                                            onRemove = { removing = m },
+                                            onChangeRole = { changingRole = m }.takeIf { session.isPresident },
+                                            // Security staff have no flat to change
+                                            onChangeFlat = { editingFlat = m }.takeIf { canManage && !m.isSecurity },
+                                            onToggleMute = { vm.toggleMute(m) }.takeIf { canModerate && !isMe && !m.isSecurity },
+                                            // Committee members can only be removed by the president (the server checks too)
+                                            onRemove = { removing = m }.takeIf { canManage && !isMe && (!m.isCommittee || session.isPresident) },
                                         )
                                     }
                                 }
@@ -257,6 +277,17 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
             )
         }
     }
+    changingRole?.let { m ->
+        ChangeRoleSheet(
+            m = m,
+            isMe = m.userId == session.userId,
+            onDismiss = { changingRole = null },
+            onSave = { role, flat ->
+                changingRole = null
+                vm.changeRole(m, role, flat, onOwnRoleChanged = onSessionChanged)
+            },
+        )
+    }
     removing?.let { m ->
         NotizDialog(
             onDismissRequest = { removing = null },
@@ -265,7 +296,7 @@ fun MembersScreen(session: SessionContext, onBack: () -> Unit, onSessionChanged:
                     stringResource(
                         Res.string.members_remove_confirm,
                         m.profiles?.fullName ?: stringResource(Res.string.members_resident),
-                        m.flatNo,
+                        m.flatNo.ifBlank { roleLabel(m.role) },
                     ),
                 )
             },
@@ -315,47 +346,120 @@ private fun MemberLine(m: Membership, modifier: Modifier = Modifier) {
         Avatar(name, size = 40.dp)
         Column(Modifier.weight(1f)) {
             Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(Res.string.home_flat, m.flatNo), color = Palette.muted, fontSize = 13.sp)
+            Text(
+                if (m.isSecurity) roleLabel(m.role) else stringResource(Res.string.home_flat, m.flatNo),
+                color = Palette.muted,
+                fontSize = 13.sp,
+            )
         }
         if (m.chatMuted) Chip(stringResource(Res.string.chat_muted_pill), Palette.red)
-        if (m.isAdmin) Chip(stringResource(Res.string.members_admin), Palette.teal)
+        RoleChip(m.role)
     }
 }
 
-/** Admin actions for a member, tucked into a ⋯ menu so the list stays clean. */
+/** Actions for a member, tucked into a ⋯ menu so the list stays clean. A null action is hidden. */
 @Composable
 private fun MemberMenu(
     m: Membership,
-    isMe: Boolean,
     busy: Boolean,
-    onToggleAdmin: () -> Unit,
-    onChangeFlat: () -> Unit,
-    onToggleMute: () -> Unit,
-    onRemove: () -> Unit,
+    onChangeRole: (() -> Unit)?,
+    onChangeFlat: (() -> Unit)?,
+    onToggleMute: (() -> Unit)?,
+    onRemove: (() -> Unit)?,
 ) {
+    if (onChangeRole == null && onChangeFlat == null && onToggleMute == null && onRemove == null) return
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }, enabled = !busy) {
             Icon(NotizIcons.More, contentDescription = stringResource(Res.string.members_actions), tint = Palette.muted)
         }
         NotizMenu(expanded = open, onDismissRequest = { open = false }) {
-            if (!isMe) {
-                NotizMenuItem(
-                    text = { Text(stringResource(if (m.isAdmin) Res.string.members_remove_admin else Res.string.members_make_admin)) },
-                    onClick = { open = false; onToggleAdmin() },
-                )
+            onChangeRole?.let { action ->
+                NotizMenuItem(text = { Text(stringResource(Res.string.members_change_role)) }, onClick = { open = false; action() })
             }
-            NotizMenuItem(text = { Text(stringResource(Res.string.members_change_flat)) }, onClick = { open = false; onChangeFlat() })
-            if (!isMe) {
+            onChangeFlat?.let { action ->
+                NotizMenuItem(text = { Text(stringResource(Res.string.members_change_flat)) }, onClick = { open = false; action() })
+            }
+            onToggleMute?.let { action ->
                 NotizMenuItem(
                     text = { Text(stringResource(if (m.chatMuted) Res.string.chat_unmute else Res.string.chat_mute)) },
-                    onClick = { open = false; onToggleMute() },
-                )
-                NotizMenuItem(
-                    text = { Text(stringResource(Res.string.members_remove), color = Palette.red) },
-                    onClick = { open = false; onRemove() },
+                    onClick = { open = false; action() },
                 )
             }
+            onRemove?.let { action ->
+                NotizMenuItem(
+                    text = { Text(stringResource(Res.string.members_remove), color = Palette.red) },
+                    onClick = { open = false; action() },
+                )
+            }
+        }
+    }
+}
+
+/** President: pick a role for a member. Moving someone off security asks for their flat. */
+@Composable
+private fun ChangeRoleSheet(m: Membership, isMe: Boolean, onDismiss: () -> Unit, onSave: (role: String, flatNo: String?) -> Unit) {
+    var role by remember(m.id) { mutableStateOf(m.role) }
+    var flat by remember(m.id) { mutableStateOf(m.flatNo) }
+    val needsFlat = role != Roles.SECURITY && m.flatNo.isBlank()
+    NotizSheet(stringResource(Res.string.members_role_title), onDismissRequest = onDismiss) {
+        Row(
+            Modifier.fillMaxWidth().background(Palette.chip, RoundedCornerShape(16.dp)).padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) { MemberLine(m) }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Roles.all.forEach { r ->
+                RoleOption(r, selected = r == role) { role = r }
+            }
+        }
+        if (needsFlat) {
+            NotizTextField(
+                value = flat,
+                onValueChange = { flat = it.uppercase().take(20) },
+                label = { Text(stringResource(Res.string.members_new_flat)) },
+                placeholder = { Text("B-202") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (isMe && m.isPresident && role != Roles.PRESIDENT) {
+            Text(stringResource(Res.string.members_step_down_hint), color = Palette.amberText, fontSize = 13.sp)
+        }
+        PrimaryButton(
+            stringResource(Res.string.action_save_changes),
+            onClick = { onSave(role, flat.takeIf { needsFlat }) },
+            enabled = role != m.role && (!needsFlat || flat.isNotBlank()),
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            height = 52.dp,
+        )
+    }
+}
+
+@Composable
+private fun RoleOption(role: String, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(if (selected) Palette.tealSoft else Color.White)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) Palette.teal else Palette.line, shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(roleLabel(role), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (selected) Palette.teal else Palette.ink)
+            Text(roleDescription(role), fontSize = 12.sp, color = Palette.muted, lineHeight = 16.sp)
+        }
+        Box(
+            Modifier.size(22.dp).clip(RoundedCornerShape(11.dp))
+                .background(if (selected) Palette.teal else Color.Transparent)
+                .border(2.dp, if (selected) Palette.teal else Palette.line, RoundedCornerShape(11.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) Icon(NotizIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
         }
     }
 }

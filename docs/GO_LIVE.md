@@ -4,7 +4,7 @@ Goal: one housing society using Notiz for real notices, dues and complaints for 
 
 ## 1. Backend (Supabase)
 
-- [ ] All migrations run, in date order (`supabase/migrations/`): init, push notifications, receipts, razorpay, admin tools, change notifications, photos, chat moderation, push in Tamil, chat replies.
+- [ ] All migrations run, in date order (`supabase/migrations/`): init, push notifications, receipts, razorpay, admin tools, change notifications, photos, chat moderation, push in Tamil, chat replies, roles.
 - [ ] Edge Functions deployed to the **Notiz** project: `push`, `create-payment-link`, `razorpay-webhook`, `delete-account` (`--no-verify-jwt` only where noted in their setup docs; `delete-account` deploys normally: `supabase functions deploy delete-account`).
 - [ ] Push webhook (`notification_outbox` → `push`) and daily `dues-reminders` cron are set up ([PUSH_SETUP.md](PUSH_SETUP.md)).
 - [ ] Upgrade the project to **Supabase Pro** so it never pauses on residents. Free projects pause after a week of inactivity.
@@ -56,7 +56,8 @@ For quick installs before Play Console is ready, the GitHub Actions build produc
 
 **Before the visit**
 - [ ] Get the flat list (Excel or a photo of the register) and the committee members' phone numbers.
-- [ ] Create the society in Notiz with the secretary's account; make the treasurer an admin.
+- [ ] Create the society in Notiz with the president's account; after they join, set the secretary and treasurer roles in Members (⋯ → Change role), and have the guards join as security staff.
+- [ ] With the president, check Settings → Roles & permissions matches how the committee actually splits the work.
 - [ ] Print the invite code on an A4 notice for the notice board and lift.
 
 **Weekend help desk (2–3 hours in the clubhouse)**

@@ -6,27 +6,27 @@ Notiz sends push notifications for:
 | --- | --- |
 | New notice | All members except the author |
 | New bill raised | That flat |
-| Payment reported (UTR entered) | Admins |
+| Payment reported (UTR entered) | Roles with *Confirm payments* (treasurer by default) |
 | Payment confirmed / not received | That flat |
 | Bill edited (amount, due date or title) — says what changed | That flat |
 | Bill or single due cancelled | That flat |
 | Dues reminder: 2 days before, on the due date, 3 days overdue | That flat |
-| New complaint | Admins |
+| New complaint | Roles with *Handle help desk* (secretary by default) |
 | Complaint status changed | Resident who raised it |
-| New poll | All members except the creator |
-| Chat message | All members except the sender (grouped per society) |
-| Join request | Admins |
+| New poll | All residents and committee (not security staff) except the creator |
+| Chat message | All residents and committee (not security staff) except the sender, grouped per society |
+| Join request | Roles with *Manage members* (secretary by default) |
 | Request approved / not approved | The person who asked |
-| Made admin / no longer admin | That member |
-| Flat number changed by an admin | That member |
-| Removed by an admin | That member |
-| Member left the society or deleted their account | Admins |
-| Society renamed, new UPI ID, online payments turned on / paused | All members except the admin who changed it |
+| Role changed ("Your role: Treasurer") | That member |
+| Flat number changed by the committee | That member |
+| Removed by the committee | That member |
+| Member left the society or deleted their account | Roles with *Manage members* |
+| Society renamed, new UPI ID, online payments turned on / paused | All residents and committee except the person who changed it |
 | Reply to your chat message ("Bala replied to you") | The person replied to |
-| Chat message reported | Admins |
+| Chat message reported | Roles with *Moderate chat* (secretary by default) |
 | Muted / unmuted in chat | That member |
 
-Tapping a notification opens the matching tab (join requests open Members). Membership and society changes also refresh the app in place (new flat number, admin tools appearing, or back to the join screen after removal).
+Tapping a notification opens the matching tab (join requests open Members). Membership and society changes also refresh the app in place (new flat number, a new role's tools appearing, or back to the join screen after removal). The president always gets everything a permission would send. Roles and permissions come from `20261113000000_roles.sql`.
 
 Notifications are sent in each person's language (English or Tamil — whatever they picked in the app), from `20261102300000_push_tamil.sql`. Names, bill titles and messages stay as typed.
 

@@ -36,7 +36,9 @@ data class Membership(
     // Present when selected with an embed: memberships?select=*,profiles(id,full_name)
     val profiles: Profile? = null,
 ) {
-    val isAdmin get() = role == "admin"
+    val isPresident get() = role == Roles.PRESIDENT
+    val isCommittee get() = role in Roles.committee
+    val isSecurity get() = role == Roles.SECURITY
     val isApproved get() = status == "approved"
     val isPending get() = status == "pending"
 }
@@ -217,3 +219,51 @@ data class ReportRow(
 
 @Serializable
 data class ReportedMessage(@SerialName("deleted_at") val deletedAt: String? = null)
+
+/** Roles in a society (see the roles migration). Committee roles also have everything a resident has. */
+object Roles {
+    const val PRESIDENT = "president"
+    const val SECRETARY = "secretary"
+    const val TREASURER = "treasurer"
+    const val RESIDENT = "resident"
+    const val SECURITY = "security"
+
+    val all = listOf(PRESIDENT, SECRETARY, TREASURER, RESIDENT, SECURITY)
+    val committee = setOf(PRESIDENT, SECRETARY, TREASURER)
+
+    /** Roles whose permissions the president can change (the president always has all). */
+    val editable = listOf(SECRETARY, TREASURER, RESIDENT, SECURITY)
+}
+
+/** Permission keys, the same as public.all_permissions() on the server. */
+object Perms {
+    const val NOTICES = "notices"
+    const val POLLS = "polls"
+    const val BILLS = "bills"
+    const val PAYMENTS = "payments"
+    const val PAYMENT_SETTINGS = "payment_settings"
+    const val MEMBERS = "members"
+    const val HELPDESK = "helpdesk"
+    const val MODERATION = "moderation"
+    const val SOCIETY = "society"
+
+    val all = listOf(NOTICES, POLLS, BILLS, PAYMENTS, PAYMENT_SETTINGS, MEMBERS, HELPDESK, MODERATION, SOCIETY)
+}
+
+@Serializable
+data class RolePermission(
+    @SerialName("society_id") val societyId: String,
+    val role: String,
+    val permission: String,
+)
+
+/** A row of the flat directory; [phone] is only filled in for security staff and the committee. */
+@Serializable
+data class DirectoryEntry(
+    @SerialName("membership_id") val membershipId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("full_name") val fullName: String,
+    @SerialName("flat_no") val flatNo: String,
+    val role: String,
+    val phone: String? = null,
+)

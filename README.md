@@ -85,7 +85,7 @@ Pick a simulator and Run. The Xcode build phase calls Gradle to build the Kotlin
 
 ## 4. Try the full flow
 
-1. Phone A: sign in → name → **Register society** (add a UPI ID) → you are admin.
+1. Phone A: sign in → name → **Register society** (add a UPI ID) → you are president.
 2. Members (top-right) → **Share on WhatsApp** to send the invite code.
 3. Phone B: sign in → **Join with code** + flat number → waits for approval.
 4. Phone A: Members → **Approve**.
@@ -133,6 +133,7 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 - **Edge Function**: type-checked with Deno, 6 tests pass (JWT signing, FCM payload, sending, dead-token cleanup, outbox marking).
 - **Online payments**: migration tested on PostgreSQL (keys hidden from app users, server-only recording, idempotent, amount/link checks, cash vs online). Edge Functions type-checked; 11 Deno tests with fake Supabase + Razorpay (link create/reuse, flat check, webhook signature incl. RFC 4231 vector, duplicates, short payments, late-webhook check).
 - **Admin tools** (`20261101000000_admin_tools.sql`): tested on PostgreSQL — edit/cancel a bill (only unpaid dues change), cancel one due, cancelled dues can't be marked paid, society settings only through the RPC, invite code regeneration, change flat, remove member, last-admin guards (demote, remove, leave, delete account), and deleting an account keeps the society's notices/messages without the name. `delete-account` has 3 Deno tests.
+- **Roles** (`20261113000000_roles.sql`): tested on PostgreSQL with five people in one society — secretary can post notices and polls but not bills or roles; treasurer raises bills, sees every flat's dues, changes only the UPI (not the name); residents see only their own dues; security sees notices, the directory with phone numbers and their own requests, and nothing from dues, polls or chat; residents' directory has no phone numbers; permission switches and reset are president-only and take effect at once; the last president can't step down; pushes go to the roles with the matching permission. The whole migration chain applies cleanly to an empty database.
 - **Photos, chat moderation, Tamil push**: tested on PostgreSQL with a stand-in Storage schema — upload/read rules per role and folder, bad paths and other societies' paths refused, max 3 photos; delete own vs admin, report once per member, muted members blocked by RLS; English/Tamil recipients split correctly for every trigger, including bill edits and reminders.
 - **Receipts & export**: receipt numbering tested on PostgreSQL (backfill, no double numbers, cash, permissions). Generated PDFs pass `qpdf --check` and render correctly; `.xlsx` files open in openpyxl with numeric amounts, Tamil text and special characters intact.
 - **Not yet compiled**: the build environment had no access to Maven/Google repositories or Xcode, so the first Gradle sync happens on your machine. If a version clashes, these are the usual fixes:
@@ -144,21 +145,41 @@ Notices, bills, payment updates, dues reminders, complaints, polls, chat and joi
 
 The "Neighbourly" look (design canvas in claude.ai): deep teal for actions, marigold for "due soon", white cards on a soft grey-green ground, large text and touch targets.
 
-- **Tabs**: Home, Notices (with Polls), Dues, Help desk, Chat — with badges for unread notices, unpaid dues / payments to verify and open requests. Settings and Members open from your avatar on Home.
+- **Tabs**: Home, Notices (with Polls), Dues, Help desk, Chat (security staff: Residents, Notices, Help desk) — with badges for unread notices, unpaid dues / payments to verify and open requests. Settings and Members open from your avatar on Home.
 - **Home** is different for residents (this month's due with *Pay now*, shortcuts, latest notice, open poll) and the committee (collection progress, a *Needs your attention* list, quick actions).
 - Theme and components live in `ui/theme/` (`Palette`, `NotizIcons`) and `ui/components/Design.kt`.
 - Font: **Inter** in `composeResources/font` (SIL Open Font License, see `docs/licenses/Inter-OFL.txt`). To use another font, drop its `.ttf`/`.otf` files there and change `appFontFamily()` in `ui/theme/Theme.kt`. Tamil uses the phone's Tamil font.
 
-## Admin tools
+## Roles and permissions
 
-- **Settings** (gear icon on the home screen): your name, language, society details and UPI ID (admins), a new invite code, leave society, delete account, sign out.
-- **Members** (admins): change a flat number, remove a member. The last admin can't be demoted, removed or leave until someone else is admin.
-- **Dues** (admins): *Cancel due* on any unpaid due; *Manage bills* to edit the title, amount or due date of a bill, or cancel it, for the flats that haven't paid. Paid dues and receipts never change.
+Five roles: **President**, **Secretary**, **Treasurer**, **Resident** and **Security staff**. Committee roles keep everything a resident has (their flat's dues, votes, chat). Security staff have no flat.
+
+| Permission | Default roles (the president always has all) |
+| --- | --- |
+| Post notices | Secretary, Treasurer |
+| Create polls | Secretary |
+| Raise bills | Treasurer |
+| Confirm payments (sees every flat's dues) | Treasurer |
+| Payment settings (UPI, Razorpay) | Treasurer |
+| Manage members (approve, invite code, change flat, remove) | Secretary |
+| Handle help desk (every flat's requests) | Secretary |
+| Moderate chat | Secretary |
+| Society details (name, city) | Secretary |
+
+- The president changes these per society in **Settings → Roles & permissions** (a switch per permission, *Reset to defaults* per role) and gives people roles in **Members → ⋯ → Change role**. Only the president can change roles or remove committee members, and a society always keeps at least one president.
+- **Security staff** join with the invite code and *I'm security staff* (no flat). They get three tabs: **Residents** (flat directory with names and a call button), **Notices** and **Help desk**. No dues, polls, chat or receipts. Phone numbers in the directory are only sent to security staff and the committee.
+- Every rule is enforced in the database (`20261113000000_roles.sql`: `has_perm()`, RLS policies and the RPCs); the app only hides what a role can't use. Existing societies are moved over automatically: the creator becomes president, other admins become secretaries.
+
+## Committee tools
+
+- **Settings** (your avatar on Home): your name, language, society details (*Society details*) and UPI ID (*Payment settings*), a new invite code (*Manage members*), leave society, delete account, sign out.
+- **Members** (*Manage members*): change a flat number, remove a member. The last president can't step down, be removed or leave until someone else is president.
+- **Dues**: *Cancel due* and *Manage bills* (*Raise bills*) to edit the title, amount or due date of a bill, or cancel it, for the flats that haven't paid; *Mark paid* / *Paid in cash* (*Confirm payments*). Paid dues and receipts never change.
 
 ## Photos and chat moderation
 
-- **Photos**: up to 3 photos on a notice (admins) or a complaint. The app shrinks them to about 1600 px JPEG before upload. Stored in the private Storage bucket `attachments`: notice photos are visible to the society, complaint photos only to the resident and the admins.
-- **Chat**: swipe a message to reply — right on others' messages, left on your own (the quote shows above your message; tap it to jump to the original). Long-press a message to reply, delete it (your own, or any message if you're an admin), report it to the admins (they get a push), or mute the sender (admins). Muted members can read but not send; unmute from Members.
+- **Photos**: up to 3 photos on a notice (*Post notices*) or a complaint. The app shrinks them to about 1600 px JPEG before upload. Stored in the private Storage bucket `attachments`: notice photos are visible to the society, complaint photos only to the person who raised it and roles with *Handle help desk*.
+- **Chat**: swipe a message to reply — right on others' messages, left on your own (the quote shows above your message; tap it to jump to the original). Long-press a message to reply, delete it (your own, or any message with *Moderate chat*), report it to the committee (they get a push), or mute the sender (*Moderate chat*). Muted members can read but not send; unmute from Members.
 - **Notifications in Tamil**: the app saves the language you picked, and every server notification is sent in English or Tamil to match.
 
 ## Known MVP limits (next steps)

@@ -8,7 +8,7 @@
     <string name="error_no_internet">No internet connection. Please try again.</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
     <string name="error_invalid_invite">That invite code doesn't match any society. Check it with your secretary.</string>
-    <string name="error_admins_only">Only admins can do this.</string>
+    <string name="error_admins_only">Your role can't do this. Ask the president if you need it.</string>
     <string name="error_already_submitted">This payment has already been reported.</string>
     <string name="error_invalid_utr">Enter a valid UTR / reference number.</string>
     <string name="error_two_options">Add at least two options.</string>
@@ -36,7 +36,7 @@
     <string name="setup_join_hint">Ask your secretary for the 6-character invite code.</string>
     <string name="setup_invite_code">Invite code</string>
     <string name="setup_request_join">Request to join</string>
-    <string name="setup_register_hint">You'll be the admin. Residents join with the invite code you get next.</string>
+    <string name="setup_register_hint">You'll be the president. Residents and staff join with the invite code you get next.</string>
     <string name="setup_society_name">Society name</string>
     <string name="setup_city">City</string>
     <string name="setup_upi_id">Society UPI ID (for dues)</string>
@@ -52,7 +52,6 @@
     <string name="tab_polls">Polls</string>
     <string name="tab_chat">Chat</string>
     <string name="home_flat">Flat %1$s</string>
-    <string name="home_flat_admin">Flat %1$s · Admin</string>
     <string name="members_title">Members</string>
     <string name="notice_pinned">Pinned</string>
     <string name="notice_new">New notice</string>
@@ -149,13 +148,10 @@
     <string name="members_approve">Approve</string>
     <string name="members_reject">Reject</string>
     <string name="members_count">Members (%1$d)</string>
-    <string name="members_remove_admin">Remove admin</string>
-    <string name="members_make_admin">Make admin</string>
     <string name="members_invite_message">Join %1$s on Notiz for notices, maintenance payments and complaints. Install the app and use invite code %2$s with your flat number.</string>
     <string name="members_invite_hint">Share this code with residents. You approve each request before they can see anything.</string>
     <string name="members_share_whatsapp">Share on WhatsApp</string>
     <string name="members_resident">Resident</string>
-    <string name="members_admin">Admin</string>
     <string name="dues_share_failed">Couldn't share the file. Please try again.</string>
     <string name="dues_export_excel">Export to Excel</string>
     <string name="dues_paid_cash">Paid in cash</string>
@@ -264,13 +260,13 @@
     <string name="action_confirm">Confirm</string>
     <string name="error_only_unpaid">Only unpaid dues can be cancelled.</string>
     <string name="error_due_cancelled">This due was cancelled.</string>
-    <string name="error_make_admin_first">Make another member admin first.</string>
+    <string name="error_make_admin_first">Make someone else president first.</string>
     <string name="error_use_leave">Use Leave society in Settings to remove yourself.</string>
     <string name="error_society_name">Enter the society name.</string>
     <string name="error_flat_no">Enter the flat number.</string>
     <string name="error_enter_title">Enter a title.</string>
     <string name="error_enter_amount">Enter a valid amount.</string>
-    <string name="error_last_admin_delete">You're the only admin of %1$s. Make another member admin, then delete your account.</string>
+    <string name="error_last_admin_delete">You're the only president of %1$s. Make someone else president, then delete your account.</string>
 
     <!-- Photos and chat moderation -->
     <string name="photos_add">Add photo</string>
@@ -278,8 +274,8 @@
     <string name="photos_retry">Couldn't load. Tap to retry</string>
     <string name="photos_pick_failed">Couldn't use that photo. Try another one.</string>
     <string name="photos_complaint_hint">Add up to 3 photos of the problem (optional).</string>
-    <string name="chat_report">Report to admins</string>
-    <string name="chat_reported">Reported. The admins have been notified.</string>
+    <string name="chat_report">Report to the committee</string>
+    <string name="chat_reported">Reported. The committee has been notified.</string>
     <string name="chat_already_reported">You've already reported this message.</string>
     <string name="chat_mute">Mute in chat</string>
     <string name="chat_unmute">Unmute in chat</string>
@@ -288,8 +284,8 @@
     <string name="chat_mute_confirm">Mute %1$s (flat %2$s)? They can still read the chat but can't send messages.</string>
     <string name="chat_delete_confirm">Delete this message for everyone?</string>
     <string name="chat_deleted">Message deleted</string>
-    <string name="chat_deleted_by_admin">Message removed by an admin</string>
-    <string name="chat_you_are_muted">An admin has muted you in this chat. You can still read messages.</string>
+    <string name="chat_deleted_by_admin">Message removed by the committee</string>
+    <string name="chat_you_are_muted">The committee has muted you in this chat. You can still read messages.</string>
     <string name="error_cant_mute_self">You can't mute yourself.</string>
     <string name="error_cant_report_own">You can't report your own message.</string>
     <string name="settings_privacy">Privacy policy</string>
@@ -307,7 +303,6 @@
     <string name="home_greeting_afternoon">Good afternoon, %1$s</string>
     <string name="home_greeting_evening">Good evening, %1$s</string>
     <string name="home_hello">Hello, %1$s</string>
-    <string name="home_admin_tag">Admin</string>
     <string name="home_days_left">%1$d days left</string>
     <string name="home_due_today">Due today</string>
     <string name="home_due_tomorrow">Due tomorrow</string>
@@ -362,7 +357,7 @@
     <string name="help_send">Send to committee</string>
     <string name="chat_header_sub">Residents only</string>
     <string name="settings_language_hint">Notifications follow this language too.</string>
-    <string name="settings_admin_group">Society · admin</string>
+    <string name="settings_admin_group">Society · committee</string>
     <string name="settings_payments">Payments and Razorpay</string>
     <string name="login_hero">Your society,
 all in one place.</string>
@@ -371,7 +366,6 @@ all in one place.</string>
     <string name="login_new_here">New here? Ask your secretary for the society's invite code after you log in.</string>
 
     <!-- Home v2 -->
-    <string name="home_committee">Committee</string>
     <string name="home_tray_notice">Notice</string>
     <string name="home_tray_poll">Poll</string>
     <string name="home_tray_invite">Invite</string>
@@ -421,4 +415,60 @@ all in one place.</string>
     <string name="dues_send_for_check">Send for checking</string>
     <string name="members_new_flat">New flat number</string>
     <string name="members_flat_hint">Their unpaid dues stay with the old flat; new bills use the new number.</string>
+    <!-- Roles -->
+    <string name="tab_directory">Residents</string>
+    <string name="role_president">President</string>
+    <string name="role_secretary">Secretary</string>
+    <string name="role_treasurer">Treasurer</string>
+    <string name="role_resident">Resident</string>
+    <string name="role_security">Security staff</string>
+    <string name="role_president_desc">Runs the society. Has every permission and decides roles.</string>
+    <string name="role_secretary_desc">Notices, polls, members, help desk and chat.</string>
+    <string name="role_treasurer_desc">Bills, payments and the society UPI.</string>
+    <string name="role_resident_desc">Pays dues, votes, chats and raises requests for their flat.</string>
+    <string name="role_security_desc">At the gate: flat directory, notices and the help desk. No flat.</string>
+    <string name="perm_notices">Post notices</string>
+    <string name="perm_notices_desc">Post, pin and delete notices; see who has read them.</string>
+    <string name="perm_polls">Create polls</string>
+    <string name="perm_polls_desc">Ask residents to vote on a question.</string>
+    <string name="perm_bills">Raise bills</string>
+    <string name="perm_bills_desc">Raise, edit and cancel maintenance bills.</string>
+    <string name="perm_payments">Confirm payments</string>
+    <string name="perm_payments_desc">See every flat's dues, mark payments received, record cash.</string>
+    <string name="perm_payment_settings">Payment settings</string>
+    <string name="perm_payment_settings_desc">Society UPI ID and online payments (Razorpay).</string>
+    <string name="perm_members">Manage members</string>
+    <string name="perm_members_desc">Approve join requests, invite code, change flats, remove residents.</string>
+    <string name="perm_helpdesk">Handle help desk</string>
+    <string name="perm_helpdesk_desc">See every flat's requests and update their status.</string>
+    <string name="perm_moderation">Moderate chat</string>
+    <string name="perm_moderation_desc">Remove messages, mute members, see reports.</string>
+    <string name="perm_society">Society details</string>
+    <string name="perm_society_desc">Change the society name and city.</string>
+    <string name="roles_title">Roles & permissions</string>
+    <string name="roles_row_hint">Choose what each role can do</string>
+    <string name="roles_intro">Pick a role, then turn on what people in that role can do in your society. Changes apply the next time they open the app.</string>
+    <string name="roles_president_note">The president always has every permission. To hand over, make someone else president from Members, then change your own role.</string>
+    <string name="roles_resident_note">Turning a permission on here gives it to every person with this role.</string>
+    <string name="roles_reset">Reset to defaults</string>
+    <string name="roles_reset_confirm">Put %1$s back to Notiz's default permissions?</string>
+    <string name="roles_reset_done">Back to the default permissions.</string>
+    <string name="roles_president_only">Only the president can change roles.</string>
+    <string name="members_change_role">Change role</string>
+    <string name="members_role_title">Change role</string>
+    <string name="members_role_changed">Role updated.</string>
+    <string name="members_step_down_hint">You'll lose the president's permissions. Make sure someone else is president first.</string>
+    <string name="error_president_roles">Only the president can change roles and permissions.</string>
+    <string name="error_president_remove">Only the president can remove committee members.</string>
+    <string name="error_approve_first">Approve the member first.</string>
+    <string name="setup_join_staff">I'm security staff</string>
+    <string name="setup_join_staff_hint">Join without a flat number</string>
+    <string name="pending_body_staff">Your request to join %1$s as security staff has been sent. The committee will approve it soon.</string>
+    <string name="directory_title">Residents</string>
+    <string name="directory_search">Search flat or name</string>
+    <string name="directory_empty_title">No residents yet</string>
+    <string name="directory_empty">Residents appear here once the committee approves them.</string>
+    <string name="directory_no_match">No flat or name matches your search.</string>
+    <string name="directory_call">Call</string>
+    <string name="directory_call_failed">Couldn't open the phone app.</string>
 </resources>

@@ -1,6 +1,6 @@
 # Device test checklist
 
-Two accounts in the same society: **A = committee (admin)**, **R = resident**. Best on two phones (e.g. Galaxy M02s + iPhone). Run every migration first, then a fresh install of the latest build. Tick each line; screenshot anything that looks off.
+Two accounts in the same society: **A = president**, **R = resident** (section 10 adds a secretary, a treasurer and a guard). Best on two phones (e.g. Galaxy M02s + iPhone). Run every migration first, then a fresh install of the latest build. Tick each line; screenshot anything that looks off.
 
 ## 0. Setup
 - [ ] Both phones: notifications allowed when asked.
@@ -44,12 +44,12 @@ Two accounts in the same society: **A = committee (admin)**, **R = resident**. B
 - [ ] Swipe **right** on someone else's message / **left** on your own → reply bar → send; quote shows, tap jumps to original. Person replied to gets "… replied to you".
 - [ ] Long-press menu: Reply, Delete (own), Report (A gets push), Mute (A only).
 - [ ] Muted R sees "muted" note instead of the message box; A unmutes from Members.
-- [ ] A deletes R's message → "Message removed by an admin", quote in replies wiped.
+- [ ] A deletes R's message → "Message removed by the committee", quote in replies wiped.
 
 ## 7. Settings and members
 - [ ] Edit name; language switch; Privacy policy opens.
 - [ ] A: society details + UPI ID save → R gets "New UPI ID" push; new invite code.
-- [ ] A: Members — invite card → WhatsApp; ⋯ menu: make admin, change flat (sheet), mute, remove. R gets each push; R's app refreshes (new flat in header / back to join screen when removed).
+- [ ] A: Members — invite card → WhatsApp; ⋯ menu: change role (sheet), change flat (sheet), mute, remove. R gets each push; R's app refreshes (new flat in header / back to join screen when removed).
 - [ ] R: Leave society; Delete account (type DELETE) → back to login.
 
 ## 8. Tamil
@@ -61,3 +61,15 @@ Two accounts in the same society: **A = committee (admin)**, **R = resident**. B
 - [ ] Send the app to background for 10+ minutes, come back: no endless spinner.
 - [ ] Rotate / large font size (Settings → Display → Font size) on Android: screens still readable.
 - [ ] Crashlytics: any crash shows in Firebase within minutes.
+
+## 10. Roles
+Add three more test accounts: **S** (secretary), **T** (treasurer) and **G** (security guard).
+- [ ] G: join screen → **I'm security staff** switch hides the flat field → waiting screen says "as security staff". A gets a join push saying "(security staff)".
+- [ ] A: Members → ⋯ → **Change role** sheet: make S Secretary, T Treasurer. Each gets "Your role: …" and their app changes in place.
+- [ ] S: Home tray has Notice, Poll, Invite (no Raise bill); attention tiles for requests, join requests, reported messages. Can post a notice and a poll; no Raise bill button on Dues; sees only own flat's dues.
+- [ ] T: Home shows the collection band; tray has Notice and Raise bill; Dues shows every flat, Mark paid and Paid in cash work. No poll button. Settings shows UPI fields but not society name.
+- [ ] R: no committee tools anywhere; Members screen is "Neighbours" without the ⋯ menu.
+- [ ] G: three tabs only — **Residents**, Notices (no Polls), Help desk. Residents list: search by flat or name, call button opens the dialler. Raise a request from Help desk → S gets the push.
+- [ ] A: Settings → **Roles & permissions**: give Treasurer *Create polls* → T reopens the app → Poll button appears. *Reset to defaults* takes it away again.
+- [ ] S tries Members → ⋯ on T: no Change role, no Remove (only the president can).
+- [ ] A makes S president, then changes own role to Resident (warning shown). A's committee tools disappear; S now sees Roles & permissions.

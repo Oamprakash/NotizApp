@@ -20,7 +20,7 @@ sealed interface AppState {
     data object NeedsProfile : AppState
     data object NeedsSociety : AppState
     data class Pending(val membership: Membership) : AppState
-    data class Ready(val membership: Membership, val society: Society) : AppState
+    data class Ready(val membership: Membership, val society: Society, val permissions: Set<String> = emptySet()) : AppState
     data class Error(val message: UiText) : AppState
 }
 
@@ -87,7 +87,11 @@ class AppViewModel(private val container: AppContainer) : BaseViewModel() {
         val approved = memberships.firstOrNull { it.isApproved && it.societies != null }
         val pending = memberships.firstOrNull { it.isPending }
         return when {
-            approved != null -> AppState.Ready(approved, approved.societies!!)
+            approved != null -> AppState.Ready(
+                approved,
+                approved.societies!!,
+                runCatching { container.societies.myPermissions(approved.societyId) }.getOrDefault(emptySet()),
+            )
             pending != null -> AppState.Pending(pending)
             else -> AppState.NeedsSociety
         }

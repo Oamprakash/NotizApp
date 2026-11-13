@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.notiz.app.LocalAppContainer
+import com.notiz.app.data.Perms
 import com.notiz.app.push.OnPushUpdate
 import com.notiz.app.push.PushEvents
 import com.notiz.app.push.PushTypes
@@ -48,6 +49,7 @@ import com.notiz.app.resources.*
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.chat.ChatTab
 import com.notiz.app.ui.complaints.ComplaintsTab
+import com.notiz.app.ui.directory.DirectoryTab
 import com.notiz.app.ui.dues.DuesTab
 import com.notiz.app.ui.notices.NoticesHub
 import com.notiz.app.ui.theme.NotizIcons
@@ -61,6 +63,14 @@ enum class HomeTab(val label: StringResource, val icon: () -> ImageVector) {
     Dues(Res.string.tab_dues, { NotizIcons.Rupee }),
     HelpDesk(Res.string.tab_help, { NotizIcons.Wrench }),
     Chat(Res.string.tab_chat, { NotizIcons.Chat }),
+    Directory(Res.string.tab_directory, { NotizIcons.Users }),
+    ;
+
+    companion object {
+        /** Security staff get the flat directory, notices and the help desk; everyone else the usual five. */
+        fun visibleFor(session: SessionContext): List<HomeTab> =
+            if (session.isSecurity) listOf(Directory, Notices, HelpDesk) else listOf(Home, Notices, Dues, HelpDesk, Chat)
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -72,10 +82,12 @@ fun HomeScreen(
     onOpenPaymentSettings: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    var tabName by rememberSaveable { mutableStateOf(HomeTab.Home.name) }
+    val tabs = HomeTab.visibleFor(session)
+    var tabName by rememberSaveable { mutableStateOf(tabs.first().name) }
     var showPolls by rememberSaveable { mutableStateOf(false) }
-    val tab = HomeTab.valueOf(tabName)
+    val tab = HomeTab.valueOf(tabName).takeIf { it in tabs } ?: tabs.first()
     fun open(target: HomeTab) {
+        if (target !in tabs) return
         tabName = target.name
         if (target == HomeTab.Notices) showPolls = false
     }
@@ -101,7 +113,7 @@ fun HomeScreen(
             }
             else -> null
         } ?: return@LaunchedEffect
-        tabName = target.name
+        if (target in tabs) tabName = target.name
         PushEvents.consumeOpened()
     }
 
@@ -120,12 +132,13 @@ fun HomeScreen(
         containerColor = Palette.ground,
         bottomBar = {
             BottomBar(
+                tabs = tabs,
                 selected = tab,
                 badgeFor = { item ->
                     when (item) {
                         HomeTab.Notices -> home.unreadNotices
-                        HomeTab.Dues -> if (session.isAdmin) home.toVerify else home.duesBadge
-                        HomeTab.HelpDesk -> if (session.isAdmin) home.openRequests else 0
+                        HomeTab.Dues -> if (session.can(Perms.PAYMENTS)) home.toVerify else home.duesBadge
+                        HomeTab.HelpDesk -> if (session.can(Perms.HELPDESK)) home.openRequests else 0
                         else -> 0
                     }
                 },
@@ -157,17 +170,18 @@ fun HomeScreen(
             HomeTab.Dues -> DuesTab(session, onOpenPaymentSettings, modifier)
             HomeTab.HelpDesk -> ComplaintsTab(session, modifier)
             HomeTab.Chat -> ChatTab(session, modifier)
+            HomeTab.Directory -> DirectoryTab(session, onOpenSettings, modifier)
         }
     }
 }
 
 /** Notiz's own tab bar: soft teal pill behind the selected icon, small orange count badges. */
 @Composable
-private fun BottomBar(selected: HomeTab, badgeFor: (HomeTab) -> Int, onSelect: (HomeTab) -> Unit) {
+private fun BottomBar(tabs: List<HomeTab>, selected: HomeTab, badgeFor: (HomeTab) -> Int, onSelect: (HomeTab) -> Unit) {
     Column(Modifier.fillMaxWidth().background(Color.White)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Palette.line))
         Row(Modifier.fillMaxWidth().navigationBarsPadding().height(66.dp).padding(horizontal = 4.dp)) {
-            HomeTab.entries.forEach { item ->
+            tabs.forEach { item ->
                 val active = item == selected
                 val badge = badgeFor(item)
                 Column(

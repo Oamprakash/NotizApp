@@ -9,12 +9,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.notiz.app.data.Membership
+import com.notiz.app.data.Perms
 import com.notiz.app.data.Society
 import com.notiz.app.push.PushEvents
 import com.notiz.app.push.PushTypes
 import com.notiz.app.ui.home.HomeScreen
 import com.notiz.app.ui.members.MembersScreen
 import com.notiz.app.ui.payments.PaymentSettingsScreen
+import com.notiz.app.ui.roles.RolesScreen
 import com.notiz.app.ui.notices.NoticeDetailScreen
 import com.notiz.app.ui.settings.SettingsScreen
 import kotlinx.serialization.Serializable
@@ -34,6 +36,9 @@ data object PaymentSettingsRoute
 @Serializable
 data object SettingsRoute
 
+@Serializable
+data object RolesRoute
+
 /**
  * Navigation for a signed-in, approved member. [onSessionChanged] quietly reloads the membership
  * and society (after editing settings, changing your own flat or leaving).
@@ -42,11 +47,12 @@ data object SettingsRoute
 fun MainNavigation(
     membership: Membership,
     society: Society,
+    permissions: Set<String>,
     onSessionChanged: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val navController = rememberNavController()
-    val session = SessionContext(membership = membership, society = society)
+    val session = SessionContext(membership = membership, society = society, permissions = permissions)
 
     // Tapped a notification: join requests open Members; everything else goes back to Home,
     // which switches to the right tab.
@@ -99,15 +105,31 @@ fun MainNavigation(
                 onSignOut = onSignOut,
                 onOpenMembers = { navController.navigate(MembersRoute) },
                 onOpenPayments = { navController.navigate(PaymentSettingsRoute) },
+                onOpenRoles = { navController.navigate(RolesRoute) },
             )
+        }
+        composable<RolesRoute> {
+            RolesScreen(session = session, onBack = { navController.popBackStack() })
         }
     }
 }
 
-/** Who is signed in and where — passed to every screen of the main app. */
-data class SessionContext(val membership: Membership, val society: Society) {
+/**
+ * Who is signed in, where, and what they may do. Screens show actions by permission
+ * ([can]); the server enforces the same rules (roles migration).
+ */
+data class SessionContext(val membership: Membership, val society: Society, val permissions: Set<String> = emptySet()) {
     val societyId get() = society.id
-    val isAdmin get() = membership.isAdmin
     val flatNo get() = membership.flatNo
     val userId get() = membership.userId
+    val role get() = membership.role
+
+    val isPresident get() = membership.isPresident
+    val isCommittee get() = membership.isCommittee
+    val isSecurity get() = membership.isSecurity
+
+    fun can(permission: String) = isPresident || permission in permissions
+
+    /** Sees every flat's dues (raise bills or verify payments). */
+    val seesAllDues get() = can(Perms.BILLS) || can(Perms.PAYMENTS)
 }

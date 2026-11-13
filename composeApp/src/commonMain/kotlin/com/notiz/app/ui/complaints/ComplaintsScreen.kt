@@ -2,6 +2,7 @@
 
 package com.notiz.app.ui.complaints
 
+import com.notiz.app.data.Perms
 import com.notiz.app.ui.components.NotizTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -207,7 +208,7 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
                                     stringResource(if (showResolved) Res.string.help_none_resolved else Res.string.complaints_empty_title),
                                     if (showResolved) {
                                         ""
-                                    } else if (session.isAdmin) {
+                                    } else if (session.can(Perms.HELPDESK)) {
                                         stringResource(Res.string.complaints_empty_admin)
                                     } else {
                                         stringResource(Res.string.complaints_empty_resident)
@@ -219,7 +220,7 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
                     items(shown, key = { it.id }) { complaint ->
                         ComplaintCard(
                             complaint = complaint,
-                            isAdmin = session.isAdmin,
+                            canManage = session.can(Perms.HELPDESK),
                             onStatus = { vm.setStatus(complaint, it) },
                         )
                     }
@@ -241,7 +242,7 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ComplaintCard(complaint: Complaint, isAdmin: Boolean, onStatus: (String) -> Unit) {
+private fun ComplaintCard(complaint: Complaint, canManage: Boolean, onStatus: (String) -> Unit) {
     val (icon, tint, bg) = categoryIcon(complaint.category)
     NotizCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -249,7 +250,7 @@ private fun ComplaintCard(complaint: Complaint, isAdmin: Boolean, onStatus: (Str
             Column(Modifier.weight(1f)) {
                 Text(
                     categoryLabel(complaint.category) +
-                        if (isAdmin && complaint.flatNo.isNotBlank()) " · " + stringResource(Res.string.home_flat, complaint.flatNo) else "",
+                        if (canManage && complaint.flatNo.isNotBlank()) " · " + stringResource(Res.string.home_flat, complaint.flatNo) else "",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -260,7 +261,7 @@ private fun ComplaintCard(complaint: Complaint, isAdmin: Boolean, onStatus: (Str
         Text(complaint.description, color = Palette.inkSoft, fontSize = 14.sp, lineHeight = 21.sp)
         if (complaint.photoPaths.isNotEmpty()) RemotePhotoStrip(complaint.photoPaths, size = 72.dp)
         StatusTracker(complaint.status)
-        if (isAdmin) {
+        if (canManage) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ComplaintStatus.all.forEach { status ->
                     FilterPill(stringResource(statusLabel(status)), selected = complaint.status == status, onClick = { onStatus(status) })

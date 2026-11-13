@@ -3,6 +3,10 @@ package com.notiz.app
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -65,6 +69,14 @@ private fun AppContent(container: AppContainer) {
                     if (hasProfile) runCatching { container.auth.setLanguage(language.code) }
                 }
 
+                // Back in the app: pick up permission changes the president made meanwhile
+                var resumedOnce by remember { mutableStateOf(false) }
+                LifecycleResumeEffect(Unit) {
+                    if (resumedOnce && state is AppState.Ready) appViewModel.reloadQuietly()
+                    resumedOnce = true
+                    onPauseOrDispose { }
+                }
+
                 // Flat, role, society details changed or removed: reload without leaving the screen
                 OnPushUpdate(PushTypes.SOCIETY) {
                     if (state is AppState.Ready || state is AppState.Pending) appViewModel.reloadQuietly()
@@ -87,6 +99,7 @@ private fun AppContent(container: AppContainer) {
                     is AppState.Ready -> MainNavigation(
                         membership = s.membership,
                         society = s.society,
+                        permissions = s.permissions,
                         onSessionChanged = appViewModel::reloadQuietly,
                         onSignOut = appViewModel::signOut,
                     )
