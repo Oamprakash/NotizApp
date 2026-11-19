@@ -39,6 +39,9 @@ import com.notiz.app.i18n.UiText
 import com.notiz.app.i18n.asString
 import com.notiz.app.i18n.uiText
 import com.notiz.app.resources.*
+import com.notiz.app.ui.components.NotizSwitch
+import com.notiz.app.push.rememberAlertCheck
+import com.notiz.app.data.NotificationPrefs
 import com.notiz.app.util.urlEncode
 import com.notiz.app.ui.components.roleLabel
 import com.notiz.app.data.Roles
@@ -76,6 +79,7 @@ data class SettingsUiState(
     val upiVpa: String = "",
     val upiPayeeName: String = "",
     val inviteCode: String = "",
+    val prefs: NotificationPrefs? = null,
     val busy: Boolean = false,
     val error: UiText? = null,
     val info: UiText? = null,
@@ -98,6 +102,18 @@ class SettingsViewModel(
     init {
         launchSafe(onError = {}) {
             container.auth.myProfile()?.let { p -> state.update { it.copy(name = p.fullName) } }
+        }
+        launchSafe(onError = {}) {
+            container.auth.notificationPrefs()?.let { p -> state.update { it.copy(prefs = p) } }
+        }
+    }
+
+    /** Flips straight away; puts it back if saving fails. */
+    fun setPrefs(new: NotificationPrefs) {
+        val old = state.value.prefs ?: return
+        state.update { it.copy(prefs = new, error = null) }
+        launchSafe(onError = { msg -> state.update { it.copy(prefs = old, error = msg) } }) {
+            container.auth.setNotificationPrefs(new)
         }
     }
 
@@ -165,6 +181,7 @@ fun SettingsScreen(
     onOpenMembers: () -> Unit = {},
     onOpenPayments: () -> Unit = {},
     onOpenRoles: () -> Unit = {},
+    onOpenAlerts: () -> Unit = {},
 ) {
     val container = LocalAppContainer.current
     val vm = viewModel { SettingsViewModel(container, session) }
@@ -230,6 +247,55 @@ fun SettingsScreen(
                     height = 44.dp,
                 )
                 Text(stringResource(Res.string.settings_language_hint), color = Palette.muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
+            }
+
+            // Notifications: visitor alert check (residents), and the two kinds people may turn off
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                GroupLabel(stringResource(Res.string.settings_notifications))
+                GroupCard {
+                    if (!session.isSecurity) {
+                        val alerts = rememberAlertCheck()
+                        ListRow(
+                            title = stringResource(Res.string.alerts_title),
+                            subtitle = stringResource(if (alerts.health.allGood) Res.string.alerts_status_ok else Res.string.alerts_status_fix),
+                            leading = {
+                                IconTile(
+                                    NotizIcons.Door,
+                                    if (alerts.health.allGood) Palette.teal else Palette.red,
+                                    if (alerts.health.allGood) Palette.tealSoft else Palette.redSoft,
+                                    size = 40.dp, iconSize = 20.dp, radius = 12.dp,
+                                )
+                            },
+                            showChevron = true,
+                            onClick = onOpenAlerts,
+                        )
+                    }
+                    val prefs = state.prefs
+                    ListRow(
+                        title = stringResource(Res.string.settings_push_chat),
+                        subtitle = stringResource(Res.string.settings_push_chat_hint),
+                        trailing = {
+                            NotizSwitch(
+                                checked = prefs?.chat ?: true,
+                                onCheckedChange = { on -> prefs?.let { vm.setPrefs(it.copy(chat = on)) } },
+                                enabled = prefs != null,
+                            )
+                        },
+                    )
+                    ListRow(
+                        title = stringResource(Res.string.settings_push_updates),
+                        subtitle = stringResource(Res.string.settings_push_updates_hint),
+                        divider = false,
+                        trailing = {
+                            NotizSwitch(
+                                checked = prefs?.updates ?: true,
+                                onCheckedChange = { on -> prefs?.let { vm.setPrefs(it.copy(updates = on)) } },
+                                enabled = prefs != null,
+                            )
+                        },
+                    )
+                }
+                Text(stringResource(Res.string.settings_push_always), color = Palette.muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
             }
 
             // Committee tools, each shown only to roles that have the permission

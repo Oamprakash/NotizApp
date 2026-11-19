@@ -3,6 +3,7 @@ package com.notiz.app.data
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.functions.functions
@@ -44,6 +45,21 @@ class AuthRepository(private val supabase: SupabaseClient) {
     /** Language for push notifications sent by the server ("en" or "ta"). */
     suspend fun setLanguage(code: String) {
         supabase.from("profiles").update({ set("language", code) }) {
+            filter { eq("id", requireUserId()) }
+        }
+    }
+
+    /** Which optional notifications this person wants (visitor, dues and help-desk ones always come). */
+    suspend fun notificationPrefs(): NotificationPrefs? =
+        supabase.from("profiles")
+            .select(Columns.list("push_chat", "push_updates")) { filter { eq("id", requireUserId()) } }
+            .decodeSingleOrNull<NotificationPrefs>()
+
+    suspend fun setNotificationPrefs(prefs: NotificationPrefs) {
+        supabase.from("profiles").update({
+            set("push_chat", prefs.chat)
+            set("push_updates", prefs.updates)
+        }) {
             filter { eq("id", requireUserId()) }
         }
     }

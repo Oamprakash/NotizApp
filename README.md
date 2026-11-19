@@ -179,6 +179,13 @@ Five roles: **President**, **Secretary**, **Treasurer**, **Resident** and **Secu
 - **Residents**: a waiting visitor shows at the top of Home with **Allow / Deny** (and in the push). *Gate* on Home lists the flat's visitors for the last 30 days and **Invite a guest**: name, kind and day give a one-time 6-digit code to share on WhatsApp. The guard types it under *Guest code* and the guest walks in; the flat gets "Your guest has arrived".
 - The president (or anyone given *Run the gate*) also gets a *Gate desk* view on the Gate screen. Everything is in the database: residents only see their own flat's visitors, codes work once and only on their day (Indian time), and only the gate desk can let people in.
 
+## Visitor alerts that don't get missed
+
+- A visitor at the gate rings the flat's phones like a call until someone answers, with **Allow / Deny right on the notification** (no need to open the app). On iPhone the alert is Time Sensitive, so Focus modes don't hide it.
+- When one person in the flat answers, the alert **stops on every other phone**; it also stops when the guard lets the visitor in or sends them away.
+- **Settings → Visitor alerts** checks this phone: notifications on, the visitor channel allowed to ring, no battery restrictions, plus steps for phones that kill background apps (Xiaomi, OnePlus/Oppo/Realme, Vivo, Samsung), and a **test alert** button. The Gate screen warns when something is wrong.
+- **Settings → Notifications:** turn off chat or notices and polls; visitor, dues and help-desk alerts always come. No ads, ever.
+
 ## Committee tools
 
 - **Settings** (your avatar on Home): your name, language, society details (*Society details*) and UPI ID (*Payment settings*), a new invite code (*Manage members*), leave society, delete account, sign out.

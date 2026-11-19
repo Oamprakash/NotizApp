@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         LanguagePrefs.init(this) // before any UI reads the saved language
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        AndroidNotifications.ensureChannel(this)
+        AndroidNotifications.ensureChannels(this)
         if (savedInstanceState == null) handleNotificationTap(intent)
         setContent { App() }
     }

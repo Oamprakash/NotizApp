@@ -22,6 +22,12 @@ object PushTypes {
     const val APPROVED = "approved"
     const val GATE = "gate"
 
+    /** Silent: someone already answered a visitor, stop the alert on this phone. */
+    const val GATE_CANCEL = "gate_cancel"
+
+    /** Settings → Visitor alerts → Send a test alert. */
+    const val GATE_TEST = "gate_test"
+
     /** Your membership or the society changed (flat, admin role, removed, rejected, UPI ID…). */
     const val SOCIETY = "society"
 }

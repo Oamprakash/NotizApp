@@ -128,3 +128,14 @@ The Firebase iOS SDK 13 needs **Xcode 26 or newer**. Test on a real iPhone.
 - Remove the test phone numbers from Supabase Auth.
 - Clean old outbox rows now and then, for example a monthly cron job:
   `delete from notification_outbox where sent_at < now() - interval '30 days';`
+
+
+## Visitor alerts (20261116000000_visitor_alerts.sql)
+
+Redeploy the function after this migration: `supabase functions deploy push --no-verify-jwt`.
+
+- **Android:** visitor alerts are sent as *data* messages, so the app builds the notification itself on the **Visitors at the gate** channel: ringtone sound, repeats until answered, Allow / Deny buttons, gone after 10 minutes. Other pushes use **Society updates** (`notiz_general`) or **Society chat** (`notiz_chat`). People can change each channel's sound in Android settings.
+- **iOS:** visitor alerts are **Time Sensitive** (they get through Focus) in the `GATE_VISITOR` category with Allow / Deny buttons, which need the phone unlocked. In Xcode the target needs the **Time Sensitive Notifications** capability and **Background Modes → Remote notifications** (both in `project.yml`; run `xcodegen`).
+- **Stop ringing everywhere:** when anyone in the flat answers, or the guard lets the visitor in or sends them away, a silent push (`type: gate_cancel`) removes the alert from every other phone in the flat.
+- **Preferences:** Settings → Notifications lets each person turn off *Chat messages* and *Notices and polls* (stored on `profiles.push_chat` / `push_updates`, filtered in `push_l`). Visitor, dues, payment, help-desk and membership pushes always go out.
+- **Test:** Settings → Visitor alerts → *Send a test alert* (`send_test_visitor_alert()`, once a minute).

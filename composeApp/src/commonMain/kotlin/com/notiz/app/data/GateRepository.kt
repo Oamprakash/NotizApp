@@ -1,6 +1,7 @@
 package com.notiz.app.data
 
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
@@ -70,6 +71,20 @@ class GateRepository(private val supabase: SupabaseClient) {
 
     suspend fun respond(entryId: String, allow: Boolean) {
         supabase.postgrest.rpc("respond_visitor", buildJsonObject { put("p_entry_id", entryId); put("p_allow", allow) })
+    }
+
+    /**
+     * Allow / Deny from a notification button, possibly with the app not running: waits for the
+     * saved login to load first.
+     */
+    suspend fun respondInBackground(entryId: String, allow: Boolean) {
+        supabase.auth.awaitInitialization()
+        respond(entryId, allow)
+    }
+
+    /** Sends yourself a test visitor alert (at most one a minute). */
+    suspend fun sendTestAlert() {
+        supabase.postgrest.rpc("send_test_visitor_alert")
     }
 
     suspend fun markIn(entryId: String) {

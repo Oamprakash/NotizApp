@@ -94,3 +94,15 @@ Use **G** (guard) and **R** (resident, ideally Tamil) on two phones.
 - [ ] G: the photo shows on the desk card, under Inside now and in Earlier today.
 - [ ] Another resident (other flat) can't see the visitor or the photo.
 - [ ] iPhone: first time asks for camera access; saying "Don't Allow" shows "Couldn't open the camera" and the visitor can still be logged.
+
+## 13. Visitor alerts
+Run `20261116000000_visitor_alerts.sql` and redeploy the `push` function first. Use R logged in on **two phones** if you can.
+- [ ] R: Settings → Visitor alerts: all three checks green (fix any red one with its button), brand tip shown on Xiaomi / OnePlus / Vivo / Samsung. *Send a test alert*, lock the phone: it rings like a call; a second test within a minute says "Wait a minute".
+- [ ] G logs a visitor for R's flat with R's app **closed**: both of R's phones ring repeatedly, with Allow / Deny buttons (Tamil labels on the Tamil phone).
+- [ ] Tap **Allow** on one phone without opening the app: ringing stops on **both** phones, a quiet "Allowed. The gate has been told." appears, G gets "allowed ✅".
+- [ ] Repeat with Deny. Repeat and let G tap *Let in anyway* or *Send away* instead: R's phones stop ringing.
+- [ ] Airplane mode on R, tap Allow: "Couldn't send your answer…"; tapping it opens the app.
+- [ ] Not answered: the alert disappears after 10 minutes.
+- [ ] iPhone: the alert shows Allow / Deny on long-press, asks for Face ID, and comes through a Focus mode.
+- [ ] Settings → Notifications: turn off *Chat messages*, have A post in chat: no push for R. A posts a notice with *Notices and polls* off: no push. A raises a bill: R still gets it.
+- [ ] Turn off the "Visitors at the gate" channel in Android settings: the Gate screen shows "This phone may miss visitors".

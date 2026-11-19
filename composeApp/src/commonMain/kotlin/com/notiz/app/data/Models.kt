@@ -12,6 +12,12 @@ data class Profile(
 )
 
 @Serializable
+data class NotificationPrefs(
+    @SerialName("push_chat") val chat: Boolean = true,
+    @SerialName("push_updates") val updates: Boolean = true,
+)
+
+@Serializable
 data class Society(
     val id: String,
     val name: String,

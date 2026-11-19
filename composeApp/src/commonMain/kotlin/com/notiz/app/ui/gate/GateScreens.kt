@@ -65,6 +65,7 @@ import com.notiz.app.photos.LocalPhoto
 import com.notiz.app.photos.RemotePhotoStrip
 import com.notiz.app.photos.rememberCameraCapture
 import com.notiz.app.push.OnPushUpdate
+import com.notiz.app.push.rememberAlertCheck
 import com.notiz.app.push.PushTypes
 import com.notiz.app.resources.*
 import com.notiz.app.ui.SessionContext
@@ -647,7 +648,7 @@ private fun EnterCodeSheet(busy: Boolean, error: String?, onDismiss: () -> Unit,
  * someone with the gate permission who also lives here (the president) can switch to the desk.
  */
 @Composable
-fun GateScreen(session: SessionContext, onBack: () -> Unit) {
+fun GateScreen(session: SessionContext, onBack: () -> Unit, onOpenAlerts: () -> Unit = {}) {
     var deskView by rememberSaveable { mutableStateOf(false) }
     val canDesk = session.can(com.notiz.app.data.Perms.GATE)
     Scaffold(
@@ -663,13 +664,14 @@ fun GateScreen(session: SessionContext, onBack: () -> Unit) {
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
-            if (deskView && canDesk) GateDesk(session, Modifier.weight(1f)) else FlatGate(session, Modifier.weight(1f))
+            if (deskView && canDesk) GateDesk(session, Modifier.weight(1f)) else FlatGate(session, onOpenAlerts, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun FlatGate(session: SessionContext, modifier: Modifier = Modifier) {
+private fun FlatGate(session: SessionContext, onOpenAlerts: () -> Unit, modifier: Modifier = Modifier) {
+    val alertCheck = rememberAlertCheck()
     val container = LocalAppContainer.current
     val vm = viewModel(key = "gate-flat") { GateViewModel(container, session, desk = false) }
     val state by vm.state.collectAsState()
@@ -694,6 +696,7 @@ private fun FlatGate(session: SessionContext, modifier: Modifier = Modifier) {
                     item {
                         ErrorBanner(state.error?.asString(), onDismiss = vm::dismiss)
                         InfoBanner(state.info?.asString(), onDismiss = vm::dismiss)
+                        AlertWarningCard(alertCheck, onOpen = onOpenAlerts)
                     }
                     if (state.waiting.isNotEmpty()) {
                         items(state.waiting, key = { "w" + it.id }) { e ->

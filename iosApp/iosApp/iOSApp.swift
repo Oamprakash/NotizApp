@@ -25,6 +25,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        registerGateCategory()
 
         // Without GoogleService-Info.plist the app still runs, just without push.
         guard Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil else {
@@ -36,6 +37,31 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Gets an APNs token silently; the permission prompt is shown later from Kotlin.
         application.registerForRemoteNotifications()
         return true
+    }
+
+    /// Allow / Deny buttons on visitor alerts (category sent by the push function).
+    /// Both need the phone unlocked, so nobody can answer the gate from a locked screen.
+    private func registerGateCategory() {
+        let labels = GateAlerts.shared.actionLabels()
+        let allow = UNNotificationAction(identifier: "GATE_ALLOW", title: labels[0], options: [.authenticationRequired])
+        let deny = UNNotificationAction(identifier: "GATE_DENY", title: labels[1], options: [.destructive, .authenticationRequired])
+        let category = UNNotificationCategory(identifier: "GATE_VISITOR", actions: [allow, deny], intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
+    /// Silent pushes: "gate_cancel" removes a visitor alert someone in the flat already answered.
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        if let type = userInfo["type"] as? String, type == "gate_cancel", let id = userInfo["id"] as? String {
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [id])
+            PushEvents.shared.onNotificationReceived(type: "gate")
+            completionHandler(.newData)
+        } else {
+            completionHandler(.noData)
+        }
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -72,7 +98,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let type = response.notification.request.content.userInfo["type"] as? String
+        let userInfo = response.notification.request.content.userInfo
+        let type = userInfo["type"] as? String
+        let action = response.actionIdentifier
+        if (action == "GATE_ALLOW" || action == "GATE_DENY"), let id = userInfo["id"] as? String {
+            // Answer the gate without opening the app; iOS waits for completionHandler.
+            GateAlerts.shared.respond(entryId: id, allow: action == "GATE_ALLOW") { _ in
+                completionHandler()
+            }
+            return
+        }
         PushEvents.shared.onNotificationOpened(type: type)
         completionHandler()
     }

@@ -32,7 +32,11 @@ interface ServiceAccount {
   private_key: string;
 }
 
+// Must match AndroidNotifications in the app
 const ANDROID_CHANNEL_ID = "notiz_general";
+const ANDROID_CHAT_CHANNEL_ID = "notiz_chat";
+/** iOS notification category with Allow / Deny buttons (registered in iosApp/iOSApp.swift). */
+const IOS_GATE_CATEGORY = "GATE_VISITOR";
 const SEND_CONCURRENCY = 25;
 
 // ─────────────────────────── Database (PostgREST with the service role) ───────────────────────────
@@ -151,6 +155,48 @@ function stringifyData(data: Record<string, unknown>): Record<string, string> {
 
 export function buildMessage(token: string, row: Pick<OutboxRow, "title" | "body" | "data">) {
   const data = stringifyData(row.data);
+
+  // Silent pushes (e.g. "stop ringing, someone already answered"): no notification at all.
+  // Android gets a data message; iOS a background push the app handles quietly.
+  if (data.silent === "1") {
+    return {
+      message: {
+        token,
+        data,
+        android: { priority: "HIGH" },
+        apns: {
+          headers: { "apns-priority": "5", "apns-push-type": "background" },
+          payload: { aps: { "content-available": 1 } },
+        },
+      },
+    };
+  }
+
+  // Visitor alerts: on Android a data message, so the app itself shows a ringing notification
+  // with Allow / Deny; on iOS a time-sensitive alert in the GATE_VISITOR category (Allow / Deny
+  // buttons), with the entry id as its identifier so a later silent push can remove it.
+  if (data.type === "gate_test" || (data.type === "gate" && data.gate_action === "ask")) {
+    const actionable = data.type === "gate";
+    return {
+      message: {
+        token,
+        data: { ...data, title: row.title, body: row.body } as Record<string, string>,
+        android: { priority: "HIGH", ttl: "600s" },
+        apns: {
+          headers: { "apns-priority": "10", ...(data.id ? { "apns-collapse-id": data.id } : {}) },
+          payload: {
+            aps: {
+              alert: { title: row.title, body: row.body },
+              sound: "default",
+              "interruption-level": "time-sensitive",
+              ...(actionable ? { category: IOS_GATE_CATEGORY } : {}),
+            },
+          },
+        },
+      },
+    };
+  }
+
   // Group chat pushes per society so a busy chat doesn't flood the tray.
   const tag = data.type === "chat" && data.society_id ? `chat-${data.society_id}` : undefined;
   return {
@@ -161,7 +207,7 @@ export function buildMessage(token: string, row: Pick<OutboxRow, "title" | "body
       android: {
         priority: "HIGH",
         notification: {
-          channel_id: ANDROID_CHANNEL_ID,
+          channel_id: data.type === "chat" ? ANDROID_CHAT_CHANNEL_ID : ANDROID_CHANNEL_ID,
           ...(tag ? { tag } : {}),
         },
       },

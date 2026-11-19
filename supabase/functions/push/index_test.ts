@@ -59,9 +59,33 @@ Deno.test("message carries title/body, string data, Android channel and chat gro
   }).message;
   assertEquals(m.notification, { title: "Ravi · B-202", body: "Hello" });
   assertEquals(m.data.count, "3", "data values must be strings");
-  assertEquals(m.android.notification.channel_id, "notiz_general");
+  assertEquals(m.android.notification.channel_id, "notiz_chat");
   assertEquals((m.android.notification as { tag?: string }).tag, "chat-s1");
   assertEquals((m.apns.payload.aps as { "thread-id"?: string })["thread-id"], "chat-s1");
+});
+
+Deno.test("visitor alert: data-only on Android, time-sensitive GATE_VISITOR on iOS", () => {
+  const m = buildMessage("tok", {
+    title: "Visitor at the gate",
+    body: "Ravi (Swiggy delivery) is waiting.",
+    data: { type: "gate", gate_action: "ask", id: "e1", l_allow: "Allow" },
+  }).message as Record<string, any>;
+  assertEquals(m.notification, undefined, "Android must get a data message so the app adds the buttons");
+  assertEquals(m.data.title, "Visitor at the gate");
+  assertEquals(m.data.l_allow, "Allow");
+  assertEquals(m.android.priority, "HIGH");
+  assertEquals(m.apns.headers["apns-collapse-id"], "e1");
+  assertEquals(m.apns.payload.aps.category, "GATE_VISITOR");
+  assertEquals(m.apns.payload.aps["interruption-level"], "time-sensitive");
+});
+
+Deno.test("silent push: no notification, iOS background push", () => {
+  const m = buildMessage("tok", { title: "", body: "", data: { type: "gate_cancel", id: "e1", silent: "1" } })
+    .message as Record<string, any>;
+  assertEquals(m.notification, undefined);
+  assertEquals(m.data, { type: "gate_cancel", id: "e1", silent: "1" });
+  assertEquals(m.apns.headers["apns-push-type"], "background");
+  assertEquals(m.apns.payload.aps["content-available"], 1);
 });
 
 Deno.test("in-list quoting survives FCM token characters", () => {

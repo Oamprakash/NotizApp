@@ -572,4 +572,36 @@
     <string name="settings_feedback">கருத்து அனுப்பு</string>
     <string name="settings_feedback_hint">பிழை அல்லது யோசனை உள்ளதா? எங்களிடம் சொல்லுங்கள்.</string>
     <string name="settings_feedback_subject">Notiz கருத்து (%1$s)</string>
+    <!-- Visitor alerts -->
+    <string name="settings_notifications">அறிவிப்புகள்</string>
+    <string name="settings_push_chat">அரட்டைச் செய்திகள்</string>
+    <string name="settings_push_chat_hint">சங்க அரட்டையில் புதிய செய்திகள்</string>
+    <string name="settings_push_updates">அறிவிப்புகள், வாக்கெடுப்புகள்</string>
+    <string name="settings_push_updates_hint">குழுவின் புதிய அறிவிப்புகள், வாக்கெடுப்புகள்</string>
+    <string name="settings_push_always">வாயில் பார்வையாளர்கள், கட்டணம், உதவி மைய நிலை ஆகியவை எப்போதும் அறிவிக்கப்படும்.</string>
+    <string name="alerts_title">பார்வையாளர் அறிவிப்புகள்</string>
+    <string name="alerts_status_ok">தயார்: பார்வையாளர் வந்தால் இந்த ஃபோன் ஒலிக்கும்</string>
+    <string name="alerts_status_fix">அறிவிப்புகள் வராமல் போகலாம். சரிசெய்ய தொடவும்.</string>
+    <string name="alerts_all_good">இந்த ஃபோன் தயார்</string>
+    <string name="alerts_needs_fix">இந்த ஃபோன் பார்வையாளர்களைத் தவறவிடலாம்</string>
+    <string name="alerts_intro">யாராவது வாயிலில் இருந்தால், நீங்கள் அறிவிப்பிலேயே அனுமதி அல்லது மறு தொடும் வரை Notiz ஒலிக்கும்.</string>
+    <string name="alerts_check_notifications">Notiz-க்கு அறிவிப்புகள் அனுமதி</string>
+    <string name="alerts_check_channel">"வாயிலில் பார்வையாளர்கள்" மேலே தோன்றி ஒலிக்கலாம்</string>
+    <string name="alerts_check_time_sensitive">நேர உணர்திறன் அறிவிப்புகள் (Focus-ஐ மீறி வரும்)</string>
+    <string name="alerts_check_battery">பேட்டரி: Notiz-க்குக் கட்டுப்பாடு இல்லை</string>
+    <string name="alerts_check_background_ios">பின்னணிப் புதுப்பிப்பு இயக்கத்தில்</string>
+    <string name="alerts_fix">சரிசெய்</string>
+    <string name="alerts_tip_title">இந்த ஃபோனில் இன்னொரு அமைப்பு</string>
+    <string name="alerts_tip_xiaomi">Xiaomi, Redmi, POCO ஃபோன்கள் பின்னணியில் செயலிகளை நிறுத்தும். Settings → Apps → Notiz: Autostart-ஐ இயக்கி, Battery saver-ஐ "No restrictions" ஆக்குங்கள்.</string>
+    <string name="alerts_tip_coloros">OnePlus, Oppo, Realme ஃபோன்கள் பின்னணியில் செயலிகளை நிறுத்தும். Settings → Apps → Notiz → Battery: பின்னணிச் செயல்பாடு, auto launch இரண்டையும் அனுமதியுங்கள்.</string>
+    <string name="alerts_tip_vivo">Vivo, iQOO ஃபோன்கள் பின்னணியில் செயலிகளை நிறுத்தும். Settings → Battery → Background power consumption: Notiz-ஐ அனுமதித்து Autostart-ஐ இயக்குங்கள்.</string>
+    <string name="alerts_tip_samsung">Samsung ஃபோனில் Settings → Apps → Notiz → Battery-இல் "Unrestricted" தேர்ந்தெடுங்கள். Notiz "Sleeping apps"-இல் இல்லை என்பதையும் உறுதிசெய்யுங்கள்.</string>
+    <string name="alerts_tip_other">சில ஃபோன்கள் பேட்டரியைச் சேமிக்க பின்னணியில் செயலிகளை நிறுத்தும். Settings → Apps → Notiz → Battery-இல் பின்னணிச் செயல்பாட்டை அனுமதித்து, battery optimisation-ஐ அணையுங்கள்.</string>
+    <string name="alerts_open_settings">அமைப்புகளைத் திற</string>
+    <string name="alerts_send_test">சோதனை அறிவிப்பு அனுப்பு</string>
+    <string name="alerts_test_hint">தொட்ட பின் ஃபோனைப் பூட்டுங்கள்: சில விநாடிகளில் உண்மையான பார்வையாளர் போல ஒலிக்க வேண்டும். பார்வையாளர் அறிவிப்புகள் ரிங்டோன் ஒலியளவைப் பயன்படுத்தும்.</string>
+    <string name="alerts_test_sent">சோதனை அறிவிப்பு அனுப்பப்பட்டது. சில விநாடிகளில் ஒலிக்கும்.</string>
+    <string name="alerts_warning_title">இந்த ஃபோன் பார்வையாளர்களைத் தவறவிடலாம்</string>
+    <string name="alerts_warning_body">ஒரு அமைப்பு பார்வையாளர் அறிவிப்புகளைத் தடுக்கிறது. ஒரு நிமிடத்தில் சரிசெய்ய தொடவும்.</string>
+    <string name="error_test_alert_wait">இன்னொரு சோதனைக்கு முன் ஒரு நிமிடம் காத்திருங்கள்.</string>
 </resources>

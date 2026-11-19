@@ -51,6 +51,11 @@
             </intent-filter>
         </service>
 
+        <!-- Allow / Deny buttons on visitor alerts -->
+        <receiver
+            android:name=".push.GateActionReceiver"
+            android:exported="false" />
+
         <!-- Used by FCM for notifications shown while the app is in the background -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

@@ -17,6 +17,7 @@ import com.notiz.app.ui.home.HomeScreen
 import com.notiz.app.ui.members.MembersScreen
 import com.notiz.app.ui.payments.PaymentSettingsScreen
 import com.notiz.app.ui.roles.RolesScreen
+import com.notiz.app.ui.gate.AlertsScreen
 import com.notiz.app.ui.gate.GateScreen
 import com.notiz.app.ui.notices.NoticeDetailScreen
 import com.notiz.app.ui.settings.SettingsScreen
@@ -42,6 +43,9 @@ data object RolesRoute
 
 @Serializable
 data object GateRoute
+
+@Serializable
+data object AlertsRoute
 
 /**
  * Navigation for a signed-in, approved member. [onSessionChanged] quietly reloads the membership
@@ -111,10 +115,14 @@ fun MainNavigation(
                 onOpenMembers = { navController.navigate(MembersRoute) },
                 onOpenPayments = { navController.navigate(PaymentSettingsRoute) },
                 onOpenRoles = { navController.navigate(RolesRoute) },
+                onOpenAlerts = { navController.navigate(AlertsRoute) },
             )
         }
         composable<GateRoute> {
-            GateScreen(session = session, onBack = { navController.popBackStack() })
+            GateScreen(session = session, onBack = { navController.popBackStack() }, onOpenAlerts = { navController.navigate(AlertsRoute) })
+        }
+        composable<AlertsRoute> {
+            AlertsScreen(onBack = { navController.popBackStack() })
         }
         composable<RolesRoute> {
             RolesScreen(session = session, onBack = { navController.popBackStack() })

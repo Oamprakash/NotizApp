@@ -48,6 +48,7 @@ private fun serverError(message: String): UiText? {
         // Gate log (20261114000000_gate_log.sql)
         "no one lives in flat" in m -> uiText(Res.string.error_gate_flat)
         "photo upload failed" in m -> uiText(Res.string.error_photo_upload)
+        "wait a minute before sending another test" in m -> uiText(Res.string.error_test_alert_wait)
         "already answered for this visitor" in m -> uiText(Res.string.error_gate_answered)
         "code not found or already used" in m -> uiText(Res.string.error_gate_code)
         "this code is for" in m -> uiText(Res.string.error_gate_code_day)
