@@ -56,6 +56,7 @@ import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -136,7 +137,7 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
 
     Box(modifier.fillMaxSize()) {
         when {
-            state.loading -> LoadingBox()
+            state.loading -> LoadingBox(kind = SkeletonKind.Cards)
             state.loadError != null && state.polls.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.polls.isEmpty()) {
@@ -147,6 +148,9 @@ fun PollsTab(session: SessionContext, modifier: Modifier = Modifier) {
                         } else {
                             stringResource(Res.string.polls_empty_resident)
                         },
+                        icon = NotizIcons.Poll,
+                        actionLabel = stringResource(Res.string.polls_new).takeIf { session.can(Perms.POLLS) },
+                        onAction = { creating = true },
                     )
                 } else {
                     LazyColumn(

@@ -106,3 +106,11 @@ Run `20261116000000_visitor_alerts.sql` and redeploy the `push` function first. 
 - [ ] iPhone: the alert shows Allow / Deny on long-press, asks for Face ID, and comes through a Focus mode.
 - [ ] Settings → Notifications: turn off *Chat messages*, have A post in chat: no push for R. A posts a notice with *Notices and polls* off: no push. A raises a bill: R still gets it.
 - [ ] Turn off the "Visitors at the gate" channel in Android settings: the Gate screen shows "This phone may miss visitors".
+
+## 14. Loading, empty and error states
+- [ ] Every tab, first open on slow data (turn on mobile data only, or Developer options → network throttling): a shimmering placeholder shaped like the screen (cards, chat bubbles, dues card, Home tiles), no plain spinner.
+- [ ] Fresh society: Notices, Polls, Help desk, Dues and Chat each show an icon, a title and a line; committee also sees a button (Post a notice, New poll, Raise bill) that opens the right sheet.
+- [ ] Airplane mode, then open the app: Home shows "Couldn't load this" with Try again; Notices etc. the same. Back online → Try again loads.
+- [ ] With data on screen, go offline and pull to refresh: the data stays, with a red banner on top.
+- [ ] Settings while offline: "Couldn't load your notification settings" with Try again.
+- [ ] Buttons that wait (Send OTP, Join) and photo thumbnails show the small teal/white spinner.

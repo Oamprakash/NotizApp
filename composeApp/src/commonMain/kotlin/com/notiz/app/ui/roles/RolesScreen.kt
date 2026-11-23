@@ -47,6 +47,7 @@ import com.notiz.app.ui.components.FilterPill
 import com.notiz.app.ui.components.GroupCard
 import com.notiz.app.ui.components.InfoBanner
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.NotizSwitch
 import com.notiz.app.ui.components.SecondaryButton
 import com.notiz.app.ui.components.permissionDescription
@@ -132,7 +133,7 @@ fun RolesScreen(session: SessionContext, onBack: () -> Unit) {
     ) { padding ->
         when {
             !session.isPresident -> ErrorBox(stringResource(Res.string.roles_president_only), onRetry = onBack, modifier = Modifier.padding(padding))
-            state.loading -> LoadingBox(Modifier.padding(padding))
+            state.loading -> LoadingBox(Modifier.padding(padding), SkeletonKind.Form)
             state.loadError != null && state.grants.isEmpty() ->
                 ErrorBox(state.loadError!!.asString(), onRetry = vm::load, modifier = Modifier.padding(padding))
             else -> Column(

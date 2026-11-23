@@ -76,6 +76,7 @@ import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.IconTile
 import com.notiz.app.ui.components.InfoBanner
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.NotizCard
 import com.notiz.app.ui.components.NotizDialog
 import com.notiz.app.ui.components.NotizSheet
@@ -209,7 +210,7 @@ private fun GateDesk(session: SessionContext, modifier: Modifier = Modifier) {
         InfoBanner(state.info?.asString(), onDismiss = vm::dismiss, modifier = Modifier.padding(horizontal = 16.dp))
         Box(Modifier.weight(1f)) {
             when {
-                state.loading -> LoadingBox()
+                state.loading -> LoadingBox(kind = SkeletonKind.Cards)
                 state.loadError != null && state.entries.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
                 else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                     LazyColumn(
@@ -685,7 +686,7 @@ private fun FlatGate(session: SessionContext, onOpenAlerts: () -> Unit, modifier
 
     Box(modifier) {
         when {
-            state.loading -> LoadingBox()
+            state.loading -> LoadingBox(kind = SkeletonKind.Cards)
             state.loadError != null && state.entries.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 LazyColumn(

@@ -54,6 +54,7 @@ import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.InfoBanner
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.LoadingButton
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.theme.StatusColors
@@ -146,7 +147,7 @@ fun PaymentSettingsScreen(session: SessionContext, onBack: () -> Unit) {
         topBar = { DetailTopBar(stringResource(Res.string.pay_title), onBack) },
     ) { padding ->
         when {
-            state.loading -> LoadingBox(Modifier.padding(padding))
+            state.loading -> LoadingBox(Modifier.padding(padding), SkeletonKind.Form)
             state.loadError != null -> ErrorBox(state.loadError!!.asString(), onRetry = vm::load, modifier = Modifier.padding(padding))
             !session.can(Perms.PAYMENT_SETTINGS) -> ErrorBox(stringResource(Res.string.error_admins_only), onRetry = onBack, modifier = Modifier.padding(padding))
             else -> Column(

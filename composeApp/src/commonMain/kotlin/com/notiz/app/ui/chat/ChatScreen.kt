@@ -83,6 +83,7 @@ import com.notiz.app.ui.components.EmptyState
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.util.formatTime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -261,9 +262,9 @@ fun ChatTab(session: SessionContext, modifier: Modifier = Modifier) {
         HorizontalDivider(color = Palette.line)
         Box(Modifier.weight(1f).fillMaxWidth().background(Color(0xFFEEF2F0))) {
             when {
-                state.loading && state.messages.isEmpty() -> LoadingBox()
+                state.loading && state.messages.isEmpty() -> LoadingBox(kind = SkeletonKind.Chat)
                 state.loadError != null && state.messages.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = vm::load)
-                state.messages.isEmpty() -> EmptyState(stringResource(Res.string.chat_empty_title), stringResource(Res.string.chat_empty_body))
+                state.messages.isEmpty() -> EmptyState(stringResource(Res.string.chat_empty_title), stringResource(Res.string.chat_empty_body), icon = NotizIcons.Chat)
                 else -> LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(12.dp),

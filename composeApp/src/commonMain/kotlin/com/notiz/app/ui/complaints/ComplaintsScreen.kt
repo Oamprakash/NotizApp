@@ -69,6 +69,7 @@ import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.theme.StatusColors
 import com.notiz.app.i18n.localTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -184,7 +185,7 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
 
     Box(modifier.fillMaxSize()) {
         when {
-            state.loading -> LoadingBox()
+            state.loading -> LoadingBox(kind = SkeletonKind.Cards)
             state.loadError != null && state.complaints.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 LazyColumn(
@@ -213,6 +214,8 @@ fun ComplaintsTab(session: SessionContext, modifier: Modifier = Modifier) {
                                     } else {
                                         stringResource(Res.string.complaints_empty_resident)
                                     },
+                                    modifier = Modifier.height(360.dp),
+                                    icon = if (showResolved) NotizIcons.Check else NotizIcons.Wrench,
                                 )
                             }
                         }

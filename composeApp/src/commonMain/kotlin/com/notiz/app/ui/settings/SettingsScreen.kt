@@ -80,6 +80,7 @@ data class SettingsUiState(
     val upiPayeeName: String = "",
     val inviteCode: String = "",
     val prefs: NotificationPrefs? = null,
+    val prefsFailed: Boolean = false,
     val busy: Boolean = false,
     val error: UiText? = null,
     val info: UiText? = null,
@@ -103,8 +104,14 @@ class SettingsViewModel(
         launchSafe(onError = {}) {
             container.auth.myProfile()?.let { p -> state.update { it.copy(name = p.fullName) } }
         }
-        launchSafe(onError = {}) {
-            container.auth.notificationPrefs()?.let { p -> state.update { it.copy(prefs = p) } }
+        loadPrefs()
+    }
+
+    fun loadPrefs() {
+        state.update { it.copy(prefsFailed = false) }
+        launchSafe(onError = { state.update { it.copy(prefsFailed = true) } }) {
+            val p = container.auth.notificationPrefs() ?: NotificationPrefs()
+            state.update { it.copy(prefs = p) }
         }
     }
 
@@ -271,6 +278,17 @@ fun SettingsScreen(
                         )
                     }
                     val prefs = state.prefs
+                    if (state.prefsFailed) {
+                        ListRow(
+                            title = stringResource(Res.string.settings_prefs_failed),
+                            titleColor = Palette.red,
+                            trailing = {
+                                NotizTextButton(onClick = vm::loadPrefs) {
+                                    Text(stringResource(Res.string.action_try_again), color = Palette.teal, fontWeight = FontWeight.Bold)
+                                }
+                            },
+                        )
+                    }
                     ListRow(
                         title = stringResource(Res.string.settings_push_chat),
                         subtitle = stringResource(Res.string.settings_push_chat_hint),

@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +43,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.notiz.app.LocalAppContainer
 import com.notiz.app.data.AttachmentRepository
 import com.notiz.app.resources.*
+import com.notiz.app.ui.components.NotizSpinner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -176,7 +176,7 @@ private fun RemotePhoto(path: String, contentScale: ContentScale, modifier: Modi
     }
     Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
         when (val l = load) {
-            PhotoLoad.Loading -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+            PhotoLoad.Loading -> NotizSpinner(Modifier.size(24.dp))
             PhotoLoad.Failed -> Text(
                 stringResource(Res.string.photos_retry),
                 style = MaterialTheme.typography.labelSmall,

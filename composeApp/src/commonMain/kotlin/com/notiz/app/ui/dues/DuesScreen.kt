@@ -53,6 +53,7 @@ import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.InfoBanner
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.theme.StatusColors
 import com.notiz.app.util.Upi
@@ -346,7 +347,7 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
 
     Box(modifier.fillMaxSize()) {
         when {
-            state.loading -> LoadingBox()
+            state.loading -> LoadingBox(kind = SkeletonKind.Dues)
             state.loadError != null && state.dues.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 LazyColumn(
@@ -386,6 +387,10 @@ fun DuesTab(session: SessionContext, onOpenPaymentSettings: () -> Unit, modifier
                                     } else {
                                         stringResource(Res.string.dues_empty_resident)
                                     },
+                                    modifier = Modifier.height(360.dp),
+                                    icon = NotizIcons.Rupee,
+                                    actionLabel = stringResource(Res.string.dues_raise_bill).takeIf { canBills },
+                                    onAction = { raising = true },
                                 )
                             }
                         }

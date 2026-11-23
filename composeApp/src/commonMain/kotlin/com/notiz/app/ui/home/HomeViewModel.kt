@@ -11,6 +11,7 @@ import com.notiz.app.data.Notice
 import com.notiz.app.data.Perms
 import com.notiz.app.data.Poll
 import com.notiz.app.i18n.UiText
+import com.notiz.app.i18n.toUiText
 import com.notiz.app.ui.BaseViewModel
 import com.notiz.app.ui.SessionContext
 import kotlinx.coroutines.CancellationException
@@ -62,6 +63,8 @@ data class HomeUiState(
     val oldestOpenRequest: Complaint? = null,
     val reportedMessages: Int = 0,
     val votingBusy: Boolean = false,
+    /** Nothing could be loaded (e.g. offline on first open): Home shows a full error with Try again. */
+    val loadFailed: UiText? = null,
     // Gate: visitors waiting for this flat's answer
     val visitors: List<GateEntry> = emptyList(),
     val visitorBusyId: String? = null,
@@ -84,8 +87,9 @@ class HomeViewModel(
 
     @OptIn(ExperimentalTime::class)
     fun load(pullToRefresh: Boolean = false) {
-        state.update { it.copy(error = null, refreshing = pullToRefresh) }
+        state.update { it.copy(error = null, refreshing = pullToRefresh, loading = it.loading || it.loadFailed != null, loadFailed = null) }
         launchSafe(onError = { msg -> state.update { it.copy(loading = false, refreshing = false, error = msg) } }) {
+            failures.clear()
             val sid = session.societyId
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             coroutineScope {
@@ -125,10 +129,22 @@ class HomeViewModel(
                 val pending = members.await().filter { it.isPending }
                 val open = complaints.await().filter { it.status != ComplaintStatus.RESOLVED }
 
+                // The three things every Home shows all failed: say so instead of an empty screen
+                val coreFailed = profile.await() == null && allDues.isEmpty() && noticeList.isEmpty() && failures.size >= 3
+                if (coreFailed) {
+                    val msg = failures.first().toUiText()
+                    state.update {
+                        // Keep what was on screen if this was a refresh; only a first load shows the full error
+                        if (it.myName.isNotEmpty()) it.copy(loading = false, refreshing = false, error = msg)
+                        else it.copy(loading = false, refreshing = false, loadFailed = msg)
+                    }
+                    return@coroutineScope
+                }
                 state.update {
                     it.copy(
                         loading = false,
                         refreshing = false,
+                        loadFailed = null,
                         myName = profile.await()?.fullName.orEmpty(),
                         myDue = myOpen,
                         myDueDaysLeft = myOpen?.let { d -> runCatching { today.daysUntil(LocalDate.parse(d.dueDate)) }.getOrNull() },
@@ -188,11 +204,14 @@ class HomeViewModel(
         )
     }
 
+    private val failures = mutableListOf<Throwable>()
+
     private suspend fun <T> soft(block: suspend () -> T): T? = try {
         block()
     } catch (e: CancellationException) {
         throw e
     } catch (e: Throwable) {
+        failures += e
         null
     }
 }

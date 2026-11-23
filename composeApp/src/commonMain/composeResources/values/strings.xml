@@ -604,4 +604,7 @@ all in one place.</string>
     <string name="alerts_warning_title">This phone may miss visitors</string>
     <string name="alerts_warning_body">A setting is blocking visitor alerts. Tap to fix it in a minute.</string>
     <string name="error_test_alert_wait">Wait a minute before sending another test.</string>
+    <string name="loading">Loading</string>
+    <string name="error_load_title">Couldn't load this</string>
+    <string name="settings_prefs_failed">Couldn't load your notification settings</string>
 </resources>

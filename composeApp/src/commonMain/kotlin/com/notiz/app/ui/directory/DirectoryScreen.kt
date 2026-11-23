@@ -50,6 +50,7 @@ import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.GroupCard
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.NotizTextField
 import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.ui.components.RoleChip
@@ -138,7 +139,7 @@ fun DirectoryTab(session: SessionContext, onOpenSettings: () -> Unit, modifier: 
         ErrorBanner(if (callError) stringResource(Res.string.directory_call_failed) else null, onDismiss = { callError = false })
         Box(Modifier.weight(1f)) {
             when {
-                state.loading -> LoadingBox()
+                state.loading -> LoadingBox(kind = SkeletonKind.List)
                 state.loadError != null && state.entries.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
                 else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                     val list = state.visible
@@ -146,6 +147,7 @@ fun DirectoryTab(session: SessionContext, onOpenSettings: () -> Unit, modifier: 
                         RefreshableEmptyState(
                             stringResource(Res.string.directory_empty_title),
                             stringResource(if (state.query.isBlank()) Res.string.directory_empty else Res.string.directory_no_match),
+                            icon = if (state.query.isBlank()) NotizIcons.Users else NotizIcons.Search,
                         )
                     } else {
                         LazyColumn(

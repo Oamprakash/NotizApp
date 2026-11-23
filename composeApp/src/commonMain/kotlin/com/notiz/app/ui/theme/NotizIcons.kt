@@ -58,6 +58,8 @@ object NotizIcons {
     val Package by lazy { icon("M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z", "M3 7.5 12 12l9-4.5", "M12 12v9") }
     val Door by lazy { icon("M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17", "M3 21h18", "M14 12h.5") }
     val User by lazy { icon("M16 8a4 4 0 1 1-8 0a4 4 0 1 1 8 0", "M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5") }
+    val CloudOff by lazy { icon("M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 17.6 8.4", "M19.5 10.6A4 4 0 0 1 17 18H11", "M3 3l18 18") }
+    val Inbox by lazy { icon("M4 13l2.5-7.5A2 2 0 0 1 8.4 4h7.2a2 2 0 0 1 1.9 1.5L20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z", "M4 13h4.5l1.5 2.5h4l1.5-2.5H20") }
     val Globe by lazy { icon("M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0", "M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18") }
 
     private fun icon(vararg paths: String, width: Float = 2f): ImageVector {

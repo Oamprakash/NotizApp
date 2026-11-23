@@ -50,7 +50,9 @@ import com.notiz.app.i18n.localizedMonths
 import com.notiz.app.resources.*
 import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
+import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.roleLabel
 import com.notiz.app.ui.components.softShadow
 import com.notiz.app.ui.theme.LightStatusBarIcons
@@ -103,7 +105,14 @@ fun HomeTabContent(
     if (state.loading) {
         Column(modifier.fillMaxSize()) {
             Band(session, state.myName, actions.openSettings, bottomPadding = 24.dp) {}
-            LoadingBox()
+            LoadingBox(kind = SkeletonKind.Home)
+        }
+        return
+    }
+    state.loadFailed?.let { failed ->
+        Column(modifier.fillMaxSize()) {
+            Band(session, state.myName, actions.openSettings, bottomPadding = 24.dp) {}
+            ErrorBox(failed.asString(), onRetry = onRefresh)
         }
         return
     }

@@ -16,7 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.notiz.app.ui.theme.NotizIcons
+import com.notiz.app.ui.theme.Palette
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,42 +36,69 @@ import com.notiz.app.i18n.currentLanguage
 import com.notiz.app.resources.*
 import org.jetbrains.compose.resources.stringResource
 
+/** Loading placeholder shaped like the screen's content (see [SkeletonKind]). */
 @Composable
-fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+fun LoadingBox(modifier: Modifier = Modifier, kind: SkeletonKind = SkeletonKind.List) {
+    Skeleton(kind, modifier)
+}
+
+/** Icon in a soft rounded tile, title, one line, and an optional button. */
+@Composable
+private fun StateMessage(
+    icon: ImageVector,
+    tint: Color,
+    tileColor: Color,
+    title: String,
+    body: String,
+    actionLabel: String?,
+    onAction: (() -> Unit)?,
+    modifier: Modifier,
+) {
+    Column(
+        modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(72.dp).background(tileColor, RoundedCornerShape(24.dp)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(32.dp))
+        }
+        Spacer(Modifier.height(18.dp))
+        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Palette.ink, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(6.dp))
+        Text(body, fontSize = 14.sp, color = Palette.muted, textAlign = TextAlign.Center, lineHeight = 20.sp)
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(20.dp))
+            PrimaryButton(actionLabel, onClick = onAction)
+        }
     }
 }
 
+/** Couldn't load: what went wrong (already translated) and Try again. */
 @Composable
 fun ErrorBox(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(16.dp))
-        PrimaryButton(stringResource(Res.string.action_try_again), onClick = onRetry)
-    }
+    StateMessage(
+        icon = NotizIcons.CloudOff,
+        tint = Palette.red,
+        tileColor = Palette.redSoft,
+        title = stringResource(Res.string.error_load_title),
+        body = message,
+        actionLabel = stringResource(Res.string.action_try_again),
+        onAction = onRetry,
+        modifier = modifier,
+    )
 }
 
+/** Nothing here yet, with an optional next step (e.g. "Post a notice"). */
 @Composable
-fun EmptyState(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
+fun EmptyState(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = NotizIcons.Inbox,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    StateMessage(icon, Palette.teal, Palette.tealSoft, title, subtitle, actionLabel, onAction, modifier)
 }
 
 /**
@@ -76,11 +106,18 @@ fun EmptyState(title: String, subtitle: String, modifier: Modifier = Modifier) {
  * content, so the message sits in a LazyColumn item that fills the screen.
  */
 @Composable
-fun RefreshableEmptyState(title: String, subtitle: String, modifier: Modifier = Modifier) {
+fun RefreshableEmptyState(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = NotizIcons.Inbox,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
     LazyColumn(modifier.fillMaxSize()) {
         item {
             Box(Modifier.fillParentMaxSize()) {
-                EmptyState(title, subtitle)
+                EmptyState(title, subtitle, icon = icon, actionLabel = actionLabel, onAction = onAction)
             }
         }
     }
@@ -152,7 +189,7 @@ fun LoadingButton(
         contentAlignment = Alignment.Center,
     ) {
         if (loading) {
-            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = Color.White)
+            NotizSpinner(color = Color.White)
         } else {
             Text(text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }

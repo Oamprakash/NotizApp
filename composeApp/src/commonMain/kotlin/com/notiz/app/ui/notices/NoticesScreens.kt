@@ -60,6 +60,7 @@ import com.notiz.app.ui.SessionContext
 import com.notiz.app.ui.components.ErrorBanner
 import com.notiz.app.ui.components.ErrorBox
 import com.notiz.app.ui.components.LoadingBox
+import com.notiz.app.ui.components.SkeletonKind
 import com.notiz.app.ui.components.RefreshableEmptyState
 import com.notiz.app.ui.components.StatusPill
 import com.notiz.app.ui.components.UnreadDot
@@ -185,7 +186,7 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
 
     Box(modifier.fillMaxSize()) {
         when {
-            state.loading -> LoadingBox()
+            state.loading -> LoadingBox(kind = SkeletonKind.Cards)
             state.loadError != null && state.notices.isEmpty() -> ErrorBox(state.loadError!!.asString(), onRetry = { vm.load() })
             else -> PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { vm.load(pullToRefresh = true) }) {
                 if (state.notices.isEmpty()) {
@@ -196,6 +197,9 @@ fun NoticesTab(session: SessionContext, onOpenNotice: (String) -> Unit, modifier
                         } else {
                             stringResource(Res.string.notices_empty_resident)
                         },
+                        icon = NotizIcons.Notice,
+                        actionLabel = stringResource(Res.string.notice_new).takeIf { session.can(Perms.NOTICES) },
+                        onAction = { composing = true },
                     )
                 } else {
                     LazyColumn(
@@ -394,7 +398,7 @@ fun NoticeDetailScreen(session: SessionContext, noticeId: String, onBack: () -> 
     ) { padding ->
         val notice = state.notice
         when {
-            state.loading -> LoadingBox(Modifier.padding(padding))
+            state.loading -> LoadingBox(Modifier.padding(padding), SkeletonKind.Cards)
             notice == null -> ErrorBox(state.error?.asString() ?: stringResource(Res.string.notice_not_found), onRetry = vm::load, modifier = Modifier.padding(padding))
             else -> Column(
                 Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
